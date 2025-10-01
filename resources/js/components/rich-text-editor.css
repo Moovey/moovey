@@ -1,0 +1,180 @@
+/* Rich Text Editor Styles */
+
+/* Ensure images are visible and properly styled */
+.ProseMirror img,
+.ProseMirror .editor-image {
+    display: block !important;
+    height: auto !important;
+    border-radius: 8px !important;
+    border: 2px solid #e5e7eb !important;
+    margin: 16px auto !important;
+    max-width: 100% !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Size-specific styles using data attributes for instant updates */
+.ProseMirror img[data-size="small"],
+.ProseMirror .editor-image[data-size="small"] {
+    width: 128px !important;
+    height: auto !important;
+}
+
+.ProseMirror img[data-size="medium"],
+.ProseMirror .editor-image[data-size="medium"] {
+    width: 256px !important;
+    height: auto !important;
+}
+
+.ProseMirror img[data-size="large"],
+.ProseMirror .editor-image[data-size="large"] {
+    width: 384px !important;
+    height: auto !important;
+}
+
+.ProseMirror img[data-size="full"],
+.ProseMirror .editor-image[data-size="full"] {
+    width: 100% !important;
+    height: auto !important;
+}
+
+/* Selected image styles */
+.ProseMirror .ProseMirror-selectednode img,
+.ProseMirror .ProseMirror-selectednode .editor-image {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    transform: scale(1.02) !important;
+}
+
+/* Hover effect for better UX */
+.ProseMirror img:hover,
+.ProseMirror .editor-image:hover {
+    border-color: #3b82f6 !important;
+    cursor: pointer !important;
+    transform: scale(1.01) !important;
+}
+
+/* Animation for size changes */
+.ProseMirror img,
+.ProseMirror .editor-image {
+    transition: width 0.3s ease, height 0.3s ease, transform 0.2s ease, border-color 0.2s ease !important;
+}
+
+/* Resizable image wrapper styles */
+.resizable-image-wrapper {
+    position: relative !important;
+    display: inline-block !important;
+    max-width: 100% !important;
+    margin: 16px 0 !important;
+}
+
+/* Show resize handles and delete button on hover */
+.resizable-image-wrapper:hover .resize-handle,
+.resizable-image-wrapper:hover button {
+    opacity: 1 !important;
+}
+
+/* Resize handle styles */
+.resize-handle {
+    position: absolute !important;
+    width: 8px !important;
+    height: 8px !important;
+    background: #3b82f6 !important;
+    border: 1px solid white !important;
+    border-radius: 50% !important;
+    opacity: 0 !important;
+    transition: opacity 0.2s ease !important;
+    z-index: 10 !important;
+}
+
+.resize-handle:hover {
+    background: #2563eb !important;
+    transform: scale(1.2) !important;
+}
+
+/* Delete button styles */
+.resizable-image-wrapper button {
+    position: absolute !important;
+    top: 4px !important;
+    right: 4px !important;
+    width: 24px !important;
+    height: 24px !important;
+    background: #ef4444 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    z-index: 20 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    opacity: 0 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.resizable-image-wrapper button:hover {
+    background: #dc2626 !important;
+    transform: scale(1.1) !important;
+}
+
+/* Dragging styles */
+.resizable-image-wrapper.dragging {
+    opacity: 0.7 !important;
+    transform: scale(0.95) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* General editor styles */
+.ProseMirror {
+    outline: none !important;
+    min-height: 200px !important;
+    padding: 16px !important;
+}
+
+.ProseMirror p {
+    margin: 8px 0 !important;
+    line-height: 1.6 !important;
+}
+
+.ProseMirror h1 {
+    font-size: 2rem !important;
+    font-weight: bold !important;
+    margin: 24px 0 16px 0 !important;
+    line-height: 1.2 !important;
+}
+
+.ProseMirror h2 {
+    font-size: 1.5rem !important;
+    font-weight: bold !important;
+    margin: 20px 0 12px 0 !important;
+    line-height: 1.3 !important;
+}
+
+.ProseMirror h3 {
+    font-size: 1.25rem !important;
+    font-weight: bold !important;
+    margin: 16px 0 8px 0 !important;
+    line-height: 1.4 !important;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+    margin: 12px 0 !important;
+    padding-left: 24px !important;
+}
+
+.ProseMirror li {
+    margin: 4px 0 !important;
+    line-height: 1.6 !important;
+}
+
+/* Link styles */
+.ProseMirror a {
+    color: #3b82f6 !important;
+    text-decoration: underline !important;
+}
+
+.ProseMirror a:hover {
+    color: #2563eb !important;
+}

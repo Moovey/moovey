@@ -1,0 +1,304 @@
+/* Rich Text Editor Styles */
+
+/* Basic Image Display - Ensure images are visible */
+.ProseMirror img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  margin: 16px 0 !important;
+  border-radius: 8px !important;
+  background: white !important;
+}
+
+/* Editor container styles */
+.ProseMirror {
+  padding: 16px !important;
+  min-height: 300px !important;
+  outline: none !important;
+  color: #111827 !important;
+}
+
+/* Ensure list styles are not overridden by Tailwind */
+.ProseMirror ul, .ProseMirror ol {
+  list-style: revert !important;
+}
+
+/* Text styles */
+.ProseMirror h1 {
+  font-size: 2rem !important;
+  font-weight: bold !important;
+  color: #111827 !important;
+  margin: 16px 0 !important;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5rem !important;
+  font-weight: bold !important;
+  color: #111827 !important;
+  margin: 14px 0 !important;
+}
+
+.ProseMirror h3 {
+  font-size: 1.25rem !important;
+  font-weight: bold !important;
+  color: #111827 !important;
+  margin: 12px 0 !important;
+}
+
+.ProseMirror p {
+  color: #111827 !important;
+  margin: 8px 0 !important;
+}
+
+.ProseMirror ul, .ProseMirror ol {
+  color: #111827 !important;
+  margin: 16px 0 !important;
+  padding-left: 24px !important;
+  list-style-position: outside !important;
+}
+
+.ProseMirror ul {
+  list-style-type: disc !important;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal !important;
+}
+
+.ProseMirror li {
+  color: #111827 !important;
+  margin: 6px 0 !important;
+  line-height: 1.6 !important;
+  padding-left: 4px !important;
+}
+
+.ProseMirror li > p {
+  margin: 0 !important;
+  display: inline !important;
+}
+
+/* Nested lists */
+.ProseMirror ul ul, .ProseMirror ol ol, .ProseMirror ul ol, .ProseMirror ol ul {
+  margin: 4px 0 4px 0 !important;
+  padding-left: 20px !important;
+}
+
+.ProseMirror ul ul {
+  list-style-type: circle !important;
+}
+
+.ProseMirror ul ul ul {
+  list-style-type: square !important;
+}
+
+/* Resizable Image Wrapper */
+.resizable-image-wrapper {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin: 16px 0;
+  transition: all 0.2s ease;
+}
+
+.resizable-image-wrapper:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.resizable-image-wrapper.dragging {
+  opacity: 0.7;
+  transform: scale(0.95);
+  z-index: 1000;
+}
+
+/* Resize Handles */
+.resize-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #3b82f6;
+  border: 1px solid white;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.resizable-image-wrapper:hover .resize-handle {
+  opacity: 1;
+}
+
+.resize-handle:hover {
+  background: #2563eb;
+  transform: scale(1.2);
+}
+
+/* Handle positions */
+.resize-handle-top-left {
+  top: -4px;
+  left: -4px;
+  cursor: nw-resize;
+}
+
+.resize-handle-top-right {
+  top: -4px;
+  right: -4px;
+  cursor: ne-resize;
+}
+
+.resize-handle-bottom-left {
+  bottom: -4px;
+  left: -4px;
+  cursor: sw-resize;
+}
+
+.resize-handle-bottom-right {
+  bottom: -4px;
+  right: -4px;
+  cursor: se-resize;
+}
+
+.resize-handle-top-center {
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: n-resize;
+}
+
+.resize-handle-bottom-center {
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: s-resize;
+}
+
+.resize-handle-left-center {
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: w-resize;
+}
+
+.resize-handle-right-center {
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: e-resize;
+}
+
+/* Drop cursor styling */
+.ProseMirror-dropcursor {
+  position: relative;
+  pointer-events: none;
+}
+
+.ProseMirror-dropcursor:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 100%;
+  height: 2px;
+  background: #3b82f6;
+  border-radius: 1px;
+}
+
+/* Image drag preview */
+.image-drag-preview {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.8;
+  transform: scale(0.8);
+  border: 2px dashed #3b82f6;
+  border-radius: 8px;
+}
+
+/* Selection styling for images */
+.ProseMirror .selected-image {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Image upload placeholder */
+.image-upload-placeholder {
+  display: inline-block;
+  padding: 20px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  text-align: center;
+  color: #6b7280;
+  background: #f9fafb;
+  margin: 8px 0;
+}
+
+.image-upload-placeholder.dragover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+/* Animation for image insertion */
+@keyframes imageInsert {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.resizable-image-wrapper.newly-inserted {
+  animation: imageInsert 0.3s ease-out;
+}
+
+/* Responsive images */
+@media (max-width: 768px) {
+  .resizable-image-wrapper {
+    max-width: 100% !important;
+  }
+  
+  .resizable-image-wrapper img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  .resize-handle {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Editor focus styles */
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror.ProseMirror-focused {
+  outline: none;
+}
+
+/* Gap cursor */
+.ProseMirror-gapcursor {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+}
+
+.ProseMirror-gapcursor:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 20px;
+  border-top: 1px solid #3b82f6;
+  animation: ProseMirror-cursor-blink 1.1s steps(2, start) infinite;
+}
+
+@keyframes ProseMirror-cursor-blink {
+  to {
+    visibility: hidden;
+  }
+}
