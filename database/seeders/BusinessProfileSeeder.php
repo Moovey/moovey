@@ -85,13 +85,20 @@ class BusinessProfileSeeder extends Seeder
         ];
 
         foreach ($businesses as $business) {
-            // Create the user first
-            $user = User::create($business['user']);
+            // Create the user first (only if it doesn't exist)
+            $user = User::firstOrCreate(
+                ['email' => $business['user']['email']],
+                array_merge($business['user'], ['email_verified_at' => now()])
+            );
             
-            // Then create the business profile
+            // Then create the business profile (only if it doesn't exist)
             $profile = $business['profile'];
             $profile['user_id'] = $user->id;
-            BusinessProfile::create($profile);
+            
+            BusinessProfile::firstOrCreate(
+                ['user_id' => $user->id],
+                $profile
+            );
         }
     }
 }
