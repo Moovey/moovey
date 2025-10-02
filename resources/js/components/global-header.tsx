@@ -1,5 +1,6 @@
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
@@ -14,8 +15,17 @@ interface GlobalHeaderProps {
 export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
     const { auth } = usePage<SharedData>().props;
     const getInitials = useInitials();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const isActive = (page: string) => currentPage === page;
+
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
+    const closeMobileMenu = () => {
+        setIsMobileMenuOpen(false);
+    };
 
     return (
         <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -152,11 +162,202 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
 
                     {/* Mobile Menu Button */}
                     <div className="lg:hidden">
-                        <button className="text-gray-600 hover:text-gray-900 transition-colors duration-200">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        <button 
+                            onClick={toggleMobileMenu}
+                            className="relative z-50 text-gray-600 hover:text-gray-900 transition-colors duration-200 p-2"
+                            aria-label="Toggle mobile menu"
+                        >
+                            <svg 
+                                className={`w-6 h-6 transition-transform duration-300 ${isMobileMenuOpen ? 'rotate-90' : ''}`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                {isMobileMenuOpen ? (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                ) : (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                )}
                             </svg>
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+                    onClick={closeMobileMenu}
+                />
+            )}
+
+            {/* Mobile Menu */}
+            <div className={`
+                fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl z-50 
+                transform transition-transform duration-300 ease-in-out lg:hidden
+                ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}
+            `}>
+                <div className="flex flex-col h-full">
+                    {/* Mobile Menu Header */}
+                    <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                        <img 
+                            src="/images/moovey-logo.png" 
+                            alt="Moovey" 
+                            className="h-8 w-auto"
+                            onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                if (e.currentTarget.nextElementSibling) {
+                                    (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block';
+                                }
+                            }}
+                        />
+                        <span className="text-xl font-bold text-gray-900" style={{display: 'none'}}>Moovey</span>
+                        <button 
+                            onClick={closeMobileMenu}
+                            className="text-gray-500 hover:text-gray-700 p-2"
+                            aria-label="Close mobile menu"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* Mobile Navigation */}
+                    <nav className="flex-1 overflow-y-auto py-6">
+                        <div className="space-y-2 px-6">
+                            <Link 
+                                href="/" 
+                                onClick={closeMobileMenu}
+                                className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                    isActive('homepage') || isActive('home') || currentPage === 'welcome'
+                                        ? 'bg-[#17B7C7] text-white' 
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                }`}
+                            >
+                                HOMEPAGE
+                            </Link>
+                            <Link 
+                                href={route('academy')} 
+                                onClick={closeMobileMenu}
+                                className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                    isActive('academy')
+                                        ? 'bg-[#17B7C7] text-white' 
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                }`}
+                            >
+                                MOOVEY ACADEMY
+                            </Link>
+                            <Link 
+                                href={route('tools')} 
+                                onClick={closeMobileMenu}
+                                className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                    isActive('tools')
+                                        ? 'bg-[#17B7C7] text-white' 
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                }`}
+                            >
+                                TOOLS
+                            </Link>
+                            <Link 
+                                href={route('community')} 
+                                onClick={closeMobileMenu}
+                                className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                    isActive('community')
+                                        ? 'bg-[#17B7C7] text-white' 
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                }`}
+                            >
+                                COMMUNITY
+                            </Link>
+                            <Link 
+                                href={route('trade-directory')} 
+                                onClick={closeMobileMenu}
+                                className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                    isActive('trade-directory') || isActive('trade_directory')
+                                        ? 'bg-[#17B7C7] text-white' 
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                }`}
+                            >
+                                TRADE DIRECTORY
+                            </Link>
+                        </div>
+                    </nav>
+
+                    {/* Mobile Auth Section */}
+                    <div className="border-t border-gray-200 p-6">
+                        {auth.user ? (
+                            <div className="space-y-4">
+                                {/* User Profile Info */}
+                                <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-[#E0F7FA] to-[#B2EBF2] rounded-lg">
+                                    <Avatar className="h-10 w-10 ring-2 ring-white shadow-md">
+                                        <AvatarImage 
+                                            src={auth.user.avatar ? `/storage/${auth.user.avatar}` : undefined} 
+                                            alt={auth.user.name} 
+                                        />
+                                        <AvatarFallback className="bg-gradient-to-br from-[#00BCD4] to-[#1A237E] text-white font-bold text-sm">
+                                            {getInitials(auth.user.name)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-gray-800 truncate">
+                                            {auth.user.name}
+                                        </p>
+                                        <p className="text-xs text-gray-600">
+                                            {auth.user.role ? 
+                                                auth.user.role.charAt(0).toUpperCase() + auth.user.role.slice(1) : 
+                                                'User'
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                {/* User Menu Links */}
+                                <div className="space-y-2">
+                                    <Link
+                                        href={route('dashboard')}
+                                        onClick={closeMobileMenu}
+                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                    >
+                                        Dashboard
+                                    </Link>
+                                    <Link
+                                        href="/profile/settings"
+                                        onClick={closeMobileMenu}
+                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                    >
+                                        Profile Settings
+                                    </Link>
+                                    <Link
+                                        href={route('logout')}
+                                        method="post"
+                                        as="button"
+                                        onClick={closeMobileMenu}
+                                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                        Sign Out
+                                    </Link>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <Link
+                                    href={route('login')}
+                                    onClick={closeMobileMenu}
+                                    className="block w-full text-center px-4 py-3 bg-[#17B7C7] text-white font-medium rounded-lg hover:bg-[#139AAA] transition-colors"
+                                >
+                                    LOGIN
+                                </Link>
+                                <Link
+                                    href={route('register')}
+                                    onClick={closeMobileMenu}
+                                    className="block w-full text-center px-4 py-3 border-2 border-[#17B7C7] text-[#17B7C7] font-medium rounded-lg hover:bg-[#17B7C7] hover:text-white transition-colors"
+                                >
+                                    REGISTER
+                                </Link>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
