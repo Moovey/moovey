@@ -117,9 +117,9 @@ export default function ModuleCards({
     };
 
     return (
-        <section id="lessons" className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <section id="lessons" className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
             <div className="max-w-6xl mx-auto">
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6 md:space-y-8">
                     {/* Dynamic Modules based on predefined stage order */}
                     {stageOrder.map((stageName, index) => {
                         const stageLessons = lessonsByStage[stageName];
@@ -144,30 +144,30 @@ export default function ModuleCards({
                         };
 
                         return (
-                            <div key={stageName} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden ${isLocked ? 'opacity-60' : ''}`}>
-                                <div className="flex">
+                            <div key={stageName} className={`bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden ${isLocked ? 'opacity-60' : ''}`}>
+                                <div className="flex flex-col lg:flex-row">
                                     {/* Left Content */}
-                                    <div className="flex-1 p-8">
+                                    <div className="flex-1 p-4 sm:p-6 md:p-8">
                                         {/* Module Header */}
-                                        <div className="flex items-center justify-between mb-6">
-                                            <div className="flex items-center space-x-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-4 sm:space-y-0">
+                                            <div className="flex items-center space-x-3 sm:space-x-4">
                                                 {/* Badge Image */}
-                                                <div className="w-16 h-16 rounded-xl overflow-hidden shadow-lg">
+                                                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl overflow-hidden shadow-lg flex-shrink-0">
                                                     <img 
                                                         src={`/images/Badges/${metadata.badge}`}
                                                         alt={`${stageName} Badge`}
                                                         className="w-full h-full object-cover"
                                                     />
                                                 </div>
-                                                <div>
-                                                    <h3 className="text-2xl font-bold text-gray-900">{stageName}</h3>
-                                                    <p className="text-gray-600">{metadata.subtitle}</p>
+                                                <div className="min-w-0 flex-1">
+                                                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">{stageName}</h3>
+                                                    <p className="text-sm sm:text-base text-gray-600 line-clamp-2">{metadata.subtitle}</p>
                                                 </div>
                                             </div>
                                             {/* Progress Circle */}
-                                            <div className="text-center">
-                                                <div className="relative w-20 h-20">
-                                                    <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
+                                            <div className="text-center flex-shrink-0">
+                                                <div className="relative w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 mx-auto">
+                                                    <svg className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 transform -rotate-90" viewBox="0 0 36 36">
                                                         <path
                                                             d="M18 2.0845
                                                             a 15.9155 15.9155 0 0 1 0 31.831
@@ -188,17 +188,17 @@ export default function ModuleCards({
                                                         />
                                                     </svg>
                                                     <div className="absolute inset-0 flex items-center justify-center">
-                                                        <span className="text-lg font-bold text-gray-700">{progressPercentage}%</span>
+                                                        <span className="text-sm sm:text-base md:text-lg font-bold text-gray-700">{progressPercentage}%</span>
                                                     </div>
                                                 </div>
-                                                <div className="text-xs text-gray-500 mt-1">{getStatusLabel(progressPercentage)}</div>
+                                                <div className="text-xs sm:text-sm text-gray-500 mt-1 truncate">{getStatusLabel(progressPercentage)}</div>
                                             </div>
                                         </div>
 
                                         {/* Action Buttons */}
-                                        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 sm:mb-6">
                                             <button 
-                                                className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-colors ${
+                                                className={`flex-1 py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold transition-colors text-sm sm:text-base ${
                                                     isLocked
                                                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                                                         : 'bg-[#00BCD4] text-white hover:bg-[#0097A7]'
@@ -208,14 +208,14 @@ export default function ModuleCards({
                                             >
                                                 {isLocked ? 'Locked' : 'Begin Progress'}
                                             </button>
-                                            <button className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-colors ${
+                                            <button className={`flex-1 py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold transition-colors text-sm sm:text-base ${
                                                 isLocked
                                                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
                                                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                             }`} disabled={isLocked}>
                                                 {isLocked ? 'Quiz Locked' : 'Take Quiz'}
                                             </button>
-                                            <button className={`px-6 py-3 font-medium transition-colors ${
+                                            <button className={`px-4 sm:px-6 py-2.5 sm:py-3 font-medium transition-colors text-sm sm:text-base ${
                                                 isLocked
                                                     ? 'text-gray-400 cursor-not-allowed' 
                                                     : 'text-[#00BCD4] hover:text-[#0097A7]'
@@ -226,17 +226,17 @@ export default function ModuleCards({
                                     </div>
 
                                     {/* Right Sidebar */}
-                                    <div className="w-80 bg-[#00BCD4] p-6 text-white">
-                                        <h4 className="font-semibold mb-4 text-lg">Lessons in this Stage</h4>
+                                    <div className="w-full lg:w-80 xl:w-96 bg-[#00BCD4] p-4 sm:p-6 text-white border-t lg:border-t-0 lg:border-l border-white border-opacity-20">
+                                        <h4 className="font-semibold mb-3 sm:mb-4 text-base sm:text-lg">Lessons in this Stage</h4>
                                         {(() => {
                                             const paginatedData = getPaginatedLessons(stageName, stageLessons);
                                             return (
                                                 <>
                                                     {/* Lessons List */}
-                                                    <div className="space-y-3 mb-4">
+                                                    <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
                                                         {paginatedData.lessons.map((lesson, lessonIndex) => (
-                                                            <div key={lesson.id} className="flex items-center space-x-3">
-                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                                                            <div key={lesson.id} className="flex items-start space-x-3">
+                                                                <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
                                                                     !lesson.is_accessible
                                                                         ? 'bg-white bg-opacity-10' 
                                                                         : lesson.is_completed
@@ -265,7 +265,7 @@ export default function ModuleCards({
                                                                 </div>
                                                                 <button 
                                                                     onClick={() => lesson.is_accessible && handleBeginProgress(stageName, metadata.badge)}
-                                                                    className={`text-sm text-left ${
+                                                                    className={`text-xs sm:text-sm text-left flex-1 min-w-0 leading-relaxed ${
                                                                         !lesson.is_accessible
                                                                             ? 'opacity-50 cursor-not-allowed' 
                                                                             : lesson.is_accessible && !lesson.is_completed
@@ -276,7 +276,7 @@ export default function ModuleCards({
                                                                     }`}
                                                                     disabled={!lesson.is_accessible}
                                                                 >
-                                                                    {lesson.title}
+                                                                    <span className="line-clamp-2">{lesson.title}</span>
                                                                 </button>
                                                             </div>
                                                         ))}
@@ -284,16 +284,16 @@ export default function ModuleCards({
 
                                                     {/* Pagination Controls */}
                                                     {paginatedData.totalPages > 1 && (
-                                                        <div className="border-t border-white border-opacity-20 pt-4">
-                                                            <div className="flex items-center justify-between text-sm">
+                                                        <div className="border-t border-white border-opacity-20 pt-3 sm:pt-4">
+                                                            <div className="flex items-center justify-between text-xs sm:text-sm">
                                                                 <span className="text-white text-opacity-80">
                                                                     {paginatedData.currentPage} of {paginatedData.totalPages}
                                                                 </span>
-                                                                <div className="flex space-x-2">
+                                                                <div className="flex space-x-1 sm:space-x-2">
                                                                     <button
                                                                         onClick={() => changePage(stageName, paginatedData.currentPage - 1)}
                                                                         disabled={paginatedData.currentPage === 1}
-                                                                        className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${
+                                                                        className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-medium border transition-colors ${
                                                                             paginatedData.currentPage === 1
                                                                                 ? 'bg-gray-400 text-gray-600 border-gray-400 cursor-not-allowed'
                                                                                 : 'bg-white text-[#00BCD4] border-white hover:bg-gray-100 hover:text-[#0097A7]'
@@ -304,7 +304,7 @@ export default function ModuleCards({
                                                                     <button
                                                                         onClick={() => changePage(stageName, paginatedData.currentPage + 1)}
                                                                         disabled={paginatedData.currentPage === paginatedData.totalPages}
-                                                                        className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${
+                                                                        className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-medium border transition-colors ${
                                                                             paginatedData.currentPage === paginatedData.totalPages
                                                                                 ? 'bg-gray-400 text-gray-600 border-gray-400 cursor-not-allowed'
                                                                                 : 'bg-white text-[#00BCD4] border-white hover:bg-gray-100 hover:text-[#0097A7]'

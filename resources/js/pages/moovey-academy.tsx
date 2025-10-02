@@ -137,31 +137,52 @@ export default function MooveyAcademy({
                 <link rel="preload" href="https://fonts.bunny.net/inter/files/inter-latin-500-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
                 <link rel="preload" href="https://fonts.bunny.net/inter/files/inter-latin-600-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
                 <link rel="preload" href="https://fonts.bunny.net/inter/files/inter-latin-700-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+                <style>{`
+                    .scrollbar-hide {
+                        -ms-overflow-style: none;
+                        scrollbar-width: none;
+                    }
+                    .scrollbar-hide::-webkit-scrollbar {
+                        display: none;
+                    }
+                    @media (max-width: 640px) {
+                        .xs\\:w-32 { width: 8rem; }
+                        .xs\\:h-32 { height: 8rem; }
+                        .xs\\:w-44 { width: 11rem; }
+                        .xs\\:h-22 { height: 5.5rem; }
+                        .xs\\:text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+                        .xs\\:text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+                        .xs\\:text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+                        .xs\\:px-4 { padding-left: 1rem; padding-right: 1rem; }
+                        .xs\\:py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+                    }
+                `}</style>
             </Head>
             
             <div className="min-h-screen bg-white font-['Inter',sans-serif]">
                 <GlobalHeader currentPage="academy" />
 
                 {/* Hero Section with Moovey Crest */}
-                <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
+                <section className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
                     <div className="max-w-4xl mx-auto text-center">
                         {/* Moovey Crest Logo */}
-                        <div className="mb-8">
+                        <div className="mb-6 sm:mb-8 md:mb-10">
                             <div className="mx-auto">
                                 <img 
                                     src="/images/moovey-crest.png" 
                                     alt="Moovey Crest" 
-                                    className="w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 xl:w-72 xl:h-72 mx-auto object-contain"
+                                    className="w-28 h-28 xs:w-32 xs:h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 2xl:w-72 2xl:h-72 mx-auto object-contain"
                                 />
                             </div>
                            
                         </div>
 
-                        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-                            Welcome to Moovey School – Your<br />
+                        <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 leading-tight px-2">
+                            Welcome to Moovey School –<br className="hidden sm:block" />
+                            <span className="block sm:inline"> Your</span><br className="sm:hidden" />
                             <span className="text-[#00BCD4]">Learning Journey</span> Starts Here!
                         </h1>
-                        <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                        <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8 md:mb-10 max-w-2xl mx-auto px-4">
                             Get started with our elite structured e-learning modules.
                         </p>
 

@@ -47,10 +47,10 @@ export default function ProgressGauge({ totalLessons, completedLessons, isAuthen
     }, [completedLessons, totalLessons]);
 
     return (
-        <div className="inline-flex flex-col items-center bg-white rounded-2xl px-12 py-8 shadow-lg border border-gray-200 mb-8">
+        <div className="inline-flex flex-col items-center bg-white rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 py-6 sm:py-8 shadow-lg border border-gray-200 mb-6 sm:mb-8 w-full max-w-sm mx-auto">
             {/* Gauge */}
-            <div className="relative mb-4">
-                <svg viewBox="0 0 200 120" className="w-52 h-28" shapeRendering="geometricPrecision">
+            <div className="relative mb-3 sm:mb-4">
+                <svg viewBox="0 0 200 120" className="w-40 h-20 xs:w-44 xs:h-22 sm:w-52 sm:h-28 md:w-60 md:h-32 lg:w-64 lg:h-34" shapeRendering="geometricPrecision">
                     {/* Background Arc */}
                     <path
                         d="M 20 100 A 80 80 0 0 1 180 100"
@@ -139,15 +139,15 @@ export default function ProgressGauge({ totalLessons, completedLessons, isAuthen
             </div>
 
             {/* Progress details */}
-            <div className="text-center">
-                <div className="text-3xl font-bold text-gray-900 mb-1">
-                    {completedLessons} <span className="text-gray-500">of</span> {totalLessons}
+            <div className="text-center w-full">
+                <div className="text-2xl xs:text-3xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
+                    {completedLessons} <span className="text-gray-500 text-lg xs:text-xl sm:text-2xl md:text-3xl">of</span> {totalLessons}
                 </div>
-                <div className="bg-gray-600 text-white text-sm px-4 py-1 rounded-full font-medium">
+                <div className="bg-gray-600 text-white text-xs xs:text-sm sm:text-sm md:text-base px-3 xs:px-4 py-1 sm:py-1.5 rounded-full font-medium">
                     Lessons Completed
                 </div>
                 {!isAuthenticated && (
-                    <div className="mt-2 text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
+                    <div className="mt-2 sm:mt-3 text-xs xs:text-sm text-amber-600 bg-amber-50 px-2 xs:px-3 py-1 sm:py-1.5 rounded-full">
                         <Link href="/login" className="hover:underline">
                             Sign in to track progress
                         </Link>
