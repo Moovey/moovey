@@ -13,29 +13,38 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin user
-        User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@moovey.com',
-            'role' => 'admin',
-            'password' => bcrypt('admin123'), // Change this password in production
-        ]);
+        // Create admin user (only if it doesn't exist)
+        User::firstOrCreate(
+            ['email' => 'admin@moovey.com'],
+            [
+                'name' => 'Admin User',
+                'role' => 'admin',
+                'password' => bcrypt('admin123'), // Change this password in production
+                'email_verified_at' => now(),
+            ]
+        );
 
-        // Create test business user
-        User::factory()->create([
-            'name' => 'MoveMaster Ltd',
-            'email' => 'business@moovey.com',
-            'role' => 'business',
-            'password' => bcrypt('business123'),
-        ]);
+        // Create test business user (only if it doesn't exist)
+        User::firstOrCreate(
+            ['email' => 'business@moovey.com'],
+            [
+                'name' => 'MoveMaster Ltd',
+                'role' => 'business',
+                'password' => bcrypt('business123'),
+                'email_verified_at' => now(),
+            ]
+        );
 
-        // Create test housemover user
-        User::factory()->create([
-            'name' => 'John Housemover',
-            'email' => 'housemover@moovey.com',
-            'role' => 'housemover',
-            'password' => bcrypt('housemover123'),
-        ]);
+        // Create test housemover user (only if it doesn't exist)
+        User::firstOrCreate(
+            ['email' => 'housemover@moovey.com'],
+            [
+                'name' => 'John Housemover',
+                'role' => 'housemover',
+                'password' => bcrypt('housemover123'),
+                'email_verified_at' => now(),
+            ]
+        );
 
         // Seed sample business profiles
         $this->call(BusinessProfileSeeder::class);
