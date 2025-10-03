@@ -91,9 +91,18 @@ export default function MoveDetails({ auth, moveDetails, taskData }: MoveDetails
         setCollapsedCategories(prev => ({ ...prev, [category]: !prev[category] }));
     };
 
-    // Restore last active section
+    // Restore last active section, but allow query param override (e.g., ?section=1)
     useEffect(() => {
         try {
+            const url = new URL(window.location.href);
+            const qp = url.searchParams.get('section');
+            if (qp) {
+                const num = parseInt(qp, 10);
+                if (!Number.isNaN(num) && num >= 1 && num <= 9) {
+                    setActiveSection(num);
+                    return; // prioritize explicit query param
+                }
+            }
             const stored = localStorage.getItem('moveDetails.activeSection');
             if (stored) setActiveSection(parseInt(stored, 10) || 1);
         } catch {/* noop */}
@@ -427,7 +436,7 @@ export default function MoveDetails({ auth, moveDetails, taskData }: MoveDetails
                         </div>
 
                         {(activeSection === 1 || activeSection === 3 || activeSection === 5) && (
-                            <div className="bg-blue-50 rounded-lg p-6 mb-8">
+                            <div id="personal-details" className="bg-blue-50 rounded-lg p-6 mb-8">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                                     <span className="text-xl mr-2">📝</span>
                                     Personal Details for {moveSections.find(s => s.id === activeSection)?.name}

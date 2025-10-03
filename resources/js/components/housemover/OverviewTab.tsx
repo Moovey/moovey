@@ -958,7 +958,7 @@ export default function OverviewTab({
                                     <div className="text-6xl mb-2">📅</div>
                                     <p className="text-lg font-semibold text-gray-800 mb-2">No Move Date Set</p>
                                     <Link 
-                                        href="/housemover/move-details"
+                                        href="/housemover/move-details?section=1#personal-details"
                                         className="inline-block bg-[#00BCD4] text-white px-4 py-2 rounded-lg hover:bg-[#00ACC1] transition-colors font-semibold"
                                     >
                                         Set Your Move Date
@@ -1047,7 +1047,7 @@ export default function OverviewTab({
                                 </p>
                                 {personalDetails.movingDate && (
                                     <Link 
-                                        href="/housemover/move-details"
+                                        href="/housemover/move-details?section=1#personal-details"
                                         className="inline-block mt-2 text-xs text-[#00BCD4] hover:text-[#00ACC1] font-semibold"
                                     >
                                         Update Move Date →
