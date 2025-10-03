@@ -1,6 +1,7 @@
 import { Link, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { route } from 'ziggy-js';
+import CompleteMovingJourney from './CompleteMovingJourney';
 
 interface Task {
     id: string;
@@ -45,6 +46,9 @@ interface OverviewTabProps {
     moveStages: MoveStage[];
     activeStage: number;
     handleStageClick: (stageId: number) => void;
+    // Ensure consistency with Move Details by letting parent provide section progress and color logic
+    getSectionProgress?: (stageId: number) => number;
+    getProgressColor?: (progress: number) => string;
     academyProgress: {
         totalLessons: number;
         completedLessons: number;
@@ -104,6 +108,8 @@ export default function OverviewTab({
     moveStages,
     activeStage,
     handleStageClick,
+    getSectionProgress,
+    getProgressColor,
     academyProgress,
     allUserTasks,
     selectedCtaTasks,
@@ -199,9 +205,43 @@ export default function OverviewTab({
 
     // Timeline component removed from Overview; keep helpers if needed elsewhere later
 
+    // Compute overall progress the same way as Move Details: average of per-section progress
+    const computedOverallProgress = (() => {
+        // Prefer parent's getSectionProgress if provided for exact parity
+        if (typeof getSectionProgress === 'function') {
+            const total = moveStages.reduce((acc, s) => acc + getSectionProgress(s.id), 0);
+            return Math.round(total / (moveStages.length || 1));
+        }
+        // Fallback to averaging provided stage.progress (same as dashboard)
+        const total = moveStages.reduce((acc, s) => acc + (s.progress || 0), 0);
+        return Math.round(total / (moveStages.length || 1));
+    })();
+
+    // Fallback color function consistent with Move Details if parent didn't provide
+    const colorForProgress = (p: number) =>
+        typeof getProgressColor === 'function' ? getProgressColor(p) : (p > 0 ? 'bg-[#00BCD4]' : 'bg-gray-300');
+
     return (
         <div className="max-w-7xl mx-auto space-y-8">
-            {/* CompleteMovingJourney removed on request */}
+            {/* Complete Moving Journey Timeline */}
+            <CompleteMovingJourney
+                overallProgress={computedOverallProgress}
+                moveSections={moveStages.map(stage => ({
+                    id: stage.id,
+                    name: stage.label,
+                    shortName: stage.shortLabel,
+                    description: stage.description,
+                    icon: stage.icon
+                }))}
+                activeSection={activeStage}
+                onSectionClick={handleStageClick}
+                getSectionProgress={(id: number) => {
+                    if (typeof getSectionProgress === 'function') return getSectionProgress(id);
+                    const stage = moveStages.find(s => s.id === id);
+                    return stage ? (stage.progress || 0) : 0;
+                }}
+                getProgressColor={colorForProgress}
+            />
 
             {/* Section 1 continued - Academy & Learning parts remain */}
             <section className="bg-white rounded-xl shadow-lg p-8">

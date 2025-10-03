@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
@@ -38,8 +38,20 @@ interface SectionTask {
     id: string;
     title: string;
     completed: boolean;
-    isCustom: boolean;
+    isCustom?: boolean;
     category: string;
+}
+
+// Minimal academy task shape for progress parity with Move Details
+interface AcademyTask {
+    id: string;
+    title: string;
+    description?: string;
+    category?: string;
+    completed: boolean;
+    urgency?: string;
+    source?: string;
+    sectionId?: number;
 }
 
 interface PersonalDetails {
@@ -354,68 +366,96 @@ export default function Dashboard({
         }
     ];
 
-    // Calculate overall move progress
-    const overallMoveProgress = Math.round(
-        moveStages.reduce((acc, stage) => acc + stage.progress, 0) / moveStages.length
-    );
-
-    // Section-specific tasks
+    // Section-specific tasks (custom tasks) - start empty for parity with Move Details
     const [sectionTasks, setSectionTasks] = useState<Record<number, SectionTask[]>>({
-        1: [
-            { id: '1-1', title: 'Set moving budget', completed: true, isCustom: false, category: 'Financial' },
-            { id: '1-2', title: 'Create moving timeline', completed: true, isCustom: false, category: 'Planning' },
-            { id: '1-3', title: 'Research moving companies', completed: true, isCustom: false, category: 'Research' },
-            { id: '1-4', title: 'Create moving folder/documents', completed: false, isCustom: false, category: 'Organization' }
-        ],
-        2: [
-            { id: '2-1', title: 'Obtain property valuation', completed: true, isCustom: false, category: 'Property' },
-            { id: '2-2', title: 'Declutter and deep clean', completed: true, isCustom: false, category: 'Preparation' },
-            { id: '2-3', title: 'Make necessary repairs', completed: false, isCustom: false, category: 'Maintenance' },
-            { id: '2-4', title: 'Stage home for viewings', completed: false, isCustom: false, category: 'Presentation' }
-        ],
-        3: [
-            { id: '3-1', title: 'Connect with estate agent', completed: true, isCustom: false, category: 'Professional' },
-            { id: '3-2', title: 'Attend property viewings', completed: true, isCustom: false, category: 'Viewing' },
-            { id: '3-3', title: 'Research neighborhood amenities', completed: false, isCustom: false, category: 'Research' },
-            { id: '3-4', title: 'Make property offer', completed: false, isCustom: false, category: 'Negotiation' }
-        ],
-        4: [
-            { id: '4-1', title: 'Apply for mortgage pre-approval', completed: false, isCustom: false, category: 'Mortgage' },
-            { id: '4-2', title: 'Gather financial documents', completed: false, isCustom: false, category: 'Documentation' },
-            { id: '4-3', title: 'Arrange property insurance', completed: false, isCustom: false, category: 'Insurance' },
-            { id: '4-4', title: 'Secure deposit funds', completed: false, isCustom: false, category: 'Financial' }
-        ],
-        5: [
-            { id: '5-1', title: 'Hire conveyancing solicitor', completed: false, isCustom: false, category: 'Legal' },
-            { id: '5-2', title: 'Arrange property survey', completed: false, isCustom: false, category: 'Survey' },
-            { id: '5-3', title: 'Review and sign contracts', completed: false, isCustom: false, category: 'Contracts' },
-            { id: '5-4', title: 'Complete property searches', completed: false, isCustom: false, category: 'Due Diligence' }
-        ],
-        6: [
-            { id: '6-1', title: 'Book removal company', completed: false, isCustom: false, category: 'Services' },
-            { id: '6-2', title: 'Order packing supplies', completed: false, isCustom: false, category: 'Supplies' },
-            { id: '6-3', title: 'Start packing non-essentials', completed: false, isCustom: false, category: 'Packing' },
-            { id: '6-4', title: 'Label boxes systematically', completed: false, isCustom: false, category: 'Organization' }
-        ],
-        7: [
-            { id: '7-1', title: 'Confirm moving day logistics', completed: false, isCustom: false, category: 'Coordination' },
-            { id: '7-2', title: 'Pack essential items box', completed: false, isCustom: false, category: 'Essentials' },
-            { id: '7-3', title: 'Take meter readings', completed: false, isCustom: false, category: 'Utilities' },
-            { id: '7-4', title: 'Conduct final walkthrough', completed: false, isCustom: false, category: 'Inspection' }
-        ],
-        8: [
-            { id: '8-1', title: 'Unpack essential rooms first', completed: false, isCustom: false, category: 'Unpacking' },
-            { id: '8-2', title: 'Set up utilities and internet', completed: false, isCustom: false, category: 'Services' },
-            { id: '8-3', title: 'Register with local services', completed: false, isCustom: false, category: 'Registration' },
-            { id: '8-4', title: 'Explore local amenities', completed: false, isCustom: false, category: 'Community' }
-        ],
-        9: [
-            { id: '9-1', title: 'Update address with bank/employer', completed: false, isCustom: false, category: 'Administrative' },
-            { id: '9-2', title: 'Register children for new schools', completed: false, isCustom: false, category: 'Education' },
-            { id: '9-3', title: 'Find new healthcare providers', completed: false, isCustom: false, category: 'Healthcare' },
-            { id: '9-4', title: 'Join community groups/clubs', completed: false, isCustom: false, category: 'Social' }
-        ]
+        1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: []
     });
+
+    // Academy tasks (from lessons), fetched similarly to Move Details for parity
+    const [academyTasks, setAcademyTasks] = useState<AcademyTask[]>([]);
+    useEffect(() => {
+        const loadAcademyTasks = async () => {
+            try {
+                const res = await fetch('/api/tasks', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const rawList = Array.isArray(data) ? data : (data.tasks || data.user_tasks || data.data || []);
+                const mapped: AcademyTask[] = (rawList || []).map((t: any) => ({
+                    id: (t.id ?? t.task_id ?? '').toString(),
+                    title: t.title ?? 'Untitled Task',
+                    description: t.description ?? '',
+                    category: t.category ?? 'Pre-Move',
+                    completed: (t.status ? t.status === 'completed' : false) || !!t.completed_at || !!t.completed,
+                    urgency: t.urgency,
+                    source: t.source ?? t.metadata?.source,
+                    sectionId: (() => {
+                        const raw = t.section_id ?? t.sectionId ?? t.section?.id;
+                        if (raw === undefined || raw === null || raw === '') return undefined;
+                        const num = typeof raw === 'number' ? raw : parseInt(raw, 10);
+                        return Number.isNaN(num) ? undefined : num;
+                    })(),
+                })).filter((t: AcademyTask) => !t.source || t.source === 'lesson');
+                setAcademyTasks(mapped);
+            } catch (e) {
+                // silent fail
+            }
+        };
+        loadAcademyTasks();
+    }, []);
+
+    // Load custom tasks created in Move Details (from custom_tasks table)
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadCustomTasks = async () => {
+            try {
+                const res = await fetch('/api/move-details', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+                if (!res.ok) return;
+                const payload = await res.json();
+                const grouped = payload?.data?.customTasks || {};
+                // Normalize into numeric keys 1..9
+                const next: Record<number, SectionTask[]> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] };
+                Object.keys(grouped).forEach((key) => {
+                    const num = parseInt(key, 10);
+                    if (Number.isNaN(num) || num < 1 || num > 9) return;
+                    const arr = Array.isArray(grouped[key]) ? grouped[key] : [];
+                    next[num] = arr.map((t: any) => ({
+                        id: (t.id ?? '').toString(),
+                        title: t.title ?? 'Custom task',
+                        completed: !!t.completed,
+                        isCustom: true,
+                        category: t.category ?? 'pre-move',
+                    }));
+                });
+                if (isMounted) setSectionTasks(next);
+            } catch (_) {
+                // ignore
+            }
+        };
+
+        loadCustomTasks();
+
+        // Refresh when the window/tab regains focus to pick up changes from Move Details page
+        const onFocus = () => loadCustomTasks();
+        window.addEventListener('focus', onFocus);
+        return () => {
+            isMounted = false;
+            window.removeEventListener('focus', onFocus);
+        };
+    }, []);
 
     // Removed sample priority tasks - now only showing tasks added from Academy Learning Tasks
     const priorityTasks: Task[] = [];
@@ -561,12 +601,32 @@ export default function Dashboard({
         }
     };
 
-    const getSectionProgress = (stageId: number) => {
-        const tasks = sectionTasks[stageId] || [];
-        if (tasks.length === 0) return 0;
-        const completedTasks = tasks.filter(task => task.completed).length;
-        return Math.round((completedTasks / tasks.length) * 100);
+    // Compute section progress identical to Move Details: combine custom + academy tasks.
+    const getSectionProgress = (sectionId: number) => {
+        const custom = sectionTasks[sectionId] || [];
+        const academy = academyTasks.filter((t) => {
+            if (t.sectionId === undefined || t.sectionId === null) {
+                // Fallback: untagged academy tasks counted under Planning (section 1)
+                return sectionId === 1;
+            }
+            return t.sectionId === sectionId;
+        });
+
+        const total = custom.length + academy.length;
+        if (total === 0) return 0;
+        const completed = custom.filter(t => t.completed).length + academy.filter(t => t.completed).length;
+        return Math.round((completed / total) * 100);
     };
+
+    // Overall progress: average of section progresses
+    const overallMoveProgress = useMemo(() => {
+        if (!moveStages.length) return 0;
+        const sum = moveStages.reduce((acc, stage) => acc + getSectionProgress(stage.id), 0);
+        return Math.round(sum / moveStages.length);
+    }, [moveStages, academyTasks, sectionTasks]);
+
+    // Match Move Details logic for coloring progress
+    const getProgressColor = (progress: number) => (progress > 0 ? 'bg-[#00BCD4]' : 'bg-gray-300');
 
     // Get upcoming tasks from CTA buttons and current/next stages
     const getUpcomingTasks = () => {
@@ -734,6 +794,8 @@ export default function Dashboard({
                     moveStages={moveStages}
                     activeStage={activeStage}
                     handleStageClick={handleStageClick}
+                    getSectionProgress={getSectionProgress}
+                    getProgressColor={getProgressColor}
                     academyProgress={academyProgress}
                     allUserTasks={allUserTasks}
                     selectedCtaTasks={selectedCtaTasks}
