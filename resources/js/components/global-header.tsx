@@ -63,6 +63,18 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                         >
                             HOME
                         </Link>
+                        {auth.user && (
+                            <Link 
+                                href={route('dashboard')} 
+                                className={`px-2 py-2 lg:px-3 xl:px-4 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
+                                    isActive('dashboard')
+                                        ? 'bg-[#17B7C7] text-white' 
+                                        : 'text-gray-700 hover:text-[#17B7C7]'
+                                }`}
+                            >
+                                MY MOOVEY
+                            </Link>
+                        )}
                         <Link 
                             href={route('academy')} 
                             className={`px-2 py-2 lg:px-3 xl:px-4 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
@@ -71,7 +83,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                     : 'text-gray-700 hover:text-[#17B7C7]'
                             }`}
                         >
-                            ACADEMY
+                            MOOVEY ACADEMY
                         </Link>
                         <Link 
                             href={route('tools')} 
@@ -101,20 +113,8 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                     : 'text-gray-700 hover:text-[#17B7C7]'
                             }`}
                         >
-                            DIRECTORY
+                            TRADE DIRECTORY
                         </Link>
-                        {auth.user && (
-                            <Link 
-                                href={route('dashboard')} 
-                                className={`px-2 py-2 lg:px-3 xl:px-4 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
-                                    isActive('dashboard')
-                                        ? 'bg-[#17B7C7] text-white' 
-                                        : 'text-gray-700 hover:text-[#17B7C7]'
-                                }`}
-                            >
-                                MY MOVE
-                            </Link>
-                        )}
                     </nav>
 
                     {/* Auth Section */}
@@ -248,8 +248,21 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                         : 'text-gray-700 hover:bg-gray-100'
                                 }`}
                             >
-                                HOMEPAGE
+                                HOME
                             </Link>
+                            {auth.user && (
+                                <Link 
+                                    href={route('dashboard')} 
+                                    onClick={closeMobileMenu}
+                                    className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                        isActive('dashboard')
+                                            ? 'bg-[#17B7C7] text-white' 
+                                            : 'text-gray-700 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    MY MOOVEY
+                                </Link>
+                            )}
                             <Link 
                                 href={route('academy')} 
                                 onClick={closeMobileMenu}
@@ -294,19 +307,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                             >
                                 TRADE DIRECTORY
                             </Link>
-                            {auth.user && (
-                                <Link 
-                                    href={route('dashboard')} 
-                                    onClick={closeMobileMenu}
-                                    className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
-                                        isActive('dashboard')
-                                            ? 'bg-[#17B7C7] text-white' 
-                                            : 'text-gray-700 hover:bg-gray-100'
-                                    }`}
-                                >
-                                    MY MOVE
-                                </Link>
-                            )}
+                            {/* My Moovey already placed after Home */}
                         </div>
                     </nav>
 
