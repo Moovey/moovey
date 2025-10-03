@@ -101,7 +101,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                             <LayoutDashboard className="h-4 w-4 text-gray-600 group-hover:text-white" />
                         </div>
                         <div>
-                            <div className="font-medium text-sm">Dashboard</div>
+                            <div className="font-medium text-sm">My Move</div>
                             <div className="text-xs text-gray-500 group-hover:text-[#00BCD4]/70">
                                 {user.role === 'admin' ? 'System Overview' : 
                                  user.role === 'business' ? 'Manage Business' : 

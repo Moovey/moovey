@@ -37,7 +37,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                             <img 
                                 src="/images/moovey-logo.png" 
                                 alt="Moovey" 
-                                className="h-10 w-auto"
+                                className="h-20 w-auto"
                                 onError={(e) => {
                                     // Fallback to text logo if image fails to load
                                     e.currentTarget.style.display = 'none';
@@ -320,7 +320,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                         onClick={closeMobileMenu}
                                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                                     >
-                                        Dashboard
+                                        My Move
                                     </Link>
                                     <Link
                                         href="/profile/settings"
