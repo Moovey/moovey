@@ -4,11 +4,11 @@ import SaveResultsButton from '@/components/SaveResultsButton';
 interface AffordabilityFormData {
     grossAnnualIncome: string;
     monthlyDebtPayments: string;
-    downPayment: string;
+    deposit: string;
     interestRate: string;
     loanTerm: string;
-    propertyTax: string;
-    homeInsurance: string;
+    councilTaxMonthly: string;
+    buildingsInsuranceAnnual: string;
     otherMonthlyExpenses: string;
 }
 
@@ -26,11 +26,11 @@ export default function AffordabilityCalculator() {
     const [formData, setFormData] = useState<AffordabilityFormData>({
         grossAnnualIncome: '',
         monthlyDebtPayments: '',
-        downPayment: '',
+        deposit: '',
         interestRate: '',
         loanTerm: '',
-        propertyTax: '',
-        homeInsurance: '',
+        councilTaxMonthly: '',
+        buildingsInsuranceAnnual: '',
         otherMonthlyExpenses: ''
     });
     
@@ -68,8 +68,8 @@ export default function AffordabilityCalculator() {
             newErrors.loanTerm = 'Please enter a valid loan term';
         }
 
-        if (!formData.downPayment || parseFloat(formData.downPayment) < 0) {
-            newErrors.downPayment = 'Please enter a valid down payment amount';
+        if (!formData.deposit || parseFloat(formData.deposit) < 0) {
+            newErrors.deposit = 'Please enter a valid deposit amount';
         }
 
         setErrors(newErrors);
@@ -83,11 +83,11 @@ export default function AffordabilityCalculator() {
 
         const grossMonthlyIncome = parseFloat(formData.grossAnnualIncome) / 12;
         const monthlyDebts = parseFloat(formData.monthlyDebtPayments || '0');
-        const downPayment = parseFloat(formData.downPayment);
+    const deposit = parseFloat(formData.deposit);
         const interestRate = parseFloat(formData.interestRate) / 100 / 12;
         const numberOfPayments = parseFloat(formData.loanTerm) * 12;
-        const monthlyPropertyTax = parseFloat(formData.propertyTax || '0') / 12;
-        const monthlyInsurance = parseFloat(formData.homeInsurance || '0') / 12;
+    const monthlyCouncilTax = parseFloat(formData.councilTaxMonthly || '0');
+    const monthlyInsurance = parseFloat(formData.buildingsInsuranceAnnual || '0') / 12;
         const otherExpenses = parseFloat(formData.otherMonthlyExpenses || '0');
 
         // Industry standard: 28% of gross income for housing, 36% for total debt
@@ -96,8 +96,8 @@ export default function AffordabilityCalculator() {
         
         // Calculate available payment for mortgage after existing debts
         const availableForMortgage = Math.min(
-            maxHousingPayment - monthlyPropertyTax - monthlyInsurance - otherExpenses,
-            maxTotalDebtPayment - monthlyDebts - monthlyPropertyTax - monthlyInsurance - otherExpenses
+            maxHousingPayment - monthlyCouncilTax - monthlyInsurance - otherExpenses,
+            maxTotalDebtPayment - monthlyDebts - monthlyCouncilTax - monthlyInsurance - otherExpenses
         );
 
         // Calculate maximum loan amount based on available payment
@@ -107,8 +107,8 @@ export default function AffordabilityCalculator() {
                            (interestRate * Math.pow(1 + interestRate, numberOfPayments));
         }
 
-        const maxHousePrice = maxLoanAmount + downPayment;
-        const totalMonthlyHousing = availableForMortgage + monthlyPropertyTax + monthlyInsurance + otherExpenses;
+    const maxHousePrice = maxLoanAmount + deposit;
+    const totalMonthlyHousing = availableForMortgage + monthlyCouncilTax + monthlyInsurance + otherExpenses;
         const debtToIncomeRatio = ((monthlyDebts + totalMonthlyHousing) / grossMonthlyIncome) * 100;
         const housingToIncomeRatio = (totalMonthlyHousing / grossMonthlyIncome) * 100;
 
@@ -123,8 +123,8 @@ export default function AffordabilityCalculator() {
             recommendations.push('Housing costs exceed 28% of income. Consider a lower price range.');
         }
         
-        if (downPayment < maxHousePrice * 0.2) {
-            recommendations.push('Consider saving for a 20% down payment to avoid PMI.');
+        if (deposit < maxHousePrice * 0.1) {
+            recommendations.push('Consider increasing your deposit (e.g., 10%+ or 20%+) to reduce LTV and improve rates.');
         }
         
         if (recommendations.length === 0) {
@@ -146,11 +146,11 @@ export default function AffordabilityCalculator() {
         setFormData({
             grossAnnualIncome: '',
             monthlyDebtPayments: '',
-            downPayment: '',
+            deposit: '',
             interestRate: '',
             loanTerm: '',
-            propertyTax: '',
-            homeInsurance: '',
+            councilTaxMonthly: '',
+            buildingsInsuranceAnnual: '',
             otherMonthlyExpenses: ''
         });
         setResults(null);
@@ -207,25 +207,25 @@ export default function AffordabilityCalculator() {
                 </div>
             </div>
 
-            {/* Loan Information */}
+            {/* Mortgage Information */}
             <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Loan Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Mortgage Information</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Down Payment (£)
+                            Deposit (£)
                         </label>
                         <input
                             type="number"
                             placeholder="50000"
-                            value={formData.downPayment}
-                            onChange={(e) => handleInputChange('downPayment', e.target.value)}
+                            value={formData.deposit}
+                            onChange={(e) => handleInputChange('deposit', e.target.value)}
                             className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-colors text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white ${
-                                errors.downPayment ? 'border-red-500' : 'border-gray-300'
+                                errors.deposit ? 'border-red-500' : 'border-gray-300'
                             }`}
                         />
-                        {errors.downPayment && (
-                            <p className="text-red-500 text-xs mt-1">{errors.downPayment}</p>
+                        {errors.deposit && (
+                            <p className="text-red-500 text-xs mt-1">{errors.deposit}</p>
                         )}
                     </div>
 
@@ -268,32 +268,32 @@ export default function AffordabilityCalculator() {
                 </div>
             </div>
 
-            {/* Additional Costs */}
+            {/* Additional Costs (UK-specific) */}
             <div className="mb-8">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Housing Costs <span className="text-gray-500 font-normal text-sm">(Optional)</span></h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Annual Property Tax (£)
+                            Council Tax (Monthly) (£)
                         </label>
                         <input
                             type="number"
-                            placeholder="2000"
-                            value={formData.propertyTax}
-                            onChange={(e) => handleInputChange('propertyTax', e.target.value)}
+                            placeholder="150"
+                            value={formData.councilTaxMonthly}
+                            onChange={(e) => handleInputChange('councilTaxMonthly', e.target.value)}
                             className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-colors text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white"
                         />
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Annual Home Insurance (£)
+                            Buildings Insurance (Annual) (£)
                         </label>
                         <input
                             type="number"
-                            placeholder="800"
-                            value={formData.homeInsurance}
-                            onChange={(e) => handleInputChange('homeInsurance', e.target.value)}
+                            placeholder="200"
+                            value={formData.buildingsInsuranceAnnual}
+                            onChange={(e) => handleInputChange('buildingsInsuranceAnnual', e.target.value)}
                             className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-colors text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white"
                         />
                     </div>
