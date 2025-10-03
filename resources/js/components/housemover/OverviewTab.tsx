@@ -600,7 +600,7 @@ export default function OverviewTab({
                         <div>
                             <h2 className="text-3xl font-bold text-[#1A237E] mb-2 flex items-center">
                                 <span className="text-3xl mr-3">🎓</span>
-                                Academy Learning Tasks
+                                My Moving Tasks
                             </h2>
                             <p className="text-gray-700">Drag & drop or select tasks to add to your Priority Tasks</p>
                         </div>
