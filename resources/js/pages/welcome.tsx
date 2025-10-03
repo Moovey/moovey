@@ -1,6 +1,5 @@
 import { Head } from '@inertiajs/react';
 import GlobalHeader from '@/components/global-header';
-import TopBanner from '@/components/welcome/top-banner';
 import HeroBanner from '@/components/welcome/hero-banner';
 import DashboardPreview from '@/components/welcome/dashboard-preview';
 import CommunitySection from '@/components/welcome/community-section';
@@ -17,7 +16,6 @@ export default function Welcome() {
             </Head>
             <div className="bg-gradient-to-br from-[#f0f9ff] via-white to-[#f9f5f0] min-h-screen font-sans">
                 <GlobalHeader currentPage="home" />
-                <TopBanner />
                 <HeroBanner />
                 <DashboardPreview />
                 <CommunitySection />
