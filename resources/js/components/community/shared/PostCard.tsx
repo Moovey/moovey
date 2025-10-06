@@ -119,6 +119,44 @@ export default function PostCard({
                     </div>
                     <p className="text-gray-700 mb-4 leading-relaxed">{displayContent}</p>
                     
+                    {/* Media Display */}
+                    {displayPost.media_type === 'images' && displayPost.images && displayPost.images.length > 0 && (
+                        <div className="mb-4">
+                            <div className={`grid gap-2 rounded-lg overflow-hidden ${
+                                displayPost.images.length === 1 ? 'grid-cols-1' :
+                                displayPost.images.length === 2 ? 'grid-cols-2' :
+                                displayPost.images.length === 3 ? 'grid-cols-2' :
+                                'grid-cols-2'
+                            }`}>
+                                {displayPost.images.map((image, index) => (
+                                    <div key={index} className={`relative ${
+                                        displayPost.images!.length === 3 && index === 0 ? 'row-span-2' : ''
+                                    }`}>
+                                        <img
+                                            src={image}
+                                            alt={`Post image ${index + 1}`}
+                                            className="w-full h-64 object-cover hover:opacity-95 transition-opacity cursor-pointer"
+                                            onClick={() => window.open(image, '_blank')}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {displayPost.media_type === 'video' && displayPost.video && (
+                        <div className="mb-4">
+                            <video
+                                src={displayPost.video}
+                                controls
+                                className="w-full max-h-96 rounded-lg"
+                                preload="metadata"
+                            >
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    )}
+                    
                     {/* Post Interactions - always use the original post's interaction data for shared posts */}
                     <PostInteractions
                         postId={isSharedPost ? post.original_post!.id : post.id}

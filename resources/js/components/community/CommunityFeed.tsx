@@ -34,9 +34,77 @@ export default function CommunityFeed({
     const [showPostForm, setShowPostForm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [selectedImages, setSelectedImages] = useState<File[]>([]);
+    const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showGifPicker, setShowGifPicker] = useState(false);
 
 
 
+
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        
+        // Check total number of images
+        if (files.length + selectedImages.length > 4) {
+            toast.warn('You can only upload up to 4 images per post');
+            return;
+        }
+        
+        // Check file sizes (2MB = 2 * 1024 * 1024 bytes)
+        const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+        const oversizedFiles = files.filter(file => file.size > maxSize);
+        
+        if (oversizedFiles.length > 0) {
+            toast.error(`Some images are too large. Please select images under 2MB each.`, {
+                position: 'top-right',
+                autoClose: 5000,
+            });
+            return;
+        }
+        
+        setSelectedImages(prev => [...prev, ...files]);
+        setSelectedVideo(null); // Clear video if images selected
+        
+        // Clear the input to allow re-selecting the same file
+        e.target.value = '';
+    };
+
+    const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Check video file size (7MB = 7 * 1024 * 1024 bytes)
+            const maxSize = 7 * 1024 * 1024; // 7MB in bytes
+            
+            if (file.size > maxSize) {
+                toast.error(`Video file is too large. Please select a video under 7MB.`, {
+                    position: 'top-right',
+                    autoClose: 5000,
+                });
+                e.target.value = ''; // Clear the input
+                return;
+            }
+            
+            setSelectedVideo(file);
+            setSelectedImages([]); // Clear images if video selected
+        }
+        
+        // Clear the input to allow re-selecting the same file
+        e.target.value = '';
+    };
+
+    const removeImage = (index: number) => {
+        setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const removeVideo = () => {
+        setSelectedVideo(null);
+    };
+
+    const addEmoji = (emoji: string) => {
+        setNewPostContent(prev => prev + emoji);
+        setShowEmojiPicker(false);
+    };
 
     const handleCreatePost = async () => {
         if (!isAuthenticated) {
@@ -56,24 +124,68 @@ export default function CommunityFeed({
         setIsSubmitting(true);
 
         try {
+            const formData = new FormData();
+            formData.append('content', newPostContent);
+            if (newPostLocation) formData.append('location', newPostLocation);
+            
+            // Add images
+            selectedImages.forEach((image, index) => {
+                formData.append(`images[${index}]`, image);
+            });
+            
+            // Add video
+            if (selectedVideo) {
+                formData.append('video', selectedVideo);
+            }
+
+            console.log('Submitting post with:', {
+                content: newPostContent,
+                images: selectedImages.length,
+                video: selectedVideo ? 'yes' : 'no',
+                location: newPostLocation
+            });
+
             const response = await fetch('/api/community/posts', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
-                body: JSON.stringify({
-                    content: newPostContent,
-                    location: newPostLocation || null,
-                }),
+                credentials: 'same-origin', // Include cookies in the request
+                body: formData,
             });
 
-            const data = await response.json();
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+
+            // Check if the response is actually JSON
+            const contentType = response.headers.get('content-type');
+            console.log('Content-Type:', contentType);
+            
+            let data;
+            if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                // If it's not JSON, get the text content to see what error we're getting
+                const textContent = await response.text();
+                console.log('Non-JSON response content:', textContent.substring(0, 500));
+                
+                // Check if this is a Laravel error page
+                if (textContent.includes('Page Expired') || textContent.includes('419')) {
+                    throw new Error('CSRF token expired. Please refresh the page and try again.');
+                } else if (textContent.includes('Unauthenticated') || textContent.includes('401')) {
+                    throw new Error('You need to be logged in to create posts.');
+                } else {
+                    throw new Error('Server returned an unexpected response. Please try again.');
+                }
+            }
+            console.log('Response data:', data);
             
             if (data.success) {
                 onPostsChange([data.post, ...posts]);
                 setNewPostContent('');
                 setNewPostLocation('');
+                setSelectedImages([]);
+                setSelectedVideo(null);
                 setShowPostForm(false);
                 // Update pagination total count
                 onPaginationChange({
@@ -89,9 +201,10 @@ export default function CommunityFeed({
                     draggable: true,
                 });
             } else {
-                toast.error('❌ Failed to create post. Please try again.', {
+                const errorMessage = data.message || 'Failed to create post. Please try again.';
+                toast.error(`❌ ${errorMessage}`, {
                     position: 'top-right',
-                    autoClose: 4000,
+                    autoClose: 5000,
                     hideProgressBar: false,
                     closeOnClick: true,
                     pauseOnHover: true,
@@ -125,6 +238,7 @@ export default function CommunityFeed({
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
+                credentials: 'same-origin', // Include cookies in the request
             });
 
             const data = await response.json();
@@ -221,31 +335,141 @@ export default function CommunityFeed({
                     
                     {/* Post Creation Form */}
                     {showPostForm && (
-                        <div className="bg-[#E0F7FA] rounded-xl p-6 mb-8 border-2 border-[#17B7C7]">
-                            <textarea
-                                value={newPostContent}
-                                onChange={(e) => setNewPostContent(e.target.value)}
-                                placeholder="What's on your mind? Share your moving experience, ask questions, or offer advice to fellow movers..."
-                                className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] resize-none transition-colors text-gray-900"
-                                rows={4}
-                                disabled={isSubmitting}
-                            />
-                            <input
-                                type="text"
-                                value={newPostLocation}
-                                onChange={(e) => setNewPostLocation(e.target.value)}
-                                placeholder="Location (optional) - e.g., London, Manchester"
-                                className="w-full p-3 mt-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] transition-colors text-gray-900"
-                                disabled={isSubmitting}
-                            />
-                            <div className="flex justify-between items-center mt-4">
-                                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                    <span>💡 Tip: Share specific details to help others with similar moves</span>
+                        <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-8">
+                            <div className="p-4">
+                                <textarea
+                                    value={newPostContent}
+                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    placeholder="What's on your mind? Share your moving experience, ask questions, or offer advice to fellow movers..."
+                                    className="w-full p-3 border-none resize-none focus:outline-none text-gray-900 text-lg placeholder-gray-500"
+                                    rows={3}
+                                    disabled={isSubmitting}
+                                />
+                                
+                                <input
+                                    type="text"
+                                    value={newPostLocation}
+                                    onChange={(e) => setNewPostLocation(e.target.value)}
+                                    placeholder="📍 Add location (optional)"
+                                    className="w-full p-3 mt-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900"
+                                    disabled={isSubmitting}
+                                />
+                                
+                                {/* Media Preview */}
+                                {(selectedImages.length > 0 || selectedVideo) && (
+                                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                                        {selectedImages.length > 0 && (
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {selectedImages.map((image, index) => (
+                                                    <div key={index} className="relative">
+                                                        <img
+                                                            src={URL.createObjectURL(image)}
+                                                            alt={`Preview ${index + 1}`}
+                                                            className="w-full h-32 object-cover rounded-lg"
+                                                        />
+                                                        <button
+                                                            onClick={() => removeImage(index)}
+                                                            className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-90"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        
+                                        {selectedVideo && (
+                                            <div className="relative">
+                                                <video
+                                                    src={URL.createObjectURL(selectedVideo)}
+                                                    className="w-full h-48 object-cover rounded-lg"
+                                                    controls
+                                                />
+                                                <button
+                                                    onClick={removeVideo}
+                                                    className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-90"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Emoji Picker */}
+                            {showEmojiPicker && (
+                                <div className="px-4 pb-4">
+                                    <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                                        <div className="grid grid-cols-8 gap-2">
+                                            {['😀', '😂', '😊', '😍', '🤔', '😢', '😮', '👍', '👎', '❤️', '🎉', '🏠', '📦', '🚚', '✨', '💪'].map(emoji => (
+                                                <button
+                                                    key={emoji}
+                                                    onClick={() => addEmoji(emoji)}
+                                                    className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                                                >
+                                                    {emoji}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex space-x-3">
+                            )}
+                            
+                            {/* Action Bar */}
+                            <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                    {/* Photo Upload */}
+                                    <label className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
+                                        <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                        </svg>
+                                        <span className="text-sm font-medium">Photo</span>
+                                        <input
+                                            type="file"
+                                            multiple
+                                            accept="image/*"
+                                            onChange={handleImageSelect}
+                                            className="hidden"
+                                            disabled={isSubmitting || selectedVideo !== null}
+                                        />
+                                    </label>
+                                    
+                                    {/* Video Upload */}
+                                    <label className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
+                                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                        </svg>
+                                        <span className="text-sm font-medium">Video</span>
+                                        <input
+                                            type="file"
+                                            accept="video/*"
+                                            onChange={handleVideoSelect}
+                                            className="hidden"
+                                            disabled={isSubmitting || selectedImages.length > 0}
+                                        />
+                                    </label>
+                                    
+                                    {/* Emoji Button */}
                                     <button
-                                        onClick={() => setShowPostForm(false)}
-                                        className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                        className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                        disabled={isSubmitting}
+                                    >
+                                        <span className="text-lg">😊</span>
+                                        <span className="text-sm font-medium">Emoji</span>
+                                    </button>
+                                </div>
+                                
+                                <div className="flex items-center space-x-3">
+                                    <button
+                                        onClick={() => {
+                                            setShowPostForm(false);
+                                            setSelectedImages([]);
+                                            setSelectedVideo(null);
+                                            setShowEmojiPicker(false);
+                                        }}
+                                        className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
                                         disabled={isSubmitting}
                                     >
                                         Cancel
@@ -253,7 +477,7 @@ export default function CommunityFeed({
                                     <button
                                         onClick={handleCreatePost}
                                         disabled={!newPostContent.trim() || isSubmitting}
-                                        className="bg-[#17B7C7] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                                        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isSubmitting ? 'Posting...' : 'Post'}
                                     </button>

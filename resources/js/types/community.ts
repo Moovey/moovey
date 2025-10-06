@@ -6,6 +6,9 @@ export interface CommunityPost {
     timestamp: string;
     content: string;
     location?: string;
+    images?: string[];
+    video?: string;
+    media_type?: 'images' | 'video' | null;
     likes: number;
     comments: number;
     shares: number;
@@ -19,6 +22,9 @@ export interface CommunityPost {
         timestamp: string;
         content: string;
         location?: string;
+        images?: string[];
+        video?: string;
+        media_type?: 'images' | 'video' | null;
         likes: number;
         comments: number;
         shares: number;

@@ -16,6 +16,9 @@ class CommunityPost extends Model
         'user_id',
         'content',
         'location',
+        'images',
+        'video',
+        'media_type',
         'likes_count',
         'comments_count',
         'shares_count',
@@ -26,6 +29,7 @@ class CommunityPost extends Model
 
     protected $casts = [
         'is_pinned' => 'boolean',
+        'images' => 'array',
     ];
 
     public function user(): BelongsTo

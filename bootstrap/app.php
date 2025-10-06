@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        
+        // CSRF validation enabled for all routes
 
         $middleware->web(append: [
             HandleAppearance::class,

@@ -6,7 +6,12 @@ use App\Models\CommunityPost;
 use App\Models\CommunityComment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Exception;
 
 class CommunityController extends Controller
 {
@@ -28,6 +33,9 @@ class CommunityController extends Controller
                 'timestamp' => $post->created_at->diffForHumans(),
                 'content' => $post->content,
                 'location' => $post->location,
+                'images' => $post->images ? array_map(fn($img) => Storage::url($img), $post->images) : [],
+                'video' => $post->video ? Storage::url($post->video) : null,
+                'media_type' => $post->media_type,
                 'likes' => $post->likes_count,
                 'comments' => $post->comments_count,
                 'shares' => $post->shares_count,
@@ -84,6 +92,9 @@ class CommunityController extends Controller
                 'timestamp' => $post->created_at->diffForHumans(),
                 'content' => $post->content,
                 'location' => $post->location,
+                'images' => $post->images ? array_map(fn($img) => Storage::url($img), $post->images) : [],
+                'video' => $post->video ? Storage::url($post->video) : null,
+                'media_type' => $post->media_type,
                 'likes' => $post->likes_count,
                 'comments' => $post->comments_count,
                 'shares' => $post->shares_count,
@@ -127,44 +138,111 @@ class CommunityController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'content' => 'required|string|max:1000',
-            'location' => 'nullable|string|max:100',
-        ]);
+        try {
+            // Validate the request - adjusted limits to match PHP configuration
+            $request->validate([
+                'content' => 'required|string|max:5000',
+                'location' => 'nullable|string|max:100',
+                'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1800', // 1.8MB per image (under PHP 2MB limit)
+                'video' => 'nullable|mimes:mp4,mov,avi,wmv,flv,webm|max:7000', // 7MB for video (under PHP 8MB post limit)
+            ]);
 
-        $post = CommunityPost::create([
-            'user_id' => Auth::id(),
-            'content' => $validated['content'],
-            'location' => $validated['location'] ?? null,
-        ]);
+            $images = [];
+            $video = null;
+            $mediaType = null;
 
-        // Update user's profile post count
-        $user = Auth::user();
-        if ($user->profile) {
-            $user->profile->increment('post_count');
+            // Handle image uploads
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('community-images', 'public');
+                    if ($path) {
+                        $images[] = $path;
+                    }
+                }
+                $mediaType = 'images';
+            }
+
+            // Handle video upload
+            if ($request->hasFile('video')) {
+                $videoFile = $request->file('video');
+                $path = $videoFile->store('community-videos', 'public');
+                
+                if ($path) {
+                    $video = $path;
+                }
+                $mediaType = 'video';
+            }
+
+            $post = CommunityPost::create([
+                'user_id' => Auth::id(),
+                'content' => $request->content,
+                'location' => $request->location,
+                'images' => !empty($images) ? $images : null,
+                'video' => $video,
+                'media_type' => $mediaType,
+            ]);
+
+            // Update user's profile post count
+            $user = Auth::user();
+            if ($user && $user->profile) {
+                $user->profile->increment('post_count');
+            }
+
+            $post->load('user:id,name,avatar');
+
+            $formattedPost = [
+                'id' => $post->id,
+                'user_id' => $post->user_id,
+                'userName' => $post->user->name,
+                'userAvatar' => $post->user->avatar,
+                'timestamp' => $post->created_at->diffForHumans(),
+                'content' => $post->content,
+                'location' => $post->location,
+                'images' => $post->images ? array_map(fn($img) => Storage::url($img), $post->images) : [],
+                'video' => $post->video ? Storage::url($post->video) : null,
+                'media_type' => $post->media_type,
+                'likes' => $post->likes_count,
+                'comments' => $post->comments_count,
+                'shares' => $post->shares_count,
+                'liked' => false,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'post' => $formattedPost,
+                'message' => 'Post created successfully!',
+            ]);
+
+        } catch (ValidationException $e) {
+            Log::error('Community post validation failed', [
+                'errors' => $e->errors(),
+                'message' => $e->getMessage()
+            ]);
+
+            // Check for file upload errors specifically
+            $errors = $e->errors();
+            $message = 'Validation failed. Please check your inputs.';
+            
+            if (isset($errors['images.0']) || isset($errors['images']) || isset($errors['video'])) {
+                $message = 'File upload failed. Please ensure your images are under 2MB and videos are under 7MB.';
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+                'errors' => $errors
+            ], 422);
+        } catch (Exception $e) {
+            Log::error('Community post creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create post. Please try again.',
+            ], 500);
         }
-
-        $post->load('user:id,name,avatar');
-
-        $formattedPost = [
-            'id' => $post->id,
-            'user_id' => $post->user_id,
-            'userName' => $post->user->name,
-            'userAvatar' => $post->user->avatar, // Use the post author's avatar
-            'timestamp' => $post->created_at->diffForHumans(),
-            'content' => $post->content,
-            'location' => $post->location,
-            'likes' => $post->likes_count,
-            'comments' => $post->comments_count,
-            'shares' => $post->shares_count,
-            'liked' => false,
-        ];
-
-        return response()->json([
-            'success' => true,
-            'post' => $formattedPost,
-            'message' => 'Post created successfully!',
-        ]);
     }
 
     /**
@@ -394,6 +472,16 @@ class CommunityController extends Controller
                 'success' => false,
                 'message' => 'You can only delete your own posts.',
             ], 403);
+        }
+
+        // Delete associated media files
+        if ($post->images) {
+            foreach ($post->images as $image) {
+                Storage::delete('public/' . $image);
+            }
+        }
+        if ($post->video) {
+            Storage::delete('public/' . $post->video);
         }
 
         // Update user's profile post count before deleting

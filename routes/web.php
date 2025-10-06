@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\BusinessController;
@@ -28,6 +29,8 @@ Route::get('/tools', [PublicController::class, 'tools'])->name('tools');
 Route::get('/trade-directory', [PublicController::class, 'tradeDirectory'])->name('trade-directory');
 Route::get('/community', [\App\Http\Controllers\CommunityController::class, 'index'])->name('community');
 
+// Test routes removed - see routes/test.php for development testing
+
 // Business Search API (public access)
 Route::get('/api/business/search', [\App\Http\Controllers\BusinessSearchController::class, 'search'])->name('api.business.search');
 Route::get('/business-profile/{id}', [\App\Http\Controllers\BusinessSearchController::class, 'show'])->name('business.profile.show');
@@ -38,7 +41,9 @@ Route::get('/api/community/posts/{post}/comments', [\App\Http\Controllers\Commun
 
 // User Profile Routes (public access)
 Route::get('/user/{userId}', [\App\Http\Controllers\UserProfileController::class, 'show'])->name('user.profile.show');
+
 Route::middleware('auth')->group(function () {
+    // Community Posts (authenticated routes)
     Route::post('/api/community/posts', [\App\Http\Controllers\CommunityController::class, 'store'])->name('api.community.posts.store');
     Route::post('/api/community/posts/{post}/like', [\App\Http\Controllers\CommunityController::class, 'toggleLike'])->name('api.community.posts.like');
     Route::post('/api/community/posts/{post}/share', [\App\Http\Controllers\CommunityController::class, 'sharePost'])->name('api.community.posts.share');
