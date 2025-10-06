@@ -112,7 +112,9 @@ export default function PostInteractions({
                 className="flex items-center space-x-2 text-gray-500 hover:text-[#17B7C7] transition-colors hover:bg-gray-50 px-3 py-2 rounded-lg"
             >
                 <span className="text-lg">💬</span>
-                <span className="font-medium">{comments} Comments</span>
+                <span className="font-medium">
+                    {comments === 0 ? '0 comment' : `${comments} comments`}
+                </span>
             </button>
             <button 
                 onClick={handleSharePost}
