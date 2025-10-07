@@ -19,6 +19,46 @@ export default function PostCard({
     const [comments, setComments] = useState<any[]>([]);
     const [commentsLoaded, setCommentsLoaded] = useState(false);
 
+    // Helper function to get the correct image URL for cloud hosting
+    const getImageUrl = (imagePath: string) => {
+        // For cloud hosting, try the Laravel route fallback first as it's more likely to work
+        const url = `/storage-file/${imagePath}`;
+        return url;
+    };
+
+    // Enhanced error handler that tries alternative paths
+    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, imagePath: string) => {
+        const target = e.target as HTMLImageElement;
+        
+        // Alternative paths to try if the primary path fails
+        const alternativePaths = [
+            `/storage/${imagePath}`, // Standard Laravel storage link
+            `/public/storage/${imagePath}`, // Direct public path
+            `/${imagePath}` // Direct image path
+        ];
+        
+        // Get the current attempt from a data attribute
+        const currentAttempt = parseInt(target.dataset.attempt || '0');
+        
+        if (currentAttempt < alternativePaths.length) {
+            // Try the next alternative path
+            target.dataset.attempt = (currentAttempt + 1).toString();
+            target.src = alternativePaths[currentAttempt];
+            // Only log if we're in development mode
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`Community: Trying alternative path ${currentAttempt + 1}: ${alternativePaths[currentAttempt]} for image: ${imagePath}`);
+            }
+        } else {
+            // All paths failed, show fallback
+            console.error(`Community: All image paths failed for: ${imagePath}`);
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+                parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-4xl text-gray-400">📦</div>';
+            }
+        }
+    };
+
     const handleLikeChange = (postId: string | number, liked: boolean, likesCount: number) => {
         onPostChange({
             ...post,
@@ -133,10 +173,12 @@ export default function PostCard({
                                         displayPost.images!.length === 3 && index === 0 ? 'row-span-2' : ''
                                     }`}>
                                         <img
-                                            src={image}
+                                            src={getImageUrl(image)}
                                             alt={`Post image ${index + 1}`}
                                             className="w-full h-64 object-cover hover:opacity-95 transition-opacity cursor-pointer"
-                                            onClick={() => window.open(image, '_blank')}
+                                            onError={(e) => handleImageError(e, image)}
+                                            data-attempt="0"
+                                            onClick={() => window.open(getImageUrl(image), '_blank')}
                                         />
                                     </div>
                                 ))}
