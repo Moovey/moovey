@@ -49,25 +49,20 @@ export default function DeclutterList() {
 
     // Helper function to get the correct image URL
     const getImageUrl = (imagePath: string) => {
-        // For cloud hosting, we might need to try different paths
-        // First, try the standard Laravel storage link path
-        const url = `/storage/${imagePath}`;
-        console.log(`Loading image: ${imagePath} with URL: ${url}`);
+        // For cloud hosting, try the Laravel route fallback first as it's more likely to work
+        const url = `/storage-file/${imagePath}`;
         return url;
     };
 
     // Enhanced error handler that tries alternative paths
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, imagePath: string) => {
         const target = e.target as HTMLImageElement;
-        const originalSrc = target.src;
         
-        // Alternative paths to try (including the Laravel route fallback)
+        // Alternative paths to try if the primary path fails
         const alternativePaths = [
-            `/storage-file/${imagePath}`, // Laravel route fallback
-            `/app/storage/app/public/${imagePath}`,
-            `/public/storage/${imagePath}`,
-            `/${imagePath}`,
-            `/app/public/storage/${imagePath}`
+            `/storage/${imagePath}`, // Standard Laravel storage link
+            `/public/storage/${imagePath}`, // Direct public path
+            `/${imagePath}` // Direct image path
         ];
         
         // Get the current attempt from a data attribute
@@ -77,7 +72,10 @@ export default function DeclutterList() {
             // Try the next alternative path
             target.dataset.attempt = (currentAttempt + 1).toString();
             target.src = alternativePaths[currentAttempt];
-            console.log(`Trying alternative path ${currentAttempt + 1}: ${alternativePaths[currentAttempt]} for image: ${imagePath}`);
+            // Only log if we're in development mode
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`Trying alternative path ${currentAttempt + 1}: ${alternativePaths[currentAttempt]} for image: ${imagePath}`);
+            }
         } else {
             // All paths failed, show fallback
             console.error(`All image paths failed for: ${imagePath}`);
@@ -210,9 +208,10 @@ export default function DeclutterList() {
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         
-        // Check total number of images (max 4)
-        if (files.length + selectedImages.length > 4) {
-            toast.warn('You can only upload up to 4 images per item');
+        // Check total number of images (max 4) - count both existing preview URLs and new images
+        const totalImages = imagePreviewUrls.length + files.length;
+        if (totalImages > 4) {
+            toast.warn('You can only have up to 4 images per item total');
             return;
         }
         
@@ -225,7 +224,7 @@ export default function DeclutterList() {
             return;
         }
         
-        // Create preview URLs
+        // Create preview URLs for new files
         const newPreviewUrls = files.map(file => URL.createObjectURL(file));
         
         setSelectedImages(prev => [...prev, ...files]);
@@ -236,10 +235,43 @@ export default function DeclutterList() {
     };
 
     const removeImage = (index: number) => {
-        // Revoke the object URL to free memory
-        URL.revokeObjectURL(imagePreviewUrls[index]);
+        const urlToRemove = imagePreviewUrls[index];
         
-        setSelectedImages(prev => prev.filter((_, i) => i !== index));
+        console.log('Removing image at index:', index, 'URL:', urlToRemove);
+        console.log('Current preview URLs:', imagePreviewUrls);
+        console.log('Current selected images count:', selectedImages.length);
+        
+        // Check if this is a new image (blob URL) or existing image (HTTP URL)
+        if (urlToRemove && urlToRemove.startsWith('blob:')) {
+            // This is a new image - revoke the blob URL and remove from selectedImages
+            URL.revokeObjectURL(urlToRemove);
+            
+            // Find which selectedImage corresponds to this blob URL
+            // We need to count how many blob URLs come before this index
+            let selectedImageIndex = -1;
+            let blobCount = 0;
+            
+            for (let i = 0; i <= index; i++) {
+                if (imagePreviewUrls[i] && imagePreviewUrls[i].startsWith('blob:')) {
+                    if (i === index) {
+                        selectedImageIndex = blobCount;
+                        break;
+                    }
+                    blobCount++;
+                }
+            }
+            
+            console.log('Removing new image at selectedImages index:', selectedImageIndex);
+            
+            // Remove the corresponding file from selectedImages
+            if (selectedImageIndex >= 0) {
+                setSelectedImages(prev => prev.filter((_, i) => i !== selectedImageIndex));
+            }
+        } else {
+            console.log('Removing existing image (HTTP URL)');
+        }
+        
+        // Always remove from preview URLs
         setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
     };
 
@@ -295,14 +327,36 @@ export default function DeclutterList() {
         }
 
         try {
+            // Always use FormData for updates to handle both text and image data consistently
+            const formDataToSend = new FormData();
+            
+            // Add form fields
+            Object.entries(formData).forEach(([key, value]) => {
+                formDataToSend.append(key, value.toString());
+            });
+            
+            // Add method override for Laravel to treat this as a PUT request
+            formDataToSend.append('_method', 'PUT');
+            
+            // Add new images if any are selected
+            selectedImages.forEach((image, index) => {
+                formDataToSend.append(`images[${index}]`, image);
+            });
+
+            console.log('Updating item with:', {
+                itemId: editingItem.id,
+                textData: Object.fromEntries(Object.entries(formData)),
+                imageCount: selectedImages.length
+            });
+
             const response = await fetch(`/api/declutter-items/${editingItem.id}`, {
-                method: 'PUT',
+                method: 'POST', // Use POST with _method override for FormData compatibility
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    // Don't set Content-Type header for FormData - browser will set it with boundary
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify(formData),
+                body: formDataToSend,
             });
 
             if (response.ok) {
@@ -336,9 +390,16 @@ export default function DeclutterList() {
             action: item.action
         });
         
-        // Clear images when editing (for simplicity, don't pre-load existing images)
+        // Clear new images when editing
         setSelectedImages([]);
-        setImagePreviewUrls([]);
+        
+        // Show existing images as preview URLs
+        if (item.images && item.images.length > 0) {
+            const existingImageUrls = item.images.map(imagePath => getImageUrl(imagePath));
+            setImagePreviewUrls(existingImageUrls);
+        } else {
+            setImagePreviewUrls([]);
+        }
         
         setEditingItem(item);
         setShowAddForm(true);
@@ -669,10 +730,10 @@ export default function DeclutterList() {
                                 <button
                                     type="button"
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="bg-[#17B7C7] text-white px-4 py-2 rounded-lg hover:bg-[#139AAA] transition-colors"
-                                    disabled={selectedImages.length >= 4}
+                                    className="bg-[#17B7C7] text-white px-4 py-2 rounded-lg hover:bg-[#139AAA] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={imagePreviewUrls.length >= 4}
                                 >
-                                    Choose Photos
+                                    Choose Photos ({4 - imagePreviewUrls.length} slots left)
                                 </button>
                                 <p className="text-sm text-gray-500 mt-2">
                                     Maximum 4 images, 2MB each. JPG, PNG supported.
@@ -683,7 +744,9 @@ export default function DeclutterList() {
                         {/* Image Previews */}
                         {imagePreviewUrls.length > 0 && (
                             <div className="mt-4">
-                                <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Photos</h4>
+                                <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                    {editingItem ? 'Current & New Photos' : 'Selected Photos'}
+                                </h4>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {imagePreviewUrls.map((url, index) => (
                                         <div key={index} className="relative">
@@ -691,7 +754,23 @@ export default function DeclutterList() {
                                                 src={url}
                                                 alt={`Preview ${index + 1}`}
                                                 className="w-full h-24 object-cover rounded-lg border border-gray-300"
+                                                onError={(e) => {
+                                                    // If it's an existing image URL and it fails, try fallback paths
+                                                    if (editingItem && !url.startsWith('blob:')) {
+                                                        handleImageError(e, url.split('/').pop() || '');
+                                                    }
+                                                }}
                                             />
+                                            {editingItem && !url.startsWith('blob:') && (
+                                                <div className="absolute bottom-1 left-1 bg-blue-500 bg-opacity-75 text-white text-xs px-1 rounded">
+                                                    Current
+                                                </div>
+                                            )}
+                                            {url.startsWith('blob:') && (
+                                                <div className="absolute bottom-1 left-1 bg-green-500 bg-opacity-75 text-white text-xs px-1 rounded">
+                                                    New
+                                                </div>
+                                            )}
                                             <button
                                                 type="button"
                                                 onClick={() => removeImage(index)}
@@ -702,6 +781,11 @@ export default function DeclutterList() {
                                         </div>
                                     ))}
                                 </div>
+                                {editingItem && (
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Note: When editing, only new images will be saved. Existing images will be replaced.
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>
