@@ -123,6 +123,14 @@ class PublicController extends Controller
     }
 
     /**
+     * Display the marketplace page.
+     */
+    public function marketplace(): Response
+    {
+        return Inertia::render('marketplace');
+    }
+
+    /**
      * Display the trade directory page.
      */
     public function tradeDirectory(): Response

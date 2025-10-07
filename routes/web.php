@@ -26,6 +26,7 @@ require_once __DIR__ . '/test.php';
 Route::get('/', [PublicController::class, 'welcome'])->name('home');
 Route::get('/academy', [PublicController::class, 'academy'])->name('academy');
 Route::get('/tools', [PublicController::class, 'tools'])->name('tools');
+Route::get('/marketplace', [PublicController::class, 'marketplace'])->name('marketplace');
 Route::get('/trade-directory', [PublicController::class, 'tradeDirectory'])->name('trade-directory');
 Route::get('/community', [\App\Http\Controllers\CommunityController::class, 'index'])->name('community');
 
@@ -38,6 +39,9 @@ Route::get('/business-profile/{id}', [\App\Http\Controllers\BusinessSearchContro
 // Community API Routes (public access)
 Route::get('/api/community/posts', [\App\Http\Controllers\CommunityController::class, 'getPosts'])->name('api.community.posts');
 Route::get('/api/community/posts/{post}/comments', [\App\Http\Controllers\CommunityController::class, 'getComments'])->name('api.community.posts.comments');
+
+// Marketplace API Routes (public access)
+Route::get('/api/marketplace/items', [\App\Http\Controllers\DeclutterItemController::class, 'marketplace'])->name('api.marketplace.items');
 
 // User Profile Routes (public access)
 Route::get('/user/{userId}', [\App\Http\Controllers\UserProfileController::class, 'show'])->name('user.profile.show');
@@ -65,6 +69,11 @@ Route::middleware('auth')->group(function () {
     
     // User Profile Update
     Route::patch('/api/user/profile', [\App\Http\Controllers\UserProfileController::class, 'update'])->name('api.user.profile.update');
+    
+    // Declutter Items API Routes
+    Route::apiResource('api/declutter-items', \App\Http\Controllers\DeclutterItemController::class);
+    Route::patch('/api/declutter-items/{id}/list-for-sale', [\App\Http\Controllers\DeclutterItemController::class, 'listForSale'])->name('api.declutter-items.list-for-sale');
+    Route::patch('/api/declutter-items/{id}/unlist-from-sale', [\App\Http\Controllers\DeclutterItemController::class, 'unlistFromSale'])->name('api.declutter-items.unlist-from-sale');
     
     // Test route for avatar debugging
     Route::get('/api/user/avatar-debug', function() {

@@ -6,6 +6,7 @@ import MortgageCalculator from '@/components/tools/MortgageCalculator';
 import AffordabilityCalculator from '@/components/tools/AffordabilityCalculator';
 import SchoolCatchmentMap from '@/components/tools/SchoolCatchmentMap';
 import VolumeCalculator from '@/components/tools/VolumeCalculator';
+import DeclutterList from '@/components/tools/DeclutterList';
 
 export default function Tools() {
     // Get initial tool index from URL or default to 0
@@ -15,7 +16,7 @@ export default function Tools() {
             const toolParam = urlParams.get('tool');
             if (toolParam) {
                 const index = parseInt(toolParam, 10);
-                return !isNaN(index) && index >= 0 && index <= 3 ? index : 0;
+                return !isNaN(index) && index >= 0 && index <= 4 ? index : 0;
             }
         }
         return 0;
@@ -52,6 +53,11 @@ export default function Tools() {
             name: 'Volume Calculator',
             description: 'Estimate the volume of your belongings to determine the right moving truck size and moving costs.',
             icon: 'volume'
+        },
+        {
+            name: 'Declutter List',
+            description: 'Create a list of items to declutter. Decide what to throw away, donate, or sell on Moovey marketplace.',
+            icon: 'declutter'
         }
     ];
 
@@ -65,6 +71,8 @@ export default function Tools() {
                 return <SchoolCatchmentMap />;
             case 3:
                 return <VolumeCalculator />;
+            case 4:
+                return <DeclutterList />;
             default:
                 return <MortgageCalculator />;
         }
@@ -127,6 +135,13 @@ export default function Tools() {
                                                     <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2m14 0h2M3 21h2m14 0h2M3 12h2m14 0h2"/>
+                                                    </svg>
+                                                );
+                                            case 'declutter':
+                                                return (
+                                                    <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 11v6m4-6v6m-7-9h10" />
                                                     </svg>
                                                 );
                                             default:
