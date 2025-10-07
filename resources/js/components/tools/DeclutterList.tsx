@@ -47,6 +47,48 @@ export default function DeclutterList() {
     const [filterAction, setFilterAction] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Helper function to get the correct image URL
+    const getImageUrl = (imagePath: string) => {
+        // For cloud hosting, we might need to try different paths
+        // First, try the standard Laravel storage link path
+        const url = `/storage/${imagePath}`;
+        console.log(`Loading image: ${imagePath} with URL: ${url}`);
+        return url;
+    };
+
+    // Enhanced error handler that tries alternative paths
+    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, imagePath: string) => {
+        const target = e.target as HTMLImageElement;
+        const originalSrc = target.src;
+        
+        // Alternative paths to try (including the Laravel route fallback)
+        const alternativePaths = [
+            `/storage-file/${imagePath}`, // Laravel route fallback
+            `/app/storage/app/public/${imagePath}`,
+            `/public/storage/${imagePath}`,
+            `/${imagePath}`,
+            `/app/public/storage/${imagePath}`
+        ];
+        
+        // Get the current attempt from a data attribute
+        const currentAttempt = parseInt(target.dataset.attempt || '0');
+        
+        if (currentAttempt < alternativePaths.length) {
+            // Try the next alternative path
+            target.dataset.attempt = (currentAttempt + 1).toString();
+            target.src = alternativePaths[currentAttempt];
+            console.log(`Trying alternative path ${currentAttempt + 1}: ${alternativePaths[currentAttempt]} for image: ${imagePath}`);
+        } else {
+            // All paths failed, show fallback
+            console.error(`All image paths failed for: ${imagePath}`);
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+                parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-4xl text-gray-400">📦</div>';
+            }
+        }
+    };
+
     // Form state
     const [formData, setFormData] = useState<{
         name: string;
@@ -705,19 +747,27 @@ export default function DeclutterList() {
                         <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
                             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                                 {/* Image Display */}
-                                {item.images && item.images.length > 0 && (
+                                {item.images && item.images.length > 0 ? (
                                     <div className="flex-shrink-0">
                                         <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 relative">
                                             <img
-                                                src={`/storage/${item.images[0]}`}
+                                                src={getImageUrl(item.images[0])}
                                                 alt={item.name}
                                                 className="w-full h-full object-cover"
+                                                onError={(e) => handleImageError(e, item.images?.[0] || '')}
+                                                data-attempt="0"
                                             />
                                             {item.images.length > 1 && (
                                                 <div className="absolute bottom-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
                                                     +{item.images.length - 1}
                                                 </div>
                                             )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex-shrink-0">
+                                        <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 relative flex items-center justify-center">
+                                            <div className="text-4xl text-gray-400">📦</div>
                                         </div>
                                     </div>
                                 )}

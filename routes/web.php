@@ -16,6 +16,21 @@ use App\Http\Controllers\MoveDetailsController;
 // Test routes for debugging
 require_once __DIR__ . '/test.php';
 
+// Storage file serving route for cloud hosting compatibility
+Route::get('/storage-file/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    
+    if (!file_exists($fullPath)) {
+        abort(404);
+    }
+    
+    $mimeType = mime_content_type($fullPath);
+    return response()->file($fullPath, [
+        'Content-Type' => $mimeType,
+        'Cache-Control' => 'public, max-age=31536000', // Cache for 1 year
+    ]);
+})->where('path', '.*')->name('storage.file');
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes
