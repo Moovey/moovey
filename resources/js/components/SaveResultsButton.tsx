@@ -92,7 +92,7 @@ export default function SaveResultsButton({
                                 value={saveName}
                                 onChange={(e) => setSaveName(e.target.value)}
                                 placeholder="e.g., My Dream House Calculation"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none text-gray-900 placeholder-gray-500 bg-white"
                                 maxLength={100}
                             />
                             <p className="text-xs text-gray-500 mt-1">
