@@ -106,6 +106,10 @@ Route::middleware('auth')->group(function () {
     })->name('api.avatar.debug');
 });
 
+// API Routes for async data loading
+Route::get('/api/welcome/featured-lessons', [PublicController::class, 'getFeaturedLessons'])->name('api.welcome.featured-lessons');
+Route::get('/api/welcome/business-network', [PublicController::class, 'getBusinessNetwork'])->name('api.welcome.business-network');
+
 // Lesson Viewing Routes (public access)
 Route::get('/lessons/{lesson}', [LessonController::class, 'show'])->name('lessons.show');
 

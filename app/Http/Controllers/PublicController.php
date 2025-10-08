@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Lesson;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,11 +14,23 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class PublicController extends Controller
 {
     /**
-     * Display the welcome page.
+     * Display the welcome page with minimal cached data.
      */
     public function welcome(): Response
     {
-        return Inertia::render('welcome');
+        // Cache basic stats for 1 hour since they don't change frequently
+        $stats = Cache::remember('welcome_page_stats', 3600, function () {
+            return [
+                'total_lessons' => Lesson::published()->count(),
+                'featured_count' => 6, // Static for now
+                'community_members' => 2500, // Can be made dynamic later
+                'verified_businesses' => 250,
+            ];
+        });
+
+        return Inertia::render('welcome', [
+            'stats' => $stats,
+        ]);
     }
 
     /**
@@ -159,5 +172,70 @@ class PublicController extends Controller
         
         $mimeType = mime_content_type($imagePath);
         return response()->file($imagePath, ['Content-Type' => $mimeType]);
+    }
+
+    /**
+     * Get featured lessons for the welcome page
+     */
+    public function getFeaturedLessons()
+    {
+        $featuredLessons = Cache::remember('welcome_featured_lessons', 1800, function () {
+            return Lesson::published()
+                ->select('id', 'title', 'description', 'lesson_stage', 'duration', 'difficulty')
+                ->orderBy('lesson_order')
+                ->limit(6)
+                ->get()
+                ->map(function ($lesson) {
+                    return [
+                        'id' => $lesson->id,
+                        'title' => $lesson->title,
+                        'description' => $lesson->description,
+                        'lesson_stage' => $lesson->lesson_stage,
+                        'duration' => $lesson->duration,
+                        'difficulty' => $lesson->difficulty,
+                    ];
+                });
+        });
+
+        return response()->json([
+            'lessons' => $featuredLessons,
+        ]);
+    }
+
+    /**
+     * Get business network data with pagination
+     */
+    public function getBusinessNetwork(Request $request)
+    {
+        $page = $request->get('page', 1);
+        $perPage = 8;
+
+        // This would typically come from a businesses table
+        // For now, returning static data with pagination simulation
+        $allBusinesses = Cache::remember('business_network_data', 3600, function () {
+            return [
+                // Pre-Move Services
+                ['category' => 'pre-move', 'name' => 'Swift Relocations', 'type' => 'Moving Company', 'rating' => 4.9, 'reviews' => 156, 'discount' => '15% Member Discount'],
+                ['category' => 'pre-move', 'name' => 'Premier Properties', 'type' => 'Estate Agent', 'rating' => 4.8, 'reviews' => 142, 'discount' => 'No Admin Fees'],
+                ['category' => 'pre-move', 'name' => 'Thompson Legal', 'type' => 'Solicitor', 'rating' => 4.7, 'reviews' => 89, 'discount' => 'Fixed Fee Quote'],
+                ['category' => 'pre-move', 'name' => 'ClearView Cleaning', 'type' => 'Cleaning Service', 'rating' => 4.9, 'reviews' => 203, 'discount' => '20% First Clean'],
+                // Add more businesses...
+            ];
+        });
+
+        $total = count($allBusinesses);
+        $offset = ($page - 1) * $perPage;
+        $businesses = array_slice($allBusinesses, $offset, $perPage);
+
+        return response()->json([
+            'businesses' => $businesses,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => ceil($total / $perPage),
+                'has_more' => $offset + $perPage < $total,
+            ],
+        ]);
     }
 }
