@@ -21,7 +21,12 @@ export default function PostCard({
 
     // Helper function to get the correct image URL for cloud hosting
     const getImageUrl = (imagePath: string) => {
-        // For cloud hosting, try the Laravel route fallback first as it's more likely to work
+        // If the path already starts with /storage/, extract just the filename part
+        if (imagePath.startsWith('/storage/')) {
+            const pathWithoutStorage = imagePath.replace('/storage/', '');
+            return `/storage-file/${pathWithoutStorage}`;
+        }
+        // Otherwise, use the path as is with storage-file prefix
         const url = `/storage-file/${imagePath}`;
         return url;
     };
@@ -30,11 +35,16 @@ export default function PostCard({
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, imagePath: string) => {
         const target = e.target as HTMLImageElement;
         
+        // Extract the clean path without /storage/ prefix for alternative attempts
+        const cleanPath = imagePath.startsWith('/storage/') 
+            ? imagePath.replace('/storage/', '') 
+            : imagePath;
+        
         // Alternative paths to try if the primary path fails
         const alternativePaths = [
-            `/storage/${imagePath}`, // Standard Laravel storage link
-            `/public/storage/${imagePath}`, // Direct public path
-            `/${imagePath}` // Direct image path
+            imagePath.startsWith('/storage/') ? imagePath : `/storage/${imagePath}`, // Original or standard Laravel storage link
+            `/public/storage/${cleanPath}`, // Direct public path
+            `/${cleanPath}` // Direct image path
         ];
         
         // Get the current attempt from a data attribute
