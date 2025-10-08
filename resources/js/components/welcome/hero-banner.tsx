@@ -1,6 +1,6 @@
 export default function HeroBanner() {
     return (
-        <section className="h-[50vh] relative overflow-hidden bg-cover bg-center bg-no-repeat flex items-center" style={{backgroundImage: "url('/images/hero-banner2.png')"}}>
+        <section className="h-[50vh] relative overflow-hidden bg-cover bg-center bg-no-repeat flex items-center" style={{backgroundImage: "url('/images/hero-banner2.webp')"}}>
             {/* Background Overlay for better text readability */}
             <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-transparent to-black/30"></div>
             

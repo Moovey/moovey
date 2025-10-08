@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from '@inertiajs/react';
 
 interface Lesson {
     id: number;
@@ -121,9 +122,12 @@ export default function FeaturedLessonsAsync() {
                                 </div>
                             </div>
                             
-                            <button className="w-full bg-[#17B7C7] text-white px-6 py-3 rounded-full font-semibold hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl">
-                                Continue
-                            </button>
+                            <Link 
+                                href="/academy"
+                                className="block w-full bg-[#17B7C7] text-white px-6 py-3 rounded-full font-semibold hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl text-center"
+                            >
+                                Continue Learning
+                            </Link>
                         </div>
                     )}
                 </div>
