@@ -138,13 +138,6 @@ export default function CommunityFeed({
                 formData.append('video', selectedVideo);
             }
 
-            console.log('Submitting post with:', {
-                content: newPostContent,
-                images: selectedImages.length,
-                video: selectedVideo ? 'yes' : 'no',
-                location: newPostLocation
-            });
-
             const response = await fetch('/api/community/posts', {
                 method: 'POST',
                 headers: {
@@ -154,12 +147,8 @@ export default function CommunityFeed({
                 body: formData,
             });
 
-            console.log('Response status:', response.status);
-            console.log('Response headers:', response.headers);
-
             // Check if the response is actually JSON
             const contentType = response.headers.get('content-type');
-            console.log('Content-Type:', contentType);
             
             let data;
             if (contentType && contentType.includes('application/json')) {
@@ -167,7 +156,6 @@ export default function CommunityFeed({
             } else {
                 // If it's not JSON, get the text content to see what error we're getting
                 const textContent = await response.text();
-                console.log('Non-JSON response content:', textContent.substring(0, 500));
                 
                 // Check if this is a Laravel error page
                 if (textContent.includes('Page Expired') || textContent.includes('419')) {
@@ -178,7 +166,6 @@ export default function CommunityFeed({
                     throw new Error('Server returned an unexpected response. Please try again.');
                 }
             }
-            console.log('Response data:', data);
             
             if (data.success) {
                 onPostsChange([data.post, ...posts]);

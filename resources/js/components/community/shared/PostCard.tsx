@@ -54,10 +54,6 @@ export default function PostCard({
             // Try the next alternative path
             target.dataset.attempt = (currentAttempt + 1).toString();
             target.src = alternativePaths[currentAttempt];
-            // Only log if we're in development mode
-            if (process.env.NODE_ENV === 'development') {
-                console.log(`Community: Trying alternative path ${currentAttempt + 1}: ${alternativePaths[currentAttempt]} for image: ${imagePath}`);
-            }
         } else {
             // All paths failed, show fallback
             console.error(`Community: All image paths failed for: ${imagePath}`);
