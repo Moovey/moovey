@@ -53,10 +53,10 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                     </div>
 
                     {/* Navigation */}
-                    <nav className="hidden lg:flex items-center space-x-1 xl:space-x-3 2xl:space-x-6">
+                    <nav className="hidden lg:flex items-center space-x-0.5 xl:space-x-1 2xl:space-x-3">
                         <Link 
                             href="/" 
-                            className={`px-2 py-2 lg:px-3 xl:px-4 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
+                            className={`px-1.5 py-2 lg:px-2 xl:px-3 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
                                 isActive('homepage') || isActive('home') || currentPage === 'welcome'
                                     ? 'bg-[#17B7C7] text-white' 
                                     : 'text-gray-700 hover:text-[#17B7C7]'
@@ -67,7 +67,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                         {auth.user && (
                             <Link 
                                 href={route('dashboard')} 
-                                className={`px-2 py-2 lg:px-3 xl:px-4 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
+                                className={`px-1.5 py-2 lg:px-2 xl:px-3 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
                                     isActive('dashboard')
                                         ? 'bg-[#17B7C7] text-white' 
                                         : 'text-gray-700 hover:text-[#17B7C7]'
@@ -78,17 +78,17 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                         )}
                         <Link 
                             href={route('academy')} 
-                            className={`px-2 py-2 lg:px-3 xl:px-4 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
+                            className={`px-1.5 py-2 lg:px-2 xl:px-3 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
                                 isActive('academy')
                                     ? 'bg-[#17B7C7] text-white' 
                                     : 'text-gray-700 hover:text-[#17B7C7]'
                             }`}
                         >
-                            MOOVEY ACADEMY
+                            ACADEMY
                         </Link>
                         <Link 
                             href={route('tools')} 
-                            className={`px-2 py-2 lg:px-3 xl:px-4 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
+                            className={`px-1.5 py-2 lg:px-2 xl:px-3 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
                                 isActive('tools')
                                     ? 'bg-[#17B7C7] text-white' 
                                     : 'text-gray-700 hover:text-[#17B7C7]'
@@ -98,7 +98,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                         </Link>
                         <Link 
                             href={route('community')} 
-                            className={`px-2 py-2 lg:px-3 xl:px-4 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
+                            className={`px-1.5 py-2 lg:px-2 xl:px-3 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
                                 isActive('community')
                                     ? 'bg-[#17B7C7] text-white' 
                                     : 'text-gray-700 hover:text-[#17B7C7]'
@@ -108,7 +108,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                         </Link>
                         <Link 
                             href={route('trade-directory')} 
-                            className={`px-2 py-2 lg:px-3 xl:px-4 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
+                            className={`px-1.5 py-2 lg:px-2 xl:px-3 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
                                 isActive('trade-directory') || isActive('trade_directory')
                                     ? 'bg-[#17B7C7] text-white' 
                                     : 'text-gray-700 hover:text-[#17B7C7]'
@@ -119,24 +119,24 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                     </nav>
 
                     {/* Auth Section */}
-                    <div className="hidden lg:flex items-center space-x-2 xl:space-x-4 2xl:space-x-6">
+                    <div className="hidden lg:flex items-center space-x-1 xl:space-x-2 2xl:space-x-4">
                         {auth.user ? (
-                            <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-2">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <button className="flex items-center space-x-2 lg:space-x-3 p-2 lg:p-3 rounded-xl bg-gradient-to-r from-[#E0F7FA] to-[#B2EBF2] hover:from-[#00BCD4] hover:to-[#26C6DA] hover:text-white transition-all duration-300 border-2 border-transparent hover:border-[#00BCD4] hover:shadow-lg hover:shadow-[#00BCD4]/20 transform hover:scale-105">
-                                            <Avatar className="h-7 w-7 lg:h-8 lg:w-8 xl:h-9 xl:w-9 ring-2 ring-white shadow-md">
+                                        <button className="flex items-center space-x-1 lg:space-x-2 p-1.5 lg:p-2 rounded-xl bg-gradient-to-r from-[#E0F7FA] to-[#B2EBF2] hover:from-[#00BCD4] hover:to-[#26C6DA] hover:text-white transition-all duration-300 border-2 border-transparent hover:border-[#00BCD4] hover:shadow-lg hover:shadow-[#00BCD4]/20 transform hover:scale-105">
+                                            <Avatar className="h-6 w-6 lg:h-7 lg:w-7 xl:h-8 xl:w-8 ring-2 ring-white shadow-md">
                                                 <AvatarImage 
                                                     src={getAvatarUrl(auth.user.avatar) || undefined} 
                                                     alt={auth.user.name} 
                                                 />
-                                                <AvatarFallback className="bg-gradient-to-br from-[#00BCD4] to-[#1A237E] text-white font-bold text-sm">
+                                                <AvatarFallback className="bg-gradient-to-br from-[#00BCD4] to-[#1A237E] text-white font-bold text-xs">
                                                     {getInitials(auth.user.name)}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <div className="text-left hidden xl:block">
-                                                <span className="block text-xs xl:text-sm font-semibold text-gray-800 group-hover:text-white">
-                                                    {auth.user.name}
+                                            <div className="text-left hidden 2xl:block">
+                                                <span className="block text-xs font-semibold text-gray-800 group-hover:text-white">
+                                                    {auth.user.name.split(' ')[0]}
                                                 </span>
                                                 <span className="block text-xs text-gray-600 group-hover:text-white/80">
                                                     {auth.user.role ? 
@@ -159,13 +159,13 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                             <>
                                 <Link
                                     href={route('login')}
-                                    className="text-xs lg:text-sm xl:text-base text-gray-700 hover:text-[#17B7C7] font-medium transition-colors duration-200"
+                                    className="text-xs lg:text-sm xl:text-base text-gray-700 hover:text-[#17B7C7] font-medium transition-colors duration-200 px-1"
                                 >
                                     LOGIN
                                 </Link>
                                 <Link
                                     href={route('register')}
-                                    className="text-xs lg:text-sm xl:text-base text-gray-700 hover:text-[#17B7C7] font-medium transition-colors duration-200"
+                                    className="text-xs lg:text-sm xl:text-base text-gray-700 hover:text-[#17B7C7] font-medium transition-colors duration-200 px-1"
                                 >
                                     REGISTER
                                 </Link>
@@ -329,7 +329,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-semibold text-gray-800 truncate">
-                                            {auth.user.name}
+                                            {auth.user.name.split(' ')[0]}
                                         </p>
                                         <p className="text-xs text-gray-600">
                                             {auth.user.role ? 
