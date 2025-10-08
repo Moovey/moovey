@@ -7,6 +7,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 import { ToastContainer, toast } from 'react-toastify';
+import QueryProvider from './components/QueryClientProvider';
 
 // Make toast available globally for use in blade templates
 declare global {
@@ -43,7 +44,7 @@ createInertiaApp({
         const root = createRoot(el);
 
         root.render(
-            <>
+            <QueryProvider>
                 <App {...props} />
                 <ToastContainer
                     position="top-right"
@@ -59,7 +60,7 @@ createInertiaApp({
                     className="!mt-16"
                     toastClassName="!text-sm !font-medium"
                 />
-            </>
+            </QueryProvider>
         );
     },
     progress: {
