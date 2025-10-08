@@ -7,6 +7,7 @@ import { UserMenuContent } from '@/components/user-menu-content';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
+import { getAvatarUrl } from '@/utils/fileUtils';
 
 interface GlobalHeaderProps {
     currentPage?: string;
@@ -126,7 +127,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                         <button className="flex items-center space-x-2 lg:space-x-3 p-2 lg:p-3 rounded-xl bg-gradient-to-r from-[#E0F7FA] to-[#B2EBF2] hover:from-[#00BCD4] hover:to-[#26C6DA] hover:text-white transition-all duration-300 border-2 border-transparent hover:border-[#00BCD4] hover:shadow-lg hover:shadow-[#00BCD4]/20 transform hover:scale-105">
                                             <Avatar className="h-7 w-7 lg:h-8 lg:w-8 xl:h-9 xl:w-9 ring-2 ring-white shadow-md">
                                                 <AvatarImage 
-                                                    src={auth.user.avatar ? `/storage/${auth.user.avatar}` : undefined} 
+                                                    src={getAvatarUrl(auth.user.avatar) || undefined} 
                                                     alt={auth.user.name} 
                                                 />
                                                 <AvatarFallback className="bg-gradient-to-br from-[#00BCD4] to-[#1A237E] text-white font-bold text-sm">
@@ -319,7 +320,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                 <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-[#E0F7FA] to-[#B2EBF2] rounded-lg">
                                     <Avatar className="h-10 w-10 ring-2 ring-white shadow-md">
                                         <AvatarImage 
-                                            src={auth.user.avatar ? `/storage/${auth.user.avatar}` : undefined} 
+                                            src={getAvatarUrl(auth.user.avatar) || undefined} 
                                             alt={auth.user.name} 
                                         />
                                         <AvatarFallback className="bg-gradient-to-br from-[#00BCD4] to-[#1A237E] text-white font-bold text-sm">

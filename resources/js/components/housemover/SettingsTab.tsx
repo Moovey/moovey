@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Transition } from '@headlessui/react';
 import { toast } from 'react-toastify';
+import { getAvatarUrl, getFallbackAvatarUrl } from '@/utils/fileUtils';
 
 interface SettingsTabProps {
     auth: {
@@ -183,7 +184,7 @@ export default function SettingsTab({ auth }: SettingsTabProps) {
                         <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg">
                             {auth?.user?.avatar ? (
                                 <img
-                                    src={`/storage/${auth.user.avatar}`}
+                                    src={getAvatarUrl(auth.user.avatar) || getFallbackAvatarUrl(auth?.user?.name || 'User', 128)}
                                     alt="Profile"
                                     className="w-full h-full object-cover"
                                     onError={(e) => {

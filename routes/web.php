@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\FileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HousemoverController;
 use App\Http\Controllers\LessonController;
@@ -97,7 +98,8 @@ Route::middleware('auth')->group(function () {
             'user_id' => $user->id,
             'user_name' => $user->name,
             'user_avatar' => $user->avatar,
-            'avatar_path' => $user->avatar ? '/storage/' . $user->avatar : null,
+            'old_avatar_path' => $user->avatar ? '/storage/' . $user->avatar : null,
+            'new_avatar_url' => $user->avatar_url,
             'avatar_full_path' => $user->avatar ? storage_path('app/public/' . $user->avatar) : null,
             'avatar_exists' => $user->avatar ? file_exists(storage_path('app/public/' . $user->avatar)) : false,
         ]);
@@ -281,9 +283,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| File Serving Routes
+|--------------------------------------------------------------------------
+| These routes serve files directly from storage to work around
+| symbolic link issues in cloud hosting environments
+*/
+
+// Serve avatar files directly
+Route::get('/files/avatars/{filename}', [FileController::class, 'serveAvatar'])->name('files.avatars');
+
+// Serve other uploaded files
+Route::get('/files/{folder}/{filename}', [FileController::class, 'serveFile'])->name('files.serve');
+
+/*
+|--------------------------------------------------------------------------
 | Include Additional Route Files
 |--------------------------------------------------------------------------
 */
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+require __DIR__.'/test_avatar.php';

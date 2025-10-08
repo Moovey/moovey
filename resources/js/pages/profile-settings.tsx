@@ -4,6 +4,7 @@ import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
 import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
 import { toast } from 'react-toastify';
+import { getAvatarUrl, getFallbackAvatarUrl } from '@/utils/fileUtils';
 
 interface SecuritySettings {
     currentPassword: string;
@@ -393,17 +394,17 @@ export default function ProfileSettings() {
                                 <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg">
                                     {auth?.user?.avatar ? (
                                         <img
-                                            src={`/storage/${auth.user.avatar}`}
+                                            src={getAvatarUrl(auth.user.avatar) || getFallbackAvatarUrl(auth?.user?.name || 'User', 128)}
                                             alt="Profile"
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
                                                 // Fallback if image fails to load
-                                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(auth?.user?.name || 'User')}&background=00BCD4&color=white&size=128`;
+                                                (e.target as HTMLImageElement).src = getFallbackAvatarUrl(auth?.user?.name || 'User', 128);
                                             }}
                                         />
                                     ) : (
                                         <img
-                                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth?.user?.name || 'User')}&background=00BCD4&color=white&size=128`}
+                                            src={getFallbackAvatarUrl(auth?.user?.name || 'User', 128)}
                                             alt="Profile"
                                             className="w-full h-full object-cover"
                                         />

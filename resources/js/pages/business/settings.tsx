@@ -3,6 +3,7 @@ import { useRef, FormEventHandler, useState, useMemo } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import BusinessNavTabs from '@/components/business/BusinessNavTabs';
 import { toast } from 'react-toastify';
+import { getAvatarUrl, getFallbackAvatarUrl } from '@/utils/fileUtils';
 
 interface SecuritySettings {
     currentPassword: string;
@@ -384,7 +385,7 @@ export default function BusinessSettings() {
                                 <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg">
                                     {auth?.user?.avatar ? (
                                         <img
-                                            src={`/storage/${auth.user.avatar}`}
+                                            src={getAvatarUrl(auth.user.avatar) || getFallbackAvatarUrl(auth?.user?.name || 'User', 128)}
                                             alt="Profile"
                                             className="w-full h-full object-cover"
                                             onError={(e) => {

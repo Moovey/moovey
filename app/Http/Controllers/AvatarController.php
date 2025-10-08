@@ -41,7 +41,7 @@ class AvatarController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Profile picture updated successfully!',
-            'avatar_url' => '/storage/' . $path,
+            'avatar_url' => '/files/avatars/' . basename($path),
         ]);
     }
 

@@ -121,6 +121,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the URL for the user's avatar
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (!$this->avatar) {
+            return null;
+        }
+        
+        // Extract just the filename from the path
+        $filename = basename($this->avatar);
+        
+        // Return the new file serving route
+        return url('/files/avatars/' . $filename);
+    }
+
+    /**
      * Get sent friend requests.
      */
     public function sentFriendRequests(): HasMany

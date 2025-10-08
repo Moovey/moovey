@@ -1,3 +1,5 @@
+import { getAvatarUrl, getFallbackAvatarUrl } from '@/utils/fileUtils';
+
 interface UserAvatarProps {
     userId?: string | number;
     userName: string;
@@ -58,7 +60,7 @@ export default function UserAvatar({
         >
             {avatar ? (
                 <img
-                    src={`/storage/${avatar}`}
+                    src={getAvatarUrl(avatar) || getFallbackAvatarUrl(userName, 80)}
                     alt={`${userName}'s avatar`}
                     className="w-full h-full object-cover"
                     onError={(e) => {
