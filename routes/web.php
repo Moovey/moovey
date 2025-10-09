@@ -86,6 +86,9 @@ Route::middleware('auth')->group(function () {
     // User Profile Update
     Route::patch('/api/user/profile', [\App\Http\Controllers\UserProfileController::class, 'update'])->name('api.user.profile.update');
     
+    // User Profile Get
+    Route::get('/api/user/{user}/profile', [\App\Http\Controllers\UserProfileController::class, 'apiShow'])->name('api.user.profile.show');
+    
     // Declutter Items API Routes
     Route::apiResource('api/declutter-items', \App\Http\Controllers\DeclutterItemController::class);
     Route::patch('/api/declutter-items/{id}/list-for-sale', [\App\Http\Controllers\DeclutterItemController::class, 'listForSale'])->name('api.declutter-items.list-for-sale');

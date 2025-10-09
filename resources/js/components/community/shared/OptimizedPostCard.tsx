@@ -3,7 +3,6 @@ import { CommunityPost } from '@/types/community';
 import UserAvatar from './UserAvatar';
 import PostInteractions from './PostInteractions';
 import CommentSection from './CommentSection';
-import { usePartialReload } from '@/hooks/usePartialReload';
 
 interface PostCardProps {
     post: CommunityPost;
@@ -91,7 +90,6 @@ const OptimizedPostCard = memo(({
     const [showComments, setShowComments] = useState(false);
     const [comments, setComments] = useState<any[]>([]);
     const [commentsLoaded, setCommentsLoaded] = useState(false);
-    const { refreshPost } = usePartialReload();
 
     // Memoize computed values
     const isSharedPost = useMemo(() => post.post_type === 'shared' && post.original_post, [post]);
@@ -129,16 +127,7 @@ const OptimizedPostCard = memo(({
         };
         
         onPostChange(updatedPost);
-        
-        // Refresh post data in background to ensure consistency
-        try {
-            const freshPost = await refreshPost(postId);
-            onPostChange(freshPost);
-        } catch (error) {
-            // Revert on error
-            onPostChange(post);
-        }
-    }, [post, isSharedPost, onPostChange, refreshPost]);
+    }, [post, isSharedPost, onPostChange]);
 
     const handleShareChange = useCallback((postId: string | number, newShares: number) => {
         const updatedPost = {

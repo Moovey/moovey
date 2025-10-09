@@ -57,6 +57,8 @@ class CommunityController extends Controller
                     'comments' => $post->originalPost->comments_count,
                     'shares' => $post->originalPost->shares_count,
                 ];
+                // For shared posts, the main liked status should reflect if user liked the ORIGINAL post
+                $data['liked'] = Auth::check() ? $post->originalPost->isLikedByUser(Auth::id()) : false;
             }
 
             return $data;
@@ -116,6 +118,8 @@ class CommunityController extends Controller
                     'comments' => $post->originalPost->comments_count,
                     'shares' => $post->originalPost->shares_count,
                 ];
+                // For shared posts, the main liked status should reflect if user liked the ORIGINAL post
+                $data['liked'] = Auth::check() ? $post->originalPost->isLikedByUser(Auth::id()) : false;
             }
 
             return $data;

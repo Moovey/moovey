@@ -163,6 +163,66 @@ class UserProfileController extends Controller
     }
 
     /**
+     * Get user profile data for API calls.
+     */
+    public function apiShow(Request $request, $userId)
+    {
+        $user = User::with('profile')->findOrFail($userId);
+        $currentUser = Auth::user();
+        
+        // Create profile if it doesn't exist
+        if (!$user->profile) {
+            $user->profile()->create([
+                'post_count' => 0,
+                'friend_count' => 0,
+            ]);
+            $user->load('profile');
+        }
+
+        // Calculate actual counts
+        $actualPostCount = CommunityPost::where('user_id', $userId)->count();
+        $actualFriendCount = $user->friends()->count() + $user->friendsOf()->count();
+        
+        // Update the profile counts if they're different
+        $updateData = [];
+        if ($user->profile->post_count !== $actualPostCount) {
+            $updateData['post_count'] = $actualPostCount;
+        }
+        if ($user->profile->friend_count !== $actualFriendCount) {
+            $updateData['friend_count'] = $actualFriendCount;
+        }
+        
+        if (!empty($updateData)) {
+            $user->profile->update($updateData);
+            $user->profile->refresh();
+        }
+
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+                'role' => $user->role,
+                'created_at' => $user->created_at->toDateString(),
+            ],
+            'profile' => [
+                'id' => $user->profile->id,
+                'user_id' => $user->profile->user_id,
+                'bio' => $user->profile->bio,
+                'location' => $user->profile->location,
+                'website' => $user->profile->website,
+                'post_count' => $user->profile->post_count,
+                'friend_count' => $user->profile->friend_count,
+                'last_active' => $user->profile->last_active?->toDateString(),
+                'created_at' => $user->profile->created_at->toDateString(),
+            ],
+            'isOwnProfile' => $currentUser && $currentUser->id == $userId,
+        ]);
+    }
+
+    /**
      * Update the user's profile.
      */
     public function update(Request $request)

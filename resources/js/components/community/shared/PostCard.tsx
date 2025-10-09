@@ -66,18 +66,49 @@ export default function PostCard({
     };
 
     const handleLikeChange = (postId: string | number, liked: boolean, likesCount: number) => {
-        onPostChange({
-            ...post,
-            liked,
-            likes: likesCount
-        });
+        // Determine if this is a shared post
+        const isSharedPost = post.post_type === 'shared' && post.original_post;
+        
+        if (isSharedPost) {
+            // For shared posts, update the original post's like data
+            onPostChange({
+                ...post,
+                liked,
+                original_post: {
+                    ...post.original_post!,
+                    likes: likesCount
+                }
+            });
+        } else {
+            // For original posts, update the main post's like data
+            onPostChange({
+                ...post,
+                liked,
+                likes: likesCount
+            });
+        }
     };
 
     const handleShareChange = (postId: string | number, sharesCount: number) => {
-        onPostChange({
-            ...post,
-            shares: sharesCount
-        });
+        // Determine if this is a shared post
+        const isSharedPost = post.post_type === 'shared' && post.original_post;
+        
+        if (isSharedPost) {
+            // For shared posts, update the original post's share data
+            onPostChange({
+                ...post,
+                original_post: {
+                    ...post.original_post!,
+                    shares: sharesCount
+                }
+            });
+        } else {
+            // For original posts, update the main post's share data
+            onPostChange({
+                ...post,
+                shares: sharesCount
+            });
+        }
     };
 
     const handleToggleComments = async (postId: string | number) => {
@@ -103,10 +134,25 @@ export default function PostCard({
     };
 
     const handleCommentCountChange = (postId: string | number, change: number) => {
-        onPostChange({
-            ...post,
-            comments: Math.max(0, post.comments + change)
-        });
+        // Determine if this is a shared post
+        const isSharedPost = post.post_type === 'shared' && post.original_post;
+        
+        if (isSharedPost) {
+            // For shared posts, update the original post's comment count
+            onPostChange({
+                ...post,
+                original_post: {
+                    ...post.original_post!,
+                    comments: Math.max(0, post.original_post!.comments + change)
+                }
+            });
+        } else {
+            // For original posts, update the main post's comment count
+            onPostChange({
+                ...post,
+                comments: Math.max(0, post.comments + change)
+            });
+        }
     };
 
     // Determine if this is a shared post
