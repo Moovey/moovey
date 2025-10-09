@@ -16,6 +16,7 @@ class BusinessSearchController extends Controller
             'service' => ['nullable', 'string', 'max:255'],
             'rating' => ['nullable', 'integer', 'min:1', 'max:5'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'offset' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $query = BusinessProfile::query()
@@ -49,7 +50,13 @@ class BusinessSearchController extends Controller
         // These can be implemented when we add location and rating fields to the business profiles
 
         $limit = $validated['limit'] ?? 10;
-        $businesses = $query->limit($limit)->get();
+        $offset = $validated['offset'] ?? 0;
+        
+        // Get total count for pagination
+        $totalCount = $query->count();
+        
+        // Apply pagination
+        $businesses = $query->skip($offset)->take($limit)->get();
 
         // Transform the data to include logo URLs
         $results = $businesses->map(function ($business) {
@@ -71,7 +78,11 @@ class BusinessSearchController extends Controller
         return response()->json([
             'success' => true,
             'results' => $results,
-            'total' => $results->count(),
+            'total' => $totalCount,
+            'returned' => $results->count(),
+            'limit' => $limit,
+            'offset' => $offset,
+            'has_more' => ($offset + $limit) < $totalCount,
             'query' => $validated,
         ]);
     }

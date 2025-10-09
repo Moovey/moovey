@@ -1,12 +1,15 @@
-import { Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head } from '@inertiajs/react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
-import HeroSearchSection from '@/components/trade-directory/HeroSearchSection';
-import RecommendedServices from '@/components/trade-directory/RecommendedServices';
-import SearchResults from '@/components/trade-directory/SearchResults';
-import ArticlesSection from '@/components/trade-directory/ArticlesSection';
-import FinalCTA from '@/components/trade-directory/FinalCTA';
+import OptimizedHeroSearchSection from '@/components/trade-directory/OptimizedHeroSearchSection';
+import OptimizedSearchResults from '@/components/trade-directory/OptimizedSearchResults';
+import { 
+    LazyRecommendedServices, 
+    LazyArticlesSection, 
+    LazyFinalCTA 
+} from '@/components/trade-directory/lazy';
+import { useTradeDirectoryCache, tradeDirectoryCache } from '@/hooks/useTradeDirectoryCache';
 import { PREDEFINED_SERVICES } from '@/constants/services';
 
 export default function TradeDirectory() {
@@ -14,12 +17,20 @@ export default function TradeDirectory() {
     const [selectedLocation, setSelectedLocation] = useState('Your Location');
     const [selectedService, setSelectedService] = useState('I\'m looking for a...');
     const [selectedRegion, setSelectedRegion] = useState('Location...');
-    const [priceFilter, setPriceFilter] = useState('');
     const [ratingFilter, setRatingFilter] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
-    const [searchError, setSearchError] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalResults, setTotalResults] = useState(0);
+    const [hasMore, setHasMore] = useState(false);
+
+    // Use optimized cache hook
+    const { search, loading, error, setError } = useTradeDirectoryCache({
+        ttl: 10 * 60 * 1000, // 10 minutes
+        maxSize: 50,
+        debounceMs: 300
+    });
 
     const serviceTypes = [...PREDEFINED_SERVICES];
 
@@ -79,41 +90,59 @@ export default function TradeDirectory() {
         { name: "Utility Setup", status: "missing", icon: "❌", priority: "Not Arranged" }
     ];
 
-    const handleSearch = async (searchParams: {
+    // Optimized search handler with caching
+    const handleSearch = useCallback(async (searchParams: {
         query: string;
         location: string;
         service: string;
         rating: string;
         keywords: string;
-    }) => {
-        setIsSearching(true);
-        setSearchError(null);
-        
+    }, page = 1) => {
         try {
-            const params = new URLSearchParams();
-            if (searchParams.query) params.append('query', searchParams.query);
-            if (searchParams.location) params.append('location', searchParams.location);
-            if (searchParams.service) params.append('service', searchParams.service);
-            if (searchParams.rating) params.append('rating', searchParams.rating);
-            if (searchParams.keywords) params.append('query', searchParams.keywords); // Add keywords to general query
-            params.append('limit', '20');
+            setError(null);
+            
+            const result = await search({
+                ...searchParams,
+                page
+            });
 
-            const response = await fetch(`/api/business/search?${params.toString()}`);
-            const data = await response.json();
-
-            if (data.success) {
-                setSearchResults(data.results);
-                setHasSearched(true);
-            } else {
-                setSearchError('Search failed. Please try again.');
-            }
-        } catch (error) {
-            setSearchError('Network error. Please check your connection and try again.');
-            console.error('Search error:', error);
-        } finally {
-            setIsSearching(false);
+            setSearchResults(result.results);
+            setCurrentPage(result.page);
+            setTotalPages(result.totalPages);
+            setTotalResults(result.total);
+            setHasMore(result.hasMore);
+            setHasSearched(true);
+        } catch (err) {
+            console.error('Search error:', err);
+            setHasSearched(true);
         }
-    };
+    }, [search, setError]);
+
+    // Handle page changes
+    const handlePageChange = useCallback((page: number) => {
+        const searchParams = {
+            query: searchQuery,
+            location: selectedLocation,
+            service: selectedService,
+            rating: ratingFilter,
+            keywords: ''
+        };
+        
+        handleSearch(searchParams, page);
+    }, [handleSearch, searchQuery, selectedLocation, selectedService, ratingFilter]);
+
+    // Preload default providers on mount
+    useEffect(() => {
+        const preloadDefault = async () => {
+            const cachedDefault = tradeDirectoryCache.get('default-providers');
+            if (!cachedDefault) {
+                // Cache default providers for faster initial load
+                tradeDirectoryCache.set('default-providers', serviceProviders, 30 * 60 * 1000); // 30 minutes
+            }
+        };
+        
+        preloadDefault();
+    }, []);
 
     const articles = [
         {
@@ -138,13 +167,16 @@ export default function TradeDirectory() {
             <Head title="Trade Directory - Find Movers & Services">
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900" rel="stylesheet" />
+                {/* Preload critical resources */}
+                <link rel="preload" href="/api/business/search?limit=5" as="fetch" crossOrigin="anonymous" />
+                <link rel="preload" href="/images/trade-directory-mascot.webp" as="image" />
             </Head>
             
             <div className="min-h-screen bg-white font-['Inter',sans-serif]">
                 <GlobalHeader currentPage="trade-directory" />
 
-                {/* Hero Section with Search */}
-                <HeroSearchSection
+                {/* Optimized Hero Section with Search */}
+                <OptimizedHeroSearchSection
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
                     selectedLocation={selectedLocation}
@@ -158,24 +190,26 @@ export default function TradeDirectory() {
                     serviceTypes={serviceTypes}
                     locations={locations}
                     onSearch={handleSearch}
-                    isSearching={isSearching}
+                    isSearching={loading}
                 />
 
-                {/* Recommended Services Section */}
-                <RecommendedServices recommendedServices={recommendedServices} />
+                {/* Lazy-loaded Recommended Services Section */}
+                <Suspense fallback={<div className="h-32 bg-gray-100 animate-pulse" />}>
+                    <LazyRecommendedServices recommendedServices={recommendedServices} />
+                </Suspense>
 
-                {/* Search Results Section - Show only if searched */}
+                {/* Optimized Search Results Section */}
                 {hasSearched && (
                     <>
-                        {searchError ? (
+                        {error ? (
                             <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
                                 <div className="max-w-7xl mx-auto text-center">
                                     <div className="bg-red-50 border border-red-200 rounded-lg p-6">
                                         <h3 className="text-lg font-semibold text-red-800 mb-2">Search Error</h3>
-                                        <p className="text-red-600">{searchError}</p>
+                                        <p className="text-red-600">{error}</p>
                                         <button 
                                             onClick={() => {
-                                                setSearchError(null);
+                                                setError(null);
                                                 setHasSearched(false);
                                             }}
                                             className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
@@ -185,9 +219,17 @@ export default function TradeDirectory() {
                                     </div>
                                 </div>
                             </section>
-                        ) : searchResults.length > 0 ? (
-                            <SearchResults serviceProviders={searchResults} />
-                        ) : !isSearching ? (
+                        ) : searchResults.length > 0 || loading ? (
+                            <OptimizedSearchResults 
+                                serviceProviders={searchResults}
+                                total={totalResults}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                hasMore={hasMore}
+                                onPageChange={handlePageChange}
+                                loading={loading}
+                            />
+                        ) : !loading ? (
                             <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
                                 <div className="max-w-7xl mx-auto text-center">
                                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
@@ -204,14 +246,21 @@ export default function TradeDirectory() {
 
                 {/* Show default content when no search has been performed */}
                 {!hasSearched && (
-                    <SearchResults serviceProviders={serviceProviders} />
+                    <OptimizedSearchResults 
+                        serviceProviders={serviceProviders}
+                        loading={loading}
+                    />
                 )}
 
-                {/* What to Read Next Section */}
-                <ArticlesSection articles={articles} />
+                {/* Lazy-loaded What to Read Next Section */}
+                <Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+                    <LazyArticlesSection articles={articles} />
+                </Suspense>
 
-                {/* Final CTA Section */}
-                <FinalCTA />
+                {/* Lazy-loaded Final CTA Section */}
+                <Suspense fallback={<div className="h-32 bg-gray-100 animate-pulse" />}>
+                    <LazyFinalCTA />
+                </Suspense>
 
                 {/* Welcome Footer */}
                 <WelcomeFooter />
