@@ -63,6 +63,12 @@ Route::get('/api/marketplace/items', [\App\Http\Controllers\DeclutterItemControl
 Route::get('/user/{userId}', [\App\Http\Controllers\UserProfileController::class, 'show'])->name('user.profile.show');
 
 Route::middleware('auth')->group(function () {
+    // Notification API Routes
+    Route::get('/api/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('api.notifications.index');
+    Route::get('/api/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('api.notifications.unread-count');
+    Route::patch('/api/notifications/{id}/mark-as-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('api.notifications.mark-as-read');
+    Route::patch('/api/notifications/mark-all-as-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('api.notifications.mark-all-as-read');
+    
     // Community Posts (authenticated routes)
     Route::post('/api/community/posts', [\App\Http\Controllers\CommunityController::class, 'store'])->name('api.community.posts.store');
     Route::post('/api/community/posts/{post}/like', [\App\Http\Controllers\CommunityController::class, 'toggleLike'])->name('api.community.posts.like');

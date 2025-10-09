@@ -457,6 +457,9 @@ class CommunityController extends Controller
         $originalPost = CommunityPost::find($originalPostId);
         if ($originalPost) {
             $originalPost->increment('shares_count');
+            
+            // Create notification for post owner
+            $originalPost->createShareNotification($userId);
         }
 
         return response()->json([

@@ -37,4 +37,43 @@ class CommunityComment extends Model
     {
         return $this->hasMany(CommunityComment::class, 'parent_id');
     }
+
+    /**
+     * Boot the model and set up event listeners
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($comment) {
+            $comment->createCommentNotification();
+        });
+    }
+
+    /**
+     * Create a comment notification
+     */
+    protected function createCommentNotification(): void
+    {
+        $post = $this->communityPost;
+        
+        // Don't notify yourself
+        if (!$post || $post->user_id === $this->user_id) return;
+
+        $commenter = $this->user;
+        if (!$commenter) return;
+
+        Notification::create([
+            'user_id' => $post->user_id,
+            'sender_id' => $this->user_id,
+            'type' => 'post_comment',
+            'message' => "{$commenter->name} commented on your post",
+            'data' => [
+                'post_id' => $post->id,
+                'comment_id' => $this->id,
+                'comment_content' => substr($this->content, 0, 50) . '...',
+                'post_content' => substr($post->content, 0, 50) . '...',
+            ]
+        ]);
+    }
 }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
+import NotificationDropdown from '@/components/NotificationDropdown';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
@@ -122,6 +123,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                     <div className="hidden lg:flex items-center space-x-1 xl:space-x-2 2xl:space-x-4">
                         {auth.user ? (
                             <div className="flex items-center space-x-2">
+                                <NotificationDropdown />
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <button className="flex items-center space-x-1 lg:space-x-2 p-1.5 lg:p-2 rounded-xl bg-gradient-to-r from-[#E0F7FA] to-[#B2EBF2] hover:from-[#00BCD4] hover:to-[#26C6DA] hover:text-white transition-all duration-300 border-2 border-transparent hover:border-[#00BCD4] hover:shadow-lg hover:shadow-[#00BCD4]/20 transform hover:scale-105">
@@ -316,6 +318,11 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                     <div className="border-t border-gray-200 p-6">
                         {auth.user ? (
                             <div className="space-y-4">
+                                {/* Mobile Notifications */}
+                                <div className="mb-4">
+                                    <NotificationDropdown />
+                                </div>
+                                
                                 {/* User Profile Info */}
                                 <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-[#E0F7FA] to-[#B2EBF2] rounded-lg">
                                     <Avatar className="h-10 w-10 ring-2 ring-white shadow-md">

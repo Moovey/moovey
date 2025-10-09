@@ -80,8 +80,57 @@ class CommunityPost extends Model
         } else {
             $this->likedByUsers()->attach($userId);
             $this->increment('likes_count');
+            
+            // Create notification for post owner (don't notify yourself)
+            if ($this->user_id !== $userId) {
+                $this->createLikeNotification($userId);
+            }
+            
             return true;
         }
+    }
+
+    /**
+     * Create a like notification
+     */
+    protected function createLikeNotification($likerId): void
+    {
+        $liker = User::find($likerId);
+        if (!$liker) return;
+
+        Notification::create([
+            'user_id' => $this->user_id,
+            'sender_id' => $likerId,
+            'type' => 'post_like',
+            'message' => "{$liker->name} liked your post",
+            'data' => [
+                'post_id' => $this->id,
+                'post_content' => substr($this->content, 0, 50) . '...',
+            ]
+        ]);
+    }
+
+    /**
+     * Create a share notification
+     */
+    public function createShareNotification($sharerId): void
+    {
+        // Don't notify yourself
+        if ($this->user_id === $sharerId) return;
+
+        $sharer = User::find($sharerId);
+        if (!$sharer) return;
+
+        Notification::create([
+            'user_id' => $this->user_id,
+            'sender_id' => $sharerId,
+            'type' => 'post_share',
+            'message' => "{$sharer->name} shared your post",
+            'data' => [
+                'post_id' => $this->id,
+                'post_content' => substr($this->content, 0, 50) . '...',
+            ]
+        ]);
     }
 
     public function scopeLatestWithPinned($query)

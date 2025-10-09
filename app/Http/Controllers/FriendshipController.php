@@ -141,8 +141,13 @@ class FriendshipController extends Controller
 
         // If accepted, update friend counts
         if ($friendship->status === 'accepted') {
-            $friendship->user->profile()->decrement('friend_count');
-            $friendship->friend->profile()->decrement('friend_count');
+            // Ensure profiles exist before decrementing
+            if ($friendship->user->profile) {
+                $friendship->user->profile()->decrement('friend_count');
+            }
+            if ($friendship->friend->profile) {
+                $friendship->friend->profile()->decrement('friend_count');
+            }
         }
 
         $friendship->delete();

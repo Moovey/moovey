@@ -44,9 +44,13 @@ class Friendship extends Model
             'accepted_at' => now()
         ]);
 
-        // Update friend counts
-        $this->user->profile()->increment('friend_count');
-        $this->friend->profile()->increment('friend_count');
+        // Update friend counts - ensure profiles exist
+        if ($this->user->profile) {
+            $this->user->profile()->increment('friend_count');
+        }
+        if ($this->friend->profile) {
+            $this->friend->profile()->increment('friend_count');
+        }
     }
 
     /**
@@ -66,8 +70,72 @@ class Friendship extends Model
         
         // Remove from friend counts if they were friends
         if ($this->status === 'accepted') {
-            $this->user->profile()->decrement('friend_count');
-            $this->friend->profile()->decrement('friend_count');
+            if ($this->user->profile) {
+                $this->user->profile()->decrement('friend_count');
+            }
+            if ($this->friend->profile) {
+                $this->friend->profile()->decrement('friend_count');
+            }
         }
+    }
+
+    /**
+     * Boot the model and set up event listeners
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($friendship) {
+            $friendship->createFriendRequestNotification();
+        });
+
+        static::updated(function ($friendship) {
+            if ($friendship->wasChanged('status') && $friendship->status === 'accepted') {
+                $friendship->createFriendAcceptedNotification();
+            }
+        });
+    }
+
+    /**
+     * Create a friend request notification
+     */
+    protected function createFriendRequestNotification(): void
+    {
+        $requester = $this->user;
+        if (!$requester) return;
+
+        Notification::create([
+            'user_id' => $this->friend_id,
+            'sender_id' => $this->user_id,
+            'type' => 'friend_request',
+            'message' => "{$requester->name} sent you a friend request",
+            'data' => [
+                'friendship_id' => $this->id,
+                'requester_name' => $requester->name,
+                'requester_avatar' => $requester->avatar,
+            ]
+        ]);
+    }
+
+    /**
+     * Create a friend request accepted notification
+     */
+    protected function createFriendAcceptedNotification(): void
+    {
+        $accepter = $this->friend;
+        if (!$accepter) return;
+
+        Notification::create([
+            'user_id' => $this->user_id,
+            'sender_id' => $this->friend_id,
+            'type' => 'friend_accepted',
+            'message' => "{$accepter->name} accepted your friend request",
+            'data' => [
+                'friendship_id' => $this->id,
+                'accepter_name' => $accepter->name,
+                'accepter_avatar' => $accepter->avatar,
+            ]
+        ]);
     }
 }
