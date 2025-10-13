@@ -169,7 +169,7 @@ export default function TradeDirectory() {
                 <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900" rel="stylesheet" />
                 {/* Preload critical resources */}
                 <link rel="preload" href="/api/business/search?limit=5" as="fetch" crossOrigin="anonymous" />
-                <link rel="preload" href="/images/trade-directory-mascot.webp" as="image" />
+                <link rel="preload" href="/images/trade-directory-banner.webp" as="image" />
             </Head>
             
             <div className="min-h-screen bg-white font-['Inter',sans-serif]">

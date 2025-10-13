@@ -54,7 +54,7 @@ export default function OptimizedHeroSearchSection({
             setImageError(true);
             setImageLoaded(true);
         };
-        img.src = '/images/trade-directory-mascot.webp';
+        img.src = '/images/trade-directory-banner.webp';
     }, []);
 
     // Prefetch popular services data
@@ -156,7 +156,7 @@ export default function OptimizedHeroSearchSection({
                                             imageLoaded ? 'opacity-100' : 'opacity-0'
                                         }`}
                                         style={{
-                                            backgroundImage: 'url(/images/trade-directory-mascot.webp)',
+                                            backgroundImage: 'url(/images/trade-directory-banner.webp)',
                                         }}
                                     />
                                 )}
