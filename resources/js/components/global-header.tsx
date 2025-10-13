@@ -39,7 +39,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                             <img 
                                 src="/images/moovey-logo.png" 
                                 alt="Moovey" 
-                                className="h-12 sm:h-14 md:h-16 lg:h-18 xl:h-20 w-auto"
+                                className="h-14 sm:h-16 md:h-18 lg:h-20 xl:h-24 2xl:h-28 w-auto"
                                 onError={(e) => {
                                     // Fallback to text logo if image fails to load
                                     e.currentTarget.style.display = 'none';
@@ -49,7 +49,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                 }}
                             />
                             {/* Fallback text logo */}
-                            <span className="text-2xl font-bold text-gray-900" style={{display: 'none'}}>Moovey</span>
+                            <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900" style={{display: 'none'}}>Moovey</span>
                         </Link>
                     </div>
 
@@ -219,7 +219,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                         <img 
                             src="/images/moovey-logo.png" 
                             alt="Moovey" 
-                            className="h-8 w-auto"
+                            className="h-10 sm:h-12 w-auto"
                             onError={(e) => {
                                 e.currentTarget.style.display = 'none';
                                 if (e.currentTarget.nextElementSibling) {
@@ -227,7 +227,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                 }
                             }}
                         />
-                        <span className="text-xl font-bold text-gray-900" style={{display: 'none'}}>Moovey</span>
+                        <span className="text-xl sm:text-2xl font-bold text-gray-900" style={{display: 'none'}}>Moovey</span>
                         <button 
                             onClick={closeMobileMenu}
                             className="text-gray-500 hover:text-gray-700 p-2"
