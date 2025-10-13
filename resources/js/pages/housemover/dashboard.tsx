@@ -2,9 +2,14 @@ import { Head } from '@inertiajs/react';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
-import WelcomeFooter from '@/components/welcome/welcome-footer';
-import OverviewTab from '@/components/housemover/OverviewTab';
 import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
+import CompleteMovingJourney from '@/components/housemover/CompleteMovingJourney';
+import LearningJourney from '@/components/housemover/overview/LearningJourney';
+import CTATasksManager from '@/components/housemover/overview/CTATasksManager';
+import SimplePriorityTasksWidget from '@/components/housemover/overview/SimplePriorityTasksWidget';
+import SimpleMoveCountdown from '@/components/housemover/overview/SimpleMoveCountdown';
+import SimpleVouchersRewards from '@/components/housemover/overview/SimpleVouchersRewards';
+import SimpleStatisticsDashboard from '@/components/housemover/overview/SimpleStatisticsDashboard';
 
 interface Task {
     id: string;
@@ -789,32 +794,73 @@ export default function Dashboard({
 
             {/* Main Dashboard Content - Professional Layout */}
             {activeTab === 'overview' && (
-                <OverviewTab
-                    overallMoveProgress={overallMoveProgress}
-                    moveStages={moveStages}
-                    activeStage={activeStage}
-                    handleStageClick={handleStageClick}
-                    getSectionProgress={getSectionProgress}
-                    getProgressColor={getProgressColor}
-                    academyProgress={academyProgress}
-                    allUserTasks={allUserTasks}
-                    selectedCtaTasks={selectedCtaTasks}
-                    setSelectedCtaTasks={setSelectedCtaTasks}
-                    userPriorityTasks={userPriorityTasks}
-                    setUserPriorityTasks={setUserPriorityTasks}
-                    getCtaTasksByCategory={getCtaTasksByCategory}
-                    handleCtaTaskToggle={handleCtaTaskToggle}
-                    addSelectedTasksToPriority={addSelectedTasksToPriority}
-                    handleDragStart={handleDragStart}
-                    handleDropOnPriority={handleDropOnPriority}
-                    handleDragOver={handleDragOver}
-                    getCombinedPriorityTasks={getCombinedPriorityTasks}
-                    handleTaskClick={handleTaskClick}
-                    handleTaskComplete={handleTaskComplete}
-                    removeFromPriorityList={removeFromPriorityList}
-                    taskStats={taskStats}
-                    personalDetails={personalDetails}
-                />
+                <div className="max-w-7xl mx-auto space-y-8">
+                    {/* Complete Moving Journey Timeline */}
+                    <CompleteMovingJourney
+                        overallProgress={overallMoveProgress}
+                        moveSections={moveStages.map(stage => ({
+                            id: stage.id,
+                            name: stage.label,
+                            shortName: stage.shortLabel,
+                            description: stage.description,
+                            icon: stage.icon
+                        }))}
+                        activeSection={activeStage}
+                        onSectionClick={handleStageClick}
+                        getSectionProgress={getSectionProgress}
+                        getProgressColor={getProgressColor}
+                    />
+
+                    {/* Learning Journey Section */}
+                    <LearningJourney academyProgress={academyProgress} />
+
+                    {/* Moving Tasks Management Section (CTA Tasks) */}
+                    <CTATasksManager 
+                        selectedCtaTasks={selectedCtaTasks}
+                        setSelectedCtaTasks={setSelectedCtaTasks}
+                        getCtaTasksByCategory={getCtaTasksByCategory}
+                        handleCtaTaskToggle={handleCtaTaskToggle}
+                        addSelectedTasksToPriority={addSelectedTasksToPriority}
+                        handleDragStart={handleDragStart}
+                        handleDropOnPriority={handleDropOnPriority}
+                        handleDragOver={handleDragOver}
+                    />
+
+                    {/* Priority Tasks & Move Countdown Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <SimplePriorityTasksWidget 
+                            userPriorityTasks={userPriorityTasks}
+                            setUserPriorityTasks={setUserPriorityTasks}
+                            getCombinedPriorityTasks={getCombinedPriorityTasks}
+                            handleTaskClick={handleTaskClick}
+                            handleTaskComplete={handleTaskComplete}
+                            removeFromPriorityList={removeFromPriorityList}
+                            taskStats={taskStats}
+                            handleDropOnPriority={handleDropOnPriority}
+                            handleDragOver={handleDragOver}
+                        />
+                        <SimpleMoveCountdown personalDetails={personalDetails} />
+                    </div>
+
+                    {/* Vouchers & Rewards Section */}
+                    <SimpleVouchersRewards />
+
+                    {/* Statistics Dashboard */}
+                    <SimpleStatisticsDashboard />
+
+                    {/* Call-to-Action Area */}
+                    <section className="text-center">
+                        <a 
+                            href="/housemover/move-details" 
+                            className="inline-flex items-center px-10 py-4 bg-[#00BCD4] text-white font-semibold text-lg rounded-lg hover:bg-[#00ACC1] transition-all duration-300 shadow-lg hover:shadow-xl"
+                        >
+                            Continue Your Moving Journey
+                            <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </a>
+                    </section>
+                </div>
             )}
 
             {/* Settings Tab */}
