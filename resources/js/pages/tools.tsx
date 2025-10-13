@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { useState, useEffect, Suspense, useCallback, useMemo, memo, ReactNode } from 'react';
 import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
@@ -108,6 +108,9 @@ const ToolButton = memo(({
 ToolButton.displayName = 'ToolButton';
 
 export default function Tools() {
+    // Get URL parameters from Inertia
+    const { url } = usePage();
+    
     // Performance monitoring
     const { measureToolSwitch } = usePerformanceMonitoring({
         enabled: import.meta.env.DEV
@@ -159,6 +162,20 @@ export default function Tools() {
             icon: 'declutter'
         }
     ], []);
+
+    // Listen for URL parameter changes and update active tool
+    useEffect(() => {
+        const urlParams = new URLSearchParams(url.split('?')[1] || '');
+        const toolParam = urlParams.get('tool');
+        if (toolParam) {
+            const index = parseInt(toolParam, 10);
+            if (!isNaN(index) && index >= 0 && index <= 4) {
+                setActiveToolIndex(index);
+            }
+        } else {
+            setActiveToolIndex(0); // Default to first tool if no parameter
+        }
+    }, [url]);
 
     // Update URL when active tool changes
     useEffect(() => {

@@ -75,7 +75,7 @@ export default function MarketplaceSidebar({
                         </button>
                         
                         <Link 
-                            href="/tools?tab=declutter"
+                            href="/tools?tool=4"
                             className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                         >
                             <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
