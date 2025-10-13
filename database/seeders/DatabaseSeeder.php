@@ -49,6 +49,9 @@ class DatabaseSeeder extends Seeder
         // Seed sample business profiles
         $this->call(BusinessProfileSeeder::class);
 
+        // Seed sample declutter items for marketplace
+        $this->call(DeclutterItemSeeder::class);
+
         // User::factory(10)->create();
     }
 }
