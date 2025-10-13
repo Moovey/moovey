@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
@@ -574,7 +574,8 @@ export default function Dashboard({
     };
 
     const handleStageClick = (stageId: number) => {
-        setActiveStage(stageId);
+        // Navigate to Move Details page with the section parameter using Inertia router
+        router.visit(`/housemover/move-details?section=${stageId}`);
     };
 
     const toggleSectionTask = (stageId: number, taskId: string) => {
