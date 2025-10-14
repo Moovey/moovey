@@ -237,6 +237,14 @@ class HousemoverController extends Controller
     }
 
     /**
+     * Display the chain checker page.
+     */
+    public function chainChecker(): Response
+    {
+        return Inertia::render('housemover/chain-checker');
+    }
+
+    /**
      * Display the profile settings page (accessible to all roles).
      */
     public function profileSettings(): Response

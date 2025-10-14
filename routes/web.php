@@ -13,6 +13,9 @@ use App\Http\Controllers\LessonController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\MoveDetailsController;
+use App\Http\Controllers\ChainCheckerController;
+use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\AgentFormController;
 
 // Test routes for debugging
 require_once __DIR__ . '/test.php';
@@ -61,6 +64,11 @@ Route::get('/api/marketplace/items', [\App\Http\Controllers\DeclutterItemControl
 
 // User Profile Routes (public access)
 Route::get('/user/{userId}', [\App\Http\Controllers\UserProfileController::class, 'show'])->name('user.profile.show');
+
+// Chain Checker Agent Form (public access)
+Route::get('/chain-checker/agent/{token}', [\App\Http\Controllers\AgentFormController::class, 'show'])->name('agent.chain-form.show');
+Route::post('/chain-checker/agent/{token}', [\App\Http\Controllers\AgentFormController::class, 'update'])->name('agent.chain-form.update');
+Route::get('/api/chain-checker/agent/{token}', [\App\Http\Controllers\AgentFormController::class, 'getChainData'])->name('api.agent.chain-data');
 
 Route::middleware('auth')->group(function () {
     // Notification API Routes
@@ -144,6 +152,23 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/move-details/custom-tasks', [MoveDetailsController::class, 'addCustomTask'])->name('api.move-details.custom.add');
     Route::patch('/api/move-details/custom-tasks/{taskId}/toggle', [MoveDetailsController::class, 'toggleCustomTask'])->name('api.move-details.custom.toggle');
     Route::delete('/api/move-details/custom-tasks/{taskId}', [MoveDetailsController::class, 'deleteCustomTask'])->name('api.move-details.custom.delete');
+    
+    // Chain Checker API Routes
+    Route::get('/api/chain-checker', [\App\Http\Controllers\ChainCheckerController::class, 'index'])->name('api.chain-checker.get');
+    Route::post('/api/chain-checker', [\App\Http\Controllers\ChainCheckerController::class, 'store'])->name('api.chain-checker.create');
+    Route::patch('/api/chain-checker/{chainChecker}', [\App\Http\Controllers\ChainCheckerController::class, 'update'])->name('api.chain-checker.update');
+    Route::patch('/api/chain-checker/{chainChecker}/status', [\App\Http\Controllers\ChainCheckerController::class, 'updateStatus'])->name('api.chain-checker.status');
+    Route::post('/api/chain-checker/{chainChecker}/request-update', [\App\Http\Controllers\ChainCheckerController::class, 'requestAgentUpdate'])->name('api.chain-checker.request-update');
+    Route::patch('/api/chain-checker/{chainChecker}/complete', [\App\Http\Controllers\ChainCheckerController::class, 'complete'])->name('api.chain-checker.complete');
+    Route::get('/api/chain-checker/{chainChecker}/updates', [\App\Http\Controllers\ChainCheckerController::class, 'getUpdates'])->name('api.chain-checker.updates');
+    
+    // Property Basket API Routes
+    Route::get('/api/properties/basket', [\App\Http\Controllers\PropertyController::class, 'getBasket'])->name('api.properties.basket');
+    Route::post('/api/properties/add-to-basket', [\App\Http\Controllers\PropertyController::class, 'addToBasket'])->name('api.properties.add-to-basket');
+    Route::delete('/api/properties/{property}/remove-from-basket', [\App\Http\Controllers\PropertyController::class, 'removeFromBasket'])->name('api.properties.remove-from-basket');
+    Route::patch('/api/properties/{property}/claim', [\App\Http\Controllers\PropertyController::class, 'claimProperty'])->name('api.properties.claim');
+    Route::get('/api/properties/{property}', [\App\Http\Controllers\PropertyController::class, 'show'])->name('api.properties.show');
+    Route::get('/api/properties/search', [\App\Http\Controllers\PropertyController::class, 'search'])->name('api.properties.search');
     
     // Saved Tool Results Routes
     Route::post('/saved-results', [\App\Http\Controllers\SavedToolResultController::class, 'store'])->name('saved-results.store');
@@ -270,6 +295,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Housemover Dashboard
         Route::get('dashboard', [HousemoverController::class, 'dashboard'])->name('dashboard');
         
+        // Chain Checker
+        Route::get('chain-checker', [HousemoverController::class, 'chainChecker'])->name('chain-checker');
+        
         // Tasks Management
         Route::get('tasks', [HousemoverController::class, 'tasks'])->name('tasks');
         
@@ -317,3 +345,4 @@ Route::get('/files/{folder}/{filename}', [FileController::class, 'serveFile'])->
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/test_avatar.php';
+require __DIR__.'/agent.php';

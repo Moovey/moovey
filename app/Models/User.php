@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -201,5 +202,37 @@ class User extends Authenticatable
             ->first();
 
         return $receivedRequest ? 'received_' . $receivedRequest->status : null;
+    }
+
+    /**
+     * Get the user's chain checker.
+     */
+    public function chainChecker(): HasOne
+    {
+        return $this->hasOne(ChainChecker::class);
+    }
+
+    /**
+     * Get the user's active chain checker.
+     */
+    public function activeChainChecker(): HasOne
+    {
+        return $this->hasOne(ChainChecker::class)->where('is_active', true);
+    }
+
+    /**
+     * Get properties in the user's basket.
+     */
+    public function basketProperties(): HasMany
+    {
+        return $this->hasMany(PropertyBasket::class);
+    }
+
+    /**
+     * Get properties claimed by the user.
+     */
+    public function claimedProperties(): HasMany
+    {
+        return $this->hasMany(Property::class, 'claimed_by_user_id');
     }
 }

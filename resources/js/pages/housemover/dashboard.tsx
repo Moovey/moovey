@@ -145,24 +145,18 @@ export default function Dashboard({
     }
 }: DashboardProps) {
     // Get initial tab from URL parameter or default to 'overview'
-    const getInitialTab = (): 'overview' | 'move-details' | 'achievements' | 'connections' => {
-        if (typeof window !== 'undefined') {
-            const urlParams = new URLSearchParams(window.location.search);
-            const tabParam = urlParams.get('tab');
-            const validTabs = ['overview', 'move-details', 'achievements', 'connections'];
-            if (tabParam && validTabs.includes(tabParam)) {
-                return tabParam as 'overview' | 'move-details' | 'achievements' | 'connections';
-            }
-        }
+    const getInitialTab = (): 'overview' => {
+        // Chain checker now has its own page, so dashboard only has overview
         return 'overview';
     };
 
-    const [activeTab, setActiveTab] = useState<'overview' | 'move-details' | 'achievements' | 'connections'>(getInitialTab());
+    const [activeTab, setActiveTab] = useState<'overview'>(getInitialTab());
     const [activeStage, setActiveStage] = useState<number>(2);
 
     // Navigation tabs configuration
     const navigationTabs = [
         { id: 'overview', icon: '🏠', label: 'OVERVIEW' },
+        { id: 'chain-checker', icon: '⛓️', label: 'CHAIN CHECKER', route: '/housemover/chain-checker' },
         { id: 'move-details', icon: '📋', label: 'MOVE DETAILS', route: '/housemover/move-details' },
         { id: 'achievements', icon: '🏆', label: 'ACHIEVEMENTS', route: '/housemover/achievements' },
         { id: 'connections', icon: '🔗', label: 'CONNECTIONS', route: '/housemover/connections' },
@@ -171,16 +165,15 @@ export default function Dashboard({
 
     // Function to handle tab change with URL update
     const handleTabChange = (tabId: string) => {
-        setActiveTab(tabId as 'overview' | 'move-details' | 'achievements' | 'connections');
-        
-        // Update URL without page refresh
-        const url = new URL(window.location.href);
+        // Only handle overview locally, other tabs have dedicated pages
         if (tabId === 'overview') {
-            url.searchParams.delete('tab'); // Remove tab param for default overview
-        } else {
-            url.searchParams.set('tab', tabId);
+            setActiveTab('overview');
+            // Remove tab param for default overview
+            const url = new URL(window.location.href);
+            url.searchParams.delete('tab');
+            window.history.pushState({}, '', url.toString());
         }
-        window.history.pushState({}, '', url.toString());
+        // Other tabs are handled by SubNavigationTabs component routing
     };
 
     // Load priority tasks on component mount
@@ -864,8 +857,8 @@ export default function Dashboard({
                 </div>
             )}
 
-            {/* Settings Tab */}
-            {/* Settings tab now routes to Profile Settings page; no internal rendering here */}
+            {/* Chain Checker Tab now routes to dedicated page */}
+            {/* Settings Tab now routes to Profile Settings page; no internal rendering here */}
 
 
 
