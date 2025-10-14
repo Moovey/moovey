@@ -36,6 +36,7 @@ class AgentChainNotification extends Mailable
         return new Envelope(
             subject: 'New Chain Checker Activated - ' . $this->user->name,
             to: [$this->chainChecker->agent_email],
+            from: config('mail.from.address', 'noreply@moovey.app'),
         );
     }
 
