@@ -106,22 +106,12 @@ class ChainCheckerController extends Controller
             try {
                 Log::info('Attempting to send email to agent', [
                     'agent_email' => $request->agent_email,
-                    'agent_name' => $request->agent_name,
-                    'mail_mailer' => config('mail.default'),
-                    'queue_connection' => config('queue.default'),
-                    'app_env' => config('app.env')
+                    'agent_name' => $request->agent_name
                 ]);
                 
-                $mailable = new AgentChainNotification($chainChecker);
+                Mail::send(new AgentChainNotification($chainChecker));
                 
-                // For production/Laravel Cloud, queue the email for better reliability
-                if (config('app.env') === 'production') {
-                    Mail::queue($mailable);
-                    Log::info('Email queued for agent', ['agent_email' => $request->agent_email]);
-                } else {
-                    Mail::send($mailable);
-                    Log::info('Email sent immediately to agent', ['agent_email' => $request->agent_email]);
-                }
+                Log::info('Email sent successfully to agent');
                 
                 // Log successful email
                 ChainUpdate::createUpdate(
@@ -137,12 +127,7 @@ class ChainCheckerController extends Controller
                     'chain_checker_id' => $chainChecker->id,
                     'agent_email' => $request->agent_email,
                     'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                    'mail_config' => [
-                        'mailer' => config('mail.default'),
-                        'host' => config('mail.mailers.smtp.host'),
-                        'port' => config('mail.mailers.smtp.port'),
-                    ]
+                    'trace' => $e->getTraceAsString()
                 ]);
                 
                 ChainUpdate::createUpdate(

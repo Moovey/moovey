@@ -10,6 +10,7 @@ import SimplePriorityTasksWidget from '@/components/housemover/overview/SimplePr
 import SimpleMoveCountdown from '@/components/housemover/overview/SimpleMoveCountdown';
 import SimpleVouchersRewards from '@/components/housemover/overview/SimpleVouchersRewards';
 import SimpleStatisticsDashboard from '@/components/housemover/overview/SimpleStatisticsDashboard';
+import PropertyBasket from '@/components/housemover/chain-checker/PropertyBasket';
 
 interface Task {
     id: string;
@@ -261,6 +262,7 @@ export default function Dashboard({
     const [personalDetails, setPersonalDetails] = useState<PersonalDetails>(personalDetailsFromProps);
     const [selectedCtaTasks, setSelectedCtaTasks] = useState<Set<string>>(new Set());
     const [userPriorityTasks, setUserPriorityTasks] = useState<Task[]>([]);
+    const [showPropertyBasket, setShowPropertyBasket] = useState(false);
 
     const moveStages: MoveStage[] = [
         {
@@ -807,6 +809,59 @@ export default function Dashboard({
 
                     {/* Learning Journey Section */}
                     <LearningJourney academyProgress={academyProgress} />
+
+                    {/* Property Basket Section */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-gradient-to-r from-[#00BCD4] to-[#00ACC1] rounded-lg flex items-center justify-center">
+                                    <span className="text-white text-xl">🏠</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold text-gray-900">Property Basket</h3>
+                                    <p className="text-sm text-gray-600">Track properties and claim your listings</p>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center space-x-3">
+                                <button
+                                    onClick={() => setShowPropertyBasket(!showPropertyBasket)}
+                                    className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
+                                >
+                                    {showPropertyBasket ? 'Hide' : 'Show'} Properties
+                                </button>
+                                <a
+                                    href="/housemover/chain-checker"
+                                    className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
+                                >
+                                    View in Chain Checker →
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <p className="text-gray-600 mb-4">
+                            Add properties from Rightmove to track interest and claim your listings.
+                        </p>
+                        
+                        {showPropertyBasket && (
+                            <PropertyBasket />
+                        )}
+                        
+                        <div className="mt-6 p-4 bg-gradient-to-r from-[#00BCD4] to-[#00ACC1] rounded-lg text-white">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h4 className="font-semibold">Ready to track your moving chain?</h4>
+                                    <p className="text-sm opacity-90">Activate Chain Checker to sync your properties and monitor progress</p>
+                                </div>
+                                <a
+                                    href="/housemover/chain-checker"
+                                    className="px-4 py-2 bg-white text-[#00BCD4] rounded-lg hover:bg-gray-100 transition-colors font-medium"
+                                >
+                                    Activate Chain Checker
+                                </a>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Moving Tasks Management Section (CTA Tasks) */}
                     <CTATasksManager 
