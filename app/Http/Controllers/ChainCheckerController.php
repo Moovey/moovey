@@ -54,12 +54,38 @@ class ChainCheckerController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'move_type' => 'required|in:buying,selling,both',
+            'chain_role' => 'required|in:first_time_buyer,seller_only,buyer_seller',
+            'buying_properties' => 'nullable|array',
+            'buying_properties.*' => 'integer|exists:properties,id',
+            'selling_properties' => 'nullable|array',
+            'selling_properties.*' => 'integer|exists:properties,id',
             'chain_length' => 'required|integer|min:1|max:20',
-            'agent_name' => 'nullable|string|max:255',
-            'agent_email' => 'nullable|email|max:255',
+            'buying_agent_details' => 'nullable|array',
+            'buying_agent_details.name' => 'nullable|string|max:255',
+            'buying_agent_details.email' => 'nullable|email|max:255',
+            'buying_agent_details.phone' => 'nullable|string|max:20',
+            'buying_agent_details.firm' => 'nullable|string|max:255',
+            'selling_agent_details' => 'nullable|array',
+            'selling_agent_details.name' => 'nullable|string|max:255',
+            'selling_agent_details.email' => 'nullable|email|max:255',
+            'selling_agent_details.phone' => 'nullable|string|max:20',
+            'selling_agent_details.firm' => 'nullable|string|max:255',
+            'buying_solicitor_details' => 'nullable|array',
+            'buying_solicitor_details.name' => 'nullable|string|max:255',
+            'buying_solicitor_details.email' => 'nullable|email|max:255',
+            'buying_solicitor_details.phone' => 'nullable|string|max:20',
+            'buying_solicitor_details.firm' => 'nullable|string|max:255',
+            'selling_solicitor_details' => 'nullable|array',
+            'selling_solicitor_details.name' => 'nullable|string|max:255',
+            'selling_solicitor_details.email' => 'nullable|email|max:255',
+            'selling_solicitor_details.phone' => 'nullable|string|max:20',
+            'selling_solicitor_details.firm' => 'nullable|string|max:255',
             'estimated_completion' => 'nullable|date|after:today',
             'consent_agent_contact' => 'nullable|boolean',
+            // Backward compatibility
+            'move_type' => 'nullable|in:buying,selling,both',
+            'agent_name' => 'nullable|string|max:255',
+            'agent_email' => 'nullable|email|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -80,14 +106,23 @@ class ChainCheckerController extends Controller
         // Create new chain checker
         $chainChecker = ChainChecker::create([
             'user_id' => $user->id,
-            'move_type' => $request->move_type,
+            'chain_role' => $request->chain_role,
+            'buying_properties' => $request->buying_properties ?? [],
+            'selling_properties' => $request->selling_properties ?? [],
+            'move_type' => $request->move_type ?? $this->determineMoveType($request->chain_role),
             'chain_length' => $request->chain_length,
-            'agent_name' => $request->agent_name,
-            'agent_email' => $request->agent_email,
+            'buying_agent_details' => $request->buying_agent_details ?? [],
+            'selling_agent_details' => $request->selling_agent_details ?? [],
+            'buying_solicitor_details' => $request->buying_solicitor_details ?? [],
+            'selling_solicitor_details' => $request->selling_solicitor_details ?? [],
+            // Backward compatibility
+            'agent_name' => $request->agent_name ?? $this->getPrimaryAgentName($request),
+            'agent_email' => $request->agent_email ?? $this->getPrimaryAgentEmail($request),
             'estimated_completion' => $request->estimated_completion ? 
                 \Carbon\Carbon::parse($request->estimated_completion) : null,
             'chain_status' => $this->getDefaultChainStatus(),
             'is_active' => true,
+            'last_activity_at' => now(),
         ]);
 
         // Generate agent token and send notification if agent email provided
@@ -389,5 +424,40 @@ class ChainCheckerController extends Controller
                 'updated_at' => null,
             ],
         ];
+    }
+
+    /**
+     * Determine move type from chain role for backward compatibility
+     */
+    private function determineMoveType(string $chainRole): string
+    {
+        return match($chainRole) {
+            'first_time_buyer' => 'buying',
+            'seller_only' => 'selling',
+            'buyer_seller' => 'both',
+            default => 'buying'
+        };
+    }
+
+    /**
+     * Get primary agent name from the new structured data
+     */
+    private function getPrimaryAgentName(Request $request): ?string
+    {
+        $buyingAgent = $request->buying_agent_details['name'] ?? null;
+        $sellingAgent = $request->selling_agent_details['name'] ?? null;
+        
+        return $buyingAgent ?: $sellingAgent;
+    }
+
+    /**
+     * Get primary agent email from the new structured data
+     */
+    private function getPrimaryAgentEmail(Request $request): ?string
+    {
+        $buyingAgent = $request->buying_agent_details['email'] ?? null;
+        $sellingAgent = $request->selling_agent_details['email'] ?? null;
+        
+        return $buyingAgent ?: $sellingAgent;
     }
 }

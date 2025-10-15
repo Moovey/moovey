@@ -15,9 +15,16 @@ class ChainChecker extends Model
     protected $fillable = [
         'user_id',
         'move_type',
+        'chain_role',
+        'buying_properties',
+        'selling_properties',
         'chain_length',
         'agent_name',
         'agent_email',
+        'buying_agent_details',
+        'selling_agent_details',
+        'buying_solicitor_details',
+        'selling_solicitor_details',
         'agent_token',
         'chain_status',
         'progress_score',
@@ -25,13 +32,25 @@ class ChainChecker extends Model
         'notes',
         'estimated_completion',
         'completed_at',
+        'chain_participants',
+        'analytics_data',
+        'last_activity_at',
     ];
 
     protected $casts = [
         'chain_status' => 'array',
+        'buying_properties' => 'array',
+        'selling_properties' => 'array',
+        'buying_agent_details' => 'array',
+        'selling_agent_details' => 'array',
+        'buying_solicitor_details' => 'array',
+        'selling_solicitor_details' => 'array',
+        'chain_participants' => 'array',
+        'analytics_data' => 'array',
         'is_active' => 'boolean',
         'estimated_completion' => 'datetime',
         'completed_at' => 'datetime',
+        'last_activity_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -105,5 +124,37 @@ class ChainChecker extends Model
             'is_active' => false,
             'progress_score' => 100,
         ]);
+    }
+
+    /**
+     * Get linked buying properties
+     */
+    public function buyingProperties()
+    {
+        if (empty($this->buying_properties)) {
+            return collect([]);
+        }
+        
+        return Property::whereIn('id', $this->buying_properties)->get();
+    }
+
+    /**
+     * Get linked selling properties
+     */
+    public function sellingProperties()
+    {
+        if (empty($this->selling_properties)) {
+            return collect([]);
+        }
+        
+        return Property::whereIn('id', $this->selling_properties)->get();
+    }
+
+    /**
+     * Update last activity timestamp
+     */
+    public function updateActivity(): void
+    {
+        $this->update(['last_activity_at' => now()]);
     }
 }

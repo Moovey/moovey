@@ -11,9 +11,39 @@ import ChainUpdates from './ChainUpdates';
 interface ChainCheckerData {
     id: number;
     move_type: 'buying' | 'selling' | 'both';
+    chain_role?: 'first_time_buyer' | 'seller_only' | 'buyer_seller';
+    buying_properties?: number[];
+    selling_properties?: number[];
     chain_length: number;
     agent_name?: string;
     agent_email?: string;
+    buying_agent_details?: {
+        name: string;
+        email: string;
+        phone: string;
+        firm: string;
+    };
+    selling_agent_details?: {
+        name: string;
+        email: string;
+        phone: string;
+        firm: string;
+    };
+    buying_solicitor_details?: {
+        name: string;
+        email: string;
+        phone: string;
+        firm: string;
+    };
+    selling_solicitor_details?: {
+        name: string;
+        email: string;
+        phone: string;
+        firm: string;
+    };
+    chain_participants?: any[];
+    analytics_data?: any;
+    last_activity_at?: string;
     chain_status: Record<string, any>;
     progress_score: number;
     is_active: boolean;

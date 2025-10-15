@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import PropertyBasket from './PropertyBasket';
 
@@ -9,6 +9,45 @@ interface ChainOverviewProps {
 
 const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) => {
     const [showPropertyBasket, setShowPropertyBasket] = useState(false);
+    const [linkedProperties, setLinkedProperties] = useState<any>({
+        buying: [],
+        selling: []
+    });
+    const [loadingProperties, setLoadingProperties] = useState(false);
+
+    useEffect(() => {
+        if (chainData.buying_properties?.length > 0 || chainData.selling_properties?.length > 0) {
+            loadLinkedProperties();
+        }
+    }, [chainData]);
+
+    const loadLinkedProperties = async () => {
+        setLoadingProperties(true);
+        try {
+            const response = await fetch('/api/properties/basket', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.data) {
+                    const allProperties = data.data;
+                    setLinkedProperties({
+                        buying: allProperties.filter((p: any) => chainData.buying_properties?.includes(p.id)),
+                        selling: allProperties.filter((p: any) => chainData.selling_properties?.includes(p.id))
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load linked properties:', error);
+        } finally {
+            setLoadingProperties(false);
+        }
+    };
 
     const getHealthColor = (score: number) => {
         if (score >= 80) return 'text-green-500';
@@ -22,6 +61,15 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
         if (score >= 60) return 'Good';
         if (score >= 40) return 'Fair';
         return 'Needs Attention';
+    };
+
+    const getRoleDisplay = (role: string) => {
+        switch (role) {
+            case 'first_time_buyer': return { label: 'First-Time Buyer', icon: '🏠', color: 'blue' };
+            case 'seller_only': return { label: 'Selling Only', icon: '💰', color: 'green' };
+            case 'buyer_seller': return { label: 'Buying & Selling', icon: '🔄', color: 'purple' };
+            default: return { label: 'Unknown', icon: '❓', color: 'gray' };
+        }
     };
 
     const chainLinks = Array.from({ length: chainData.chain_length }, (_, index) => ({
@@ -67,16 +115,23 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-600">Move Type</p>
-                            <p className="text-lg font-bold text-gray-900 capitalize">{chainData.move_type}</p>
+                            <p className="text-sm font-medium text-gray-600">Your Role</p>
+                            <p className="text-lg font-bold text-gray-900">
+                                {chainData.chain_role ? getRoleDisplay(chainData.chain_role).label : 
+                                 (chainData.move_type === 'both' ? 'Buying & Selling' : 
+                                  chainData.move_type === 'buying' ? 'Buying Only' : 'Selling Only')}
+                            </p>
                             <p className="text-sm text-gray-500">
-                                {chainData.move_type === 'both' ? 'Buying & Selling' : 
-                                 chainData.move_type === 'buying' ? 'Buying Only' : 'Selling Only'}
+                                {chainData.buying_properties?.length > 0 && `${chainData.buying_properties.length} buying`}
+                                {chainData.buying_properties?.length > 0 && chainData.selling_properties?.length > 0 && ', '}
+                                {chainData.selling_properties?.length > 0 && `${chainData.selling_properties.length} selling`}
+                                {(!chainData.buying_properties?.length && !chainData.selling_properties?.length) && 'No linked properties'}
                             </p>
                         </div>
                         <div className="text-4xl">
-                            {chainData.move_type === 'both' ? '🔄' : 
-                             chainData.move_type === 'buying' ? '🏠' : '💰'}
+                            {chainData.chain_role ? getRoleDisplay(chainData.chain_role).icon :
+                             (chainData.move_type === 'both' ? '🔄' : 
+                              chainData.move_type === 'buying' ? '🏠' : '💰')}
                         </div>
                     </div>
                 </div>
@@ -165,6 +220,74 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                 </div>
             </div>
 
+            {/* Linked Properties Section */}
+            {(chainData.buying_properties?.length > 0 || chainData.selling_properties?.length > 0) && (
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Your Chain Properties</h3>
+                    
+                    {loadingProperties ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00BCD4]"></div>
+                            <span className="ml-2 text-gray-600">Loading properties...</span>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {/* Buying Properties */}
+                            {linkedProperties.buying.length > 0 && (
+                                <div>
+                                    <h4 className="font-medium text-gray-900 mb-4 flex items-center">
+                                        <span className="text-blue-500 mr-2">🏠</span>
+                                        Properties You're Buying
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {linkedProperties.buying.map((property: any) => (
+                                            <div key={property.id} className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                                                <div className="font-medium text-gray-900 mb-1">
+                                                    {property.address || 'Property Address'}
+                                                </div>
+                                                <div className="text-sm text-gray-600 mb-2">
+                                                    £{property.price?.toLocaleString() || 'Price on request'}
+                                                </div>
+                                                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                                    <span className="bg-blue-100 px-2 py-1 rounded">Buying</span>
+                                                    <span>Added to chain</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Selling Properties */}
+                            {linkedProperties.selling.length > 0 && (
+                                <div>
+                                    <h4 className="font-medium text-gray-900 mb-4 flex items-center">
+                                        <span className="text-green-500 mr-2">💰</span>
+                                        Properties You're Selling
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {linkedProperties.selling.map((property: any) => (
+                                            <div key={property.id} className="border border-green-200 rounded-lg p-4 bg-green-50">
+                                                <div className="font-medium text-gray-900 mb-1">
+                                                    {property.address || 'Property Address'}
+                                                </div>
+                                                <div className="text-sm text-gray-600 mb-2">
+                                                    £{property.price?.toLocaleString() || 'Price on request'}
+                                                </div>
+                                                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                                    <span className="bg-green-100 px-2 py-1 rounded">Selling</span>
+                                                    <span>Added to chain</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Property Basket Section */}
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-4">
@@ -186,29 +309,154 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                 )}
             </div>
 
-            {/* Agent Information */}
-            {chainData.agent_name && (
+            {/* Professional Details */}
+            {(chainData.buying_agent_details?.name || chainData.selling_agent_details?.name || 
+              chainData.buying_solicitor_details?.name || chainData.selling_solicitor_details?.name || 
+              chainData.agent_name) && (
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Agent Information</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Professional Team</h3>
                     
-                    <div className="flex items-start space-x-4">
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                            <span className="text-xl">🏘️</span>
-                        </div>
-                        <div className="flex-1">
-                            <div className="font-medium text-gray-900">{chainData.agent_name}</div>
-                            {chainData.agent_email && (
-                                <div className="text-sm text-gray-600">{chainData.agent_email}</div>
-                            )}
-                            <div className="flex items-center space-x-4 mt-3">
-                                <button className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors">
-                                    Request Update
-                                </button>
-                                <button className="text-sm text-gray-600 hover:text-gray-800 transition-colors">
-                                    Edit Details
-                                </button>
+                    <div className="space-y-6">
+                        {/* Buying Side Professionals */}
+                        {(chainData.buying_agent_details?.name || chainData.buying_solicitor_details?.name) && (
+                            <div className="bg-blue-50 rounded-lg p-4">
+                                <h4 className="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span className="text-blue-500 mr-2">🏠</span>
+                                    Buying Side Team
+                                </h4>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {chainData.buying_agent_details?.name && (
+                                        <div className="bg-white rounded-lg p-4">
+                                            <div className="flex items-start space-x-3">
+                                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                                    <span className="text-lg">🏘️</span>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-gray-900">Estate Agent</div>
+                                                    <div className="text-sm text-gray-900">{chainData.buying_agent_details.name}</div>
+                                                    {chainData.buying_agent_details.firm && (
+                                                        <div className="text-xs text-gray-600">{chainData.buying_agent_details.firm}</div>
+                                                    )}
+                                                    {chainData.buying_agent_details.email && (
+                                                        <div className="text-xs text-gray-600">{chainData.buying_agent_details.email}</div>
+                                                    )}
+                                                    {chainData.buying_agent_details.phone && (
+                                                        <div className="text-xs text-gray-600">{chainData.buying_agent_details.phone}</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {chainData.buying_solicitor_details?.name && (
+                                        <div className="bg-white rounded-lg p-4">
+                                            <div className="flex items-start space-x-3">
+                                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                                    <span className="text-lg">⚖️</span>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-gray-900">Solicitor</div>
+                                                    <div className="text-sm text-gray-900">{chainData.buying_solicitor_details.name}</div>
+                                                    {chainData.buying_solicitor_details.firm && (
+                                                        <div className="text-xs text-gray-600">{chainData.buying_solicitor_details.firm}</div>
+                                                    )}
+                                                    {chainData.buying_solicitor_details.email && (
+                                                        <div className="text-xs text-gray-600">{chainData.buying_solicitor_details.email}</div>
+                                                    )}
+                                                    {chainData.buying_solicitor_details.phone && (
+                                                        <div className="text-xs text-gray-600">{chainData.buying_solicitor_details.phone}</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
+                        
+                        {/* Selling Side Professionals */}
+                        {(chainData.selling_agent_details?.name || chainData.selling_solicitor_details?.name) && (
+                            <div className="bg-green-50 rounded-lg p-4">
+                                <h4 className="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span className="text-green-500 mr-2">💰</span>
+                                    Selling Side Team
+                                </h4>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {chainData.selling_agent_details?.name && (
+                                        <div className="bg-white rounded-lg p-4">
+                                            <div className="flex items-start space-x-3">
+                                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                                    <span className="text-lg">🏘️</span>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-gray-900">Estate Agent</div>
+                                                    <div className="text-sm text-gray-900">{chainData.selling_agent_details.name}</div>
+                                                    {chainData.selling_agent_details.firm && (
+                                                        <div className="text-xs text-gray-600">{chainData.selling_agent_details.firm}</div>
+                                                    )}
+                                                    {chainData.selling_agent_details.email && (
+                                                        <div className="text-xs text-gray-600">{chainData.selling_agent_details.email}</div>
+                                                    )}
+                                                    {chainData.selling_agent_details.phone && (
+                                                        <div className="text-xs text-gray-600">{chainData.selling_agent_details.phone}</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {chainData.selling_solicitor_details?.name && (
+                                        <div className="bg-white rounded-lg p-4">
+                                            <div className="flex items-start space-x-3">
+                                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                                    <span className="text-lg">⚖️</span>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-gray-900">Solicitor</div>
+                                                    <div className="text-sm text-gray-900">{chainData.selling_solicitor_details.name}</div>
+                                                    {chainData.selling_solicitor_details.firm && (
+                                                        <div className="text-xs text-gray-600">{chainData.selling_solicitor_details.firm}</div>
+                                                    )}
+                                                    {chainData.selling_solicitor_details.email && (
+                                                        <div className="text-xs text-gray-600">{chainData.selling_solicitor_details.email}</div>
+                                                    )}
+                                                    {chainData.selling_solicitor_details.phone && (
+                                                        <div className="text-xs text-gray-600">{chainData.selling_solicitor_details.phone}</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Legacy Agent Information */}
+                        {chainData.agent_name && !chainData.buying_agent_details?.name && !chainData.selling_agent_details?.name && (
+                            <div className="bg-gray-50 rounded-lg p-4">
+                                <div className="flex items-start space-x-4">
+                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                                        <span className="text-xl">🏘️</span>
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="font-medium text-gray-900">{chainData.agent_name}</div>
+                                        {chainData.agent_email && (
+                                            <div className="text-sm text-gray-600">{chainData.agent_email}</div>
+                                        )}
+                                        <div className="flex items-center space-x-4 mt-3">
+                                            <button className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors">
+                                                Request Update
+                                            </button>
+                                            <button className="text-sm text-gray-600 hover:text-gray-800 transition-colors">
+                                                Edit Details
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
