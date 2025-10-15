@@ -85,16 +85,12 @@ const PropertyBasket: React.FC = () => {
                 credentials: 'same-origin',
             });
 
-            console.log('API Response status:', response.status);
-            
             if (response.ok) {
                 const data = await response.json();
-                console.log('API Response data:', data);
                 
                 if (data.success) {
                     // Ensure data.data is always an array
                     const properties = Array.isArray(data.data) ? data.data : [];
-                    console.log('Setting basket properties:', properties);
                     setBasketProperties(properties);
                 } else {
                     console.error('API returned error:', data.message);
@@ -173,13 +169,10 @@ const PropertyBasket: React.FC = () => {
                     if (claimAfterAdd && autoClaimType) {
                         if (basket.is_claimed) {
                             message = `Property added to your basket! (Already claimed as ${basket.claim_type} by you)`;
-                            console.log('Property was already claimed by user:', { propertyId, claimType: basket.claim_type });
                         } else if (claimSuccessful) {
                             message = `Property added to your basket and claimed as ${autoClaimType}!`;
-                            console.log('Property successfully auto-claimed:', { propertyId, claimType: autoClaimType });
                         } else {
                             message = `Property added to your basket! (Could not claim as ${autoClaimType})`;
-                            console.log('Auto-claim failed:', { propertyId, attemptedClaimType: autoClaimType });
                         }
                     }
                     alert(message);

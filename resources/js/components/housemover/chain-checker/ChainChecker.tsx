@@ -74,19 +74,10 @@ interface ChainCheckerProps {
     const [showSetupWizard, setShowSetupWizard] = useState(false);
 
     useEffect(() => {
-        console.log('ChainChecker component mounted, loading data...');
         loadChainData();
     }, []);
 
-    // Debug logging
-    console.log('ChainChecker render state:', { 
-        loading, 
-        chainData: !!chainData, 
-        showSetupWizard,
-        willShowSetupWizard: showSetupWizard,
-        willShowTeaser: !loading && !chainData && !showSetupWizard,
-        willShowMain: !loading && chainData && !showSetupWizard
-    });    const loadChainData = async () => {
+    const loadChainData = async () => {
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             const response = await fetch('/api/chain-checker', {
@@ -99,18 +90,13 @@ interface ChainCheckerProps {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('Chain checker API response:', data); // Debug log
                 if (data.success) {
                     setChainData(data.data?.chain_checker || null);
                     // Don't auto-show setup wizard - let user click activate button
-                } else {
-                    console.log('Chain checker API returned success: false');
                 }
-            } else {
-                console.error('Chain checker API response not ok:', response.status, response.statusText);
             }
         } catch (error) {
-            console.error('Failed to load chain data:', error);
+            // Error loading chain data
         } finally {
             setLoading(false);
         }
@@ -134,7 +120,6 @@ interface ChainCheckerProps {
 
     // Check for setup wizard first, before checking chainData
     if (showSetupWizard) {
-        console.log('ChainChecker: Showing setup wizard');
         return (
             <ChainSetupWizard 
                 onComplete={handleSetupComplete}
@@ -147,7 +132,6 @@ interface ChainCheckerProps {
         return (
             <ChainCheckerTeaser 
                 onActivate={() => {
-                    console.log('ChainChecker: Activate button clicked, setting showSetupWizard to true');
                     setShowSetupWizard(true);
                 }}
             />

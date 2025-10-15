@@ -62,7 +62,6 @@ const ChainCheckerTeaser: React.FC<ChainCheckerTeaserProps> = ({ onActivate }) =
                 {/* CTA Button */}
                 <button
                     onClick={() => {
-                        console.log('ChainCheckerTeaser: Button clicked!');
                         onActivate();
                     }}
                     className="px-8 py-4 bg-[#00BCD4] text-white rounded-lg hover:bg-[#00ACC1] transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-lg"
