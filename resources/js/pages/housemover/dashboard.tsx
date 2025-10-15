@@ -1,16 +1,18 @@
 import { Head, router } from '@inertiajs/react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
 import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
-import CompleteMovingJourney from '@/components/housemover/CompleteMovingJourney';
-import LearningJourney from '@/components/housemover/overview/LearningJourney';
-import CTATasksManager from '@/components/housemover/overview/CTATasksManager';
-import SimplePriorityTasksWidget from '@/components/housemover/overview/SimplePriorityTasksWidget';
-import SimpleMoveCountdown from '@/components/housemover/overview/SimpleMoveCountdown';
-import SimpleVouchersRewards from '@/components/housemover/overview/SimpleVouchersRewards';
-import SimpleStatisticsDashboard from '@/components/housemover/overview/SimpleStatisticsDashboard';
-import PropertyBasket from '@/components/housemover/chain-checker/PropertyBasket';
+
+// Lazy load heavy components for better initial page load
+const CompleteMovingJourney = lazy(() => import('@/components/housemover/CompleteMovingJourney'));
+const LearningJourney = lazy(() => import('@/components/housemover/overview/LearningJourney'));
+const CTATasksManager = lazy(() => import('@/components/housemover/overview/CTATasksManager'));
+const SimplePriorityTasksWidget = lazy(() => import('@/components/housemover/overview/SimplePriorityTasksWidget'));
+const SimpleMoveCountdown = lazy(() => import('@/components/housemover/overview/SimpleMoveCountdown'));
+const SimpleVouchersRewards = lazy(() => import('@/components/housemover/overview/SimpleVouchersRewards'));
+const SimpleStatisticsDashboard = lazy(() => import('@/components/housemover/overview/SimpleStatisticsDashboard'));
+const PropertyBasket = lazy(() => import('@/components/housemover/chain-checker/PropertyBasket'));
 
 interface Task {
     id: string;
@@ -123,6 +125,28 @@ interface DashboardProps {
   personalDetails?: PersonalDetails;
 }
 
+// Cache for API responses
+const API_CACHE = new Map<string, { data: any; timestamp: number; ttl: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Cache utility functions
+const getCachedData = (key: string) => {
+    const cached = API_CACHE.get(key);
+    if (cached && Date.now() - cached.timestamp < cached.ttl) {
+        return cached.data;
+    }
+    return null;
+};
+
+const setCachedData = (key: string, data: any, ttl: number = CACHE_TTL) => {
+    API_CACHE.set(key, { data, timestamp: Date.now(), ttl });
+};
+
+// Loading skeleton component
+const LoadingSkeleton: React.FC<{ className?: string }> = ({ className = '' }) => (
+    <div className={`animate-pulse bg-gray-200 rounded ${className}`}></div>
+);
+
 export default function Dashboard({ 
     auth, 
     upcomingTasks = [], 
@@ -153,6 +177,21 @@ export default function Dashboard({
 
     const [activeTab, setActiveTab] = useState<'overview'>(getInitialTab());
     const [activeStage, setActiveStage] = useState<number>(2);
+    
+    // Performance optimization states
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [componentLoadStates, setComponentLoadStates] = useState({
+        journey: false,
+        learning: false,
+        tasks: false,
+        priority: false,
+        countdown: false,
+        vouchers: false,
+        statistics: false,
+        propertyBasket: false
+    });
+    const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set(['banner', 'tabs']));
+    const [dataVersion, setDataVersion] = useState(0); // For tracking data freshness
 
     // Navigation tabs configuration
     const navigationTabs = [
@@ -177,13 +216,37 @@ export default function Dashboard({
         // Other tabs are handled by SubNavigationTabs component routing
     };
 
-    // Load priority tasks on component mount
+    // Optimized data loading with progressive enhancement
     useEffect(() => {
-        loadPriorityTasks();
+        const initializeDashboard = async () => {
+            // Start with critical data first
+            setVisibleSections(prev => new Set([...prev, 'journey']));
+            
+            // Load priority tasks (critical)
+            await loadPriorityTasks();
+            
+            // Progressive loading of other sections
+            setTimeout(() => setVisibleSections(prev => new Set([...prev, 'learning'])), 100);
+            setTimeout(() => setVisibleSections(prev => new Set([...prev, 'tasks'])), 200);
+            setTimeout(() => setVisibleSections(prev => new Set([...prev, 'priority', 'countdown'])), 300);
+            setTimeout(() => setVisibleSections(prev => new Set([...prev, 'vouchers', 'statistics'])), 400);
+            
+            setIsInitialLoading(false);
+        };
+
+        initializeDashboard();
     }, []);
 
-    // Load priority tasks from backend
-    const loadPriorityTasks = async () => {
+    // Optimized priority tasks loading with caching
+    const loadPriorityTasks = useCallback(async () => {
+        const cacheKey = 'priority-tasks';
+        const cached = getCachedData(cacheKey);
+        
+        if (cached) {
+            setUserPriorityTasks(cached);
+            return;
+        }
+
         try {
             const response = await fetch('/api/priority-tasks', {
                 method: 'GET',
@@ -208,15 +271,33 @@ export default function Dashboard({
                         description: task.description,
                     }));
                     setUserPriorityTasks(priorityTasks);
+                    setCachedData(cacheKey, priorityTasks);
                 }
             }
         } catch (error) {
-            console.error('Failed to load priority tasks:', error);
+            // Silently fail for better UX
         }
-    };
+    }, []);
 
-    // Save task to priority list
-    const saveToPriorityList = async (taskId: string) => {
+    // Optimized save task to priority list with optimistic updates
+    const saveToPriorityList = useCallback(async (taskId: string) => {
+        // Optimistic update - add immediately to UI
+        const task = allUserTasks.find(t => t.id.toString() === taskId);
+        if (task) {
+            const optimisticTask = {
+                id: task.id.toString(),
+                title: task.title,
+                icon: '🎓',
+                dueDate: 'From Academy',
+                urgency: 'moderate' as const,
+                category: task.category,
+                completed: false,
+                estimatedTime: '15 mins',
+                description: task.description,
+            };
+            setUserPriorityTasks(prev => [...prev, optimisticTask]);
+        }
+
         try {
             const response = await fetch('/api/priority-tasks', {
                 method: 'POST',
@@ -229,16 +310,32 @@ export default function Dashboard({
 
             if (response.ok) {
                 const data = await response.json();
-                return data.success;
+                if (data.success) {
+                    // Invalidate cache
+                    API_CACHE.delete('priority-tasks');
+                    setDataVersion(prev => prev + 1);
+                    return true;
+                }
             }
+            
+            // Rollback optimistic update on failure
+            setUserPriorityTasks(prev => prev.filter(t => t.id !== taskId));
         } catch (error) {
-            console.error('Failed to save task to priority list:', error);
+            // Rollback optimistic update on error
+            setUserPriorityTasks(prev => prev.filter(t => t.id !== taskId));
         }
         return false;
-    };
+    }, [allUserTasks]);
 
-    // Remove task from priority list
-    const removeFromPriorityList = async (taskId: string) => {
+    // Optimized remove task from priority list with optimistic updates
+    const removeFromPriorityList = useCallback(async (taskId: string) => {
+        // Store the task for potential rollback using functional state update
+        let taskToRemove: Task | undefined;
+        setUserPriorityTasks(prev => {
+            taskToRemove = prev.find(t => t.id === taskId);
+            return prev.filter(t => t.id !== taskId);
+        });
+
         try {
             const response = await fetch(`/api/priority-tasks/${taskId}`, {
                 method: 'DELETE',
@@ -250,13 +347,26 @@ export default function Dashboard({
 
             if (response.ok) {
                 const data = await response.json();
-                return data.success;
+                if (data.success) {
+                    // Invalidate cache
+                    API_CACHE.delete('priority-tasks');
+                    setDataVersion(prev => prev + 1);
+                    return true;
+                }
+            }
+            
+            // Rollback optimistic update on failure
+            if (taskToRemove) {
+                setUserPriorityTasks(prev => [...prev, taskToRemove!]);
             }
         } catch (error) {
-            console.error('Failed to remove task from priority list:', error);
+            // Rollback optimistic update on error
+            if (taskToRemove) {
+                setUserPriorityTasks(prev => [...prev, taskToRemove!]);
+            }
         }
         return false;
-    };
+    }, []);
     const [showTaskCreator, setShowTaskCreator] = useState<number | null>(null);
     const [newTaskText, setNewTaskText] = useState('');
     const [personalDetails, setPersonalDetails] = useState<PersonalDetails>(personalDetailsFromProps);
@@ -371,90 +481,160 @@ export default function Dashboard({
         1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: []
     });
 
-    // Academy tasks (from lessons), fetched similarly to Move Details for parity
+    // Academy tasks (from lessons), fetched with caching and pagination
     const [academyTasks, setAcademyTasks] = useState<AcademyTask[]>([]);
-    useEffect(() => {
-        const loadAcademyTasks = async () => {
-            try {
-                const res = await fetch('/api/tasks', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                });
-                if (!res.ok) return;
-                const data = await res.json();
-                const rawList = Array.isArray(data) ? data : (data.tasks || data.user_tasks || data.data || []);
-                const mapped: AcademyTask[] = (rawList || []).map((t: any) => ({
-                    id: (t.id ?? t.task_id ?? '').toString(),
-                    title: t.title ?? 'Untitled Task',
-                    description: t.description ?? '',
-                    category: t.category ?? 'Pre-Move',
-                    completed: (t.status ? t.status === 'completed' : false) || !!t.completed_at || !!t.completed,
-                    urgency: t.urgency,
-                    source: t.source ?? t.metadata?.source,
-                    sectionId: (() => {
-                        const raw = t.section_id ?? t.sectionId ?? t.section?.id;
-                        if (raw === undefined || raw === null || raw === '') return undefined;
-                        const num = typeof raw === 'number' ? raw : parseInt(raw, 10);
-                        return Number.isNaN(num) ? undefined : num;
-                    })(),
-                })).filter((t: AcademyTask) => !t.source || t.source === 'lesson');
+    const [academyTasksPage, setAcademyTasksPage] = useState(1);
+    const [hasMoreAcademyTasks, setHasMoreAcademyTasks] = useState(true);
+    
+    const loadAcademyTasks = useCallback(async (page: number = 1, append: boolean = false) => {
+        const cacheKey = `academy-tasks-${page}`;
+        const cached = getCachedData(cacheKey);
+        
+        if (cached && !append) {
+            setAcademyTasks(cached.tasks);
+            setHasMoreAcademyTasks(cached.hasMore);
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/tasks?page=${page}&per_page=20`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            const rawList = Array.isArray(data) ? data : (data.tasks || data.user_tasks || data.data || []);
+            const mapped: AcademyTask[] = (rawList || []).map((t: any) => ({
+                id: (t.id ?? t.task_id ?? '').toString(),
+                title: t.title ?? 'Untitled Task',
+                description: t.description ?? '',
+                category: t.category ?? 'Pre-Move',
+                completed: (t.status ? t.status === 'completed' : false) || !!t.completed_at || !!t.completed,
+                urgency: t.urgency,
+                source: t.source ?? t.metadata?.source,
+                sectionId: (() => {
+                    const raw = t.section_id ?? t.sectionId ?? t.section?.id;
+                    if (raw === undefined || raw === null || raw === '') return undefined;
+                    const num = typeof raw === 'number' ? raw : parseInt(raw, 10);
+                    return Number.isNaN(num) ? undefined : num;
+                })(),
+            })).filter((t: AcademyTask) => !t.source || t.source === 'lesson');
+            
+            const hasMore = mapped.length === 20; // If we got a full page, there might be more
+            const result = { tasks: mapped, hasMore };
+            setCachedData(cacheKey, result);
+            
+            if (append) {
+                setAcademyTasks(prev => [...prev, ...mapped]);
+            } else {
                 setAcademyTasks(mapped);
-            } catch (e) {
-                // silent fail
             }
-        };
-        loadAcademyTasks();
+            setHasMoreAcademyTasks(hasMore);
+        } catch (e) {
+            // silent fail
+        }
     }, []);
 
-    // Load custom tasks created in Move Details (from custom_tasks table)
+    useEffect(() => {
+        loadAcademyTasks(1);
+    }, [loadAcademyTasks]);
+
+    // Optimized custom tasks loading with caching and intelligent updates
+    const loadCustomTasks = useCallback(async () => {
+        const cacheKey = 'custom-tasks';
+        const cached = getCachedData(cacheKey);
+        
+        if (cached) {
+            setSectionTasks(cached);
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/move-details', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+            if (!res.ok) return;
+            const payload = await res.json();
+            const grouped = payload?.data?.customTasks || {};
+            // Normalize into numeric keys 1..9
+            const next: Record<number, SectionTask[]> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] };
+            Object.keys(grouped).forEach((key) => {
+                const num = parseInt(key, 10);
+                if (Number.isNaN(num) || num < 1 || num > 9) return;
+                const arr = Array.isArray(grouped[key]) ? grouped[key] : [];
+                next[num] = arr.map((t: any) => ({
+                    id: (t.id ?? '').toString(),
+                    title: t.title ?? 'Custom task',
+                    completed: !!t.completed,
+                    isCustom: true,
+                    category: t.category ?? 'pre-move',
+                }));
+            });
+            setSectionTasks(next);
+            setCachedData(cacheKey, next);
+        } catch (_) {
+            // ignore
+        }
+    }, []);
+
     useEffect(() => {
         let isMounted = true;
 
-        const loadCustomTasks = async () => {
-            try {
-                const res = await fetch('/api/move-details', {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    credentials: 'same-origin',
-                });
-                if (!res.ok) return;
-                const payload = await res.json();
-                const grouped = payload?.data?.customTasks || {};
-                // Normalize into numeric keys 1..9
-                const next: Record<number, SectionTask[]> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] };
-                Object.keys(grouped).forEach((key) => {
-                    const num = parseInt(key, 10);
-                    if (Number.isNaN(num) || num < 1 || num > 9) return;
-                    const arr = Array.isArray(grouped[key]) ? grouped[key] : [];
-                    next[num] = arr.map((t: any) => ({
-                        id: (t.id ?? '').toString(),
-                        title: t.title ?? 'Custom task',
-                        completed: !!t.completed,
-                        isCustom: true,
-                        category: t.category ?? 'pre-move',
-                    }));
-                });
-                if (isMounted) setSectionTasks(next);
-            } catch (_) {
-                // ignore
-            }
+        if (isMounted) {
+            loadCustomTasks();
+        }
+
+        // Refresh when the window/tab regains focus with debouncing
+        let focusTimeout: NodeJS.Timeout;
+        const onFocus = () => {
+            clearTimeout(focusTimeout);
+            focusTimeout = setTimeout(() => {
+                if (isMounted) {
+                    // Invalidate cache and reload
+                    API_CACHE.delete('custom-tasks');
+                    loadCustomTasks();
+                }
+            }, 1000); // 1 second debounce
         };
 
-        loadCustomTasks();
-
-        // Refresh when the window/tab regains focus to pick up changes from Move Details page
-        const onFocus = () => loadCustomTasks();
         window.addEventListener('focus', onFocus);
         return () => {
             isMounted = false;
+            clearTimeout(focusTimeout);
             window.removeEventListener('focus', onFocus);
         };
+    }, [loadCustomTasks]);
+
+    // Cache cleanup and performance monitoring
+    useEffect(() => {
+        const cleanup = setInterval(() => {
+            // Clean expired cache entries
+            const now = Date.now();
+            for (const [key, value] of API_CACHE.entries()) {
+                if (now - value.timestamp > value.ttl) {
+                    API_CACHE.delete(key);
+                }
+            }
+            
+            // Limit cache size to prevent memory issues
+            if (API_CACHE.size > 50) {
+                const entries = Array.from(API_CACHE.entries())
+                    .sort((a, b) => a[1].timestamp - b[1].timestamp);
+                entries.slice(0, entries.length - 40).forEach(([key]) => {
+                    API_CACHE.delete(key);
+                });
+            }
+        }, 60000); // Run cleanup every minute
+
+        return () => clearInterval(cleanup);
     }, []);
 
     // Removed sample priority tasks - now only showing tasks added from Academy Learning Tasks
@@ -602,8 +782,8 @@ export default function Dashboard({
         }
     };
 
-    // Compute section progress identical to Move Details: combine custom + academy tasks.
-    const getSectionProgress = (sectionId: number) => {
+    // Memoized section progress calculation for performance
+    const getSectionProgress = useCallback((sectionId: number) => {
         const custom = sectionTasks[sectionId] || [];
         const academy = academyTasks.filter((t) => {
             if (t.sectionId === undefined || t.sectionId === null) {
@@ -617,20 +797,17 @@ export default function Dashboard({
         if (total === 0) return 0;
         const completed = custom.filter(t => t.completed).length + academy.filter(t => t.completed).length;
         return Math.round((completed / total) * 100);
-    };
+    }, [academyTasks, sectionTasks]);
 
-    // Overall progress: average of section progresses
+    // Memoized overall progress calculation
     const overallMoveProgress = useMemo(() => {
         if (!moveStages.length) return 0;
         const sum = moveStages.reduce((acc, stage) => acc + getSectionProgress(stage.id), 0);
         return Math.round(sum / moveStages.length);
-    }, [moveStages, academyTasks, sectionTasks]);
+    }, [moveStages, getSectionProgress]);
 
-    // Match Move Details logic for coloring progress
-    const getProgressColor = (progress: number) => (progress > 0 ? 'bg-[#00BCD4]' : 'bg-gray-300');
-
-    // Get upcoming tasks from CTA buttons and current/next stages
-    const getUpcomingTasks = () => {
+    // Memoized upcoming tasks calculation
+    const upcomingTasksMemoized = useMemo(() => {
         const allUpcomingTasks = [];
         
         // First, add CTA tasks from lessons (these are high priority)
@@ -673,18 +850,26 @@ export default function Dashboard({
         }
         
         return allUpcomingTasks.slice(0, 4);
-    };
+    }, [upcomingTasks, sectionTasks, activeStage, moveStages]);
 
-    // Group CTA tasks by category
-    const getCtaTasksByCategory = () => {
-        // Use allUserTasks to get all tasks, not just the limited upcomingTasks
+    // Memoized CTA tasks by category
+    const ctaTasksByCategory = useMemo(() => {
         const ctaTasks = allUserTasks || [];
         return {
             'Pre-Move': ctaTasks.filter(task => task.category === 'Pre-Move'),
             'In-Move': ctaTasks.filter(task => task.category === 'In-Move'),
             'Post-Move': ctaTasks.filter(task => task.category === 'Post-Move')
         };
-    };
+    }, [allUserTasks]);
+
+    // Match Move Details logic for coloring progress
+    const getProgressColor = (progress: number) => (progress > 0 ? 'bg-[#00BCD4]' : 'bg-gray-300');
+
+    // Get upcoming tasks (now uses memoized version)
+    const getUpcomingTasks = () => upcomingTasksMemoized;
+
+    // Group CTA tasks by category (now uses memoized version)
+    const getCtaTasksByCategory = () => ctaTasksByCategory;
 
     // Handle CTA task selection/deselection
     const handleCtaTaskToggle = (taskId: string) => {
@@ -788,27 +973,39 @@ export default function Dashboard({
                 onTabChange={handleTabChange}
             />
 
-            {/* Main Dashboard Content - Professional Layout */}
+            {/* Main Dashboard Content - Professional Layout with Performance Optimizations */}
             {activeTab === 'overview' && (
                 <div className="max-w-7xl mx-auto space-y-8">
-                    {/* Complete Moving Journey Timeline */}
-                    <CompleteMovingJourney
-                        overallProgress={overallMoveProgress}
-                        moveSections={moveStages.map(stage => ({
-                            id: stage.id,
-                            name: stage.label,
-                            shortName: stage.shortLabel,
-                            description: stage.description,
-                            icon: stage.icon
-                        }))}
-                        activeSection={activeStage}
-                        onSectionClick={handleStageClick}
-                        getSectionProgress={getSectionProgress}
-                        getProgressColor={getProgressColor}
-                    />
+                    {/* Complete Moving Journey Timeline - Lazy Loaded */}
+                    {visibleSections.has('journey') ? (
+                        <Suspense fallback={<LoadingSkeleton className="h-48" />}>
+                            <CompleteMovingJourney
+                                overallProgress={overallMoveProgress}
+                                moveSections={moveStages.map(stage => ({
+                                    id: stage.id,
+                                    name: stage.label,
+                                    shortName: stage.shortLabel,
+                                    description: stage.description,
+                                    icon: stage.icon
+                                }))}
+                                activeSection={activeStage}
+                                onSectionClick={handleStageClick}
+                                getSectionProgress={getSectionProgress}
+                                getProgressColor={getProgressColor}
+                            />
+                        </Suspense>
+                    ) : (
+                        <LoadingSkeleton className="h-48" />
+                    )}
 
-                    {/* Learning Journey Section */}
-                    <LearningJourney academyProgress={academyProgress} />
+                    {/* Learning Journey Section - Lazy Loaded */}
+                    {visibleSections.has('learning') ? (
+                        <Suspense fallback={<LoadingSkeleton className="h-32" />}>
+                            <LearningJourney academyProgress={academyProgress} />
+                        </Suspense>
+                    ) : (
+                        <LoadingSkeleton className="h-32" />
+                    )}
 
                     {/* Property Basket Section */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -844,7 +1041,9 @@ export default function Dashboard({
                         </p>
                         
                         {showPropertyBasket && (
-                            <PropertyBasket />
+                            <Suspense fallback={<LoadingSkeleton className="h-64" />}>
+                                <PropertyBasket />
+                            </Suspense>
                         )}
                         
                         <div className="mt-6 p-4 bg-gradient-to-r from-[#00BCD4] to-[#00ACC1] rounded-lg text-white">
@@ -863,39 +1062,68 @@ export default function Dashboard({
                         </div>
                     </div>
 
-                    {/* Moving Tasks Management Section (CTA Tasks) */}
-                    <CTATasksManager 
-                        selectedCtaTasks={selectedCtaTasks}
-                        setSelectedCtaTasks={setSelectedCtaTasks}
-                        getCtaTasksByCategory={getCtaTasksByCategory}
-                        handleCtaTaskToggle={handleCtaTaskToggle}
-                        addSelectedTasksToPriority={addSelectedTasksToPriority}
-                        handleDragStart={handleDragStart}
-                        handleDropOnPriority={handleDropOnPriority}
-                        handleDragOver={handleDragOver}
-                    />
+                    {/* Moving Tasks Management Section (CTA Tasks) - Lazy Loaded */}
+                    {visibleSections.has('tasks') ? (
+                        <Suspense fallback={<LoadingSkeleton className="h-56" />}>
+                            <CTATasksManager 
+                                selectedCtaTasks={selectedCtaTasks}
+                                setSelectedCtaTasks={setSelectedCtaTasks}
+                                getCtaTasksByCategory={getCtaTasksByCategory}
+                                handleCtaTaskToggle={handleCtaTaskToggle}
+                                addSelectedTasksToPriority={addSelectedTasksToPriority}
+                                handleDragStart={handleDragStart}
+                                handleDropOnPriority={handleDropOnPriority}
+                                handleDragOver={handleDragOver}
+                            />
+                        </Suspense>
+                    ) : (
+                        <LoadingSkeleton className="h-56" />
+                    )}
 
-                    {/* Priority Tasks & Move Countdown Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <SimplePriorityTasksWidget 
-                            userPriorityTasks={userPriorityTasks}
-                            setUserPriorityTasks={setUserPriorityTasks}
-                            getCombinedPriorityTasks={getCombinedPriorityTasks}
-                            handleTaskClick={handleTaskClick}
-                            handleTaskComplete={handleTaskComplete}
-                            removeFromPriorityList={removeFromPriorityList}
-                            taskStats={taskStats}
-                            handleDropOnPriority={handleDropOnPriority}
-                            handleDragOver={handleDragOver}
-                        />
-                        <SimpleMoveCountdown personalDetails={personalDetails} />
-                    </div>
+                    {/* Priority Tasks & Move Countdown Row - Lazy Loaded */}
+                    {visibleSections.has('priority') && visibleSections.has('countdown') ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Suspense fallback={<LoadingSkeleton className="h-80" />}>
+                                <SimplePriorityTasksWidget 
+                                    userPriorityTasks={userPriorityTasks}
+                                    setUserPriorityTasks={setUserPriorityTasks}
+                                    getCombinedPriorityTasks={getCombinedPriorityTasks}
+                                    handleTaskClick={handleTaskClick}
+                                    handleTaskComplete={handleTaskComplete}
+                                    removeFromPriorityList={removeFromPriorityList}
+                                    taskStats={taskStats}
+                                    handleDropOnPriority={handleDropOnPriority}
+                                    handleDragOver={handleDragOver}
+                                />
+                            </Suspense>
+                            <Suspense fallback={<LoadingSkeleton className="h-80" />}>
+                                <SimpleMoveCountdown personalDetails={personalDetails} />
+                            </Suspense>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <LoadingSkeleton className="h-80" />
+                            <LoadingSkeleton className="h-80" />
+                        </div>
+                    )}
 
-                    {/* Vouchers & Rewards Section */}
-                    <SimpleVouchersRewards />
+                    {/* Vouchers & Rewards Section - Lazy Loaded */}
+                    {visibleSections.has('vouchers') ? (
+                        <Suspense fallback={<LoadingSkeleton className="h-40" />}>
+                            <SimpleVouchersRewards />
+                        </Suspense>
+                    ) : (
+                        <LoadingSkeleton className="h-40" />
+                    )}
 
-                    {/* Statistics Dashboard */}
-                    <SimpleStatisticsDashboard />
+                    {/* Statistics Dashboard - Lazy Loaded */}
+                    {visibleSections.has('statistics') ? (
+                        <Suspense fallback={<LoadingSkeleton className="h-64" />}>
+                            <SimpleStatisticsDashboard />
+                        </Suspense>
+                    ) : (
+                        <LoadingSkeleton className="h-64" />
+                    )}
 
                     {/* Call-to-Action Area */}
                     <section className="text-center">
@@ -909,6 +1137,15 @@ export default function Dashboard({
                             </svg>
                         </a>
                     </section>
+
+                    {/* Performance Monitoring - Hidden */}
+                    {process.env.NODE_ENV === 'development' && (
+                        <div className="hidden">
+                            <div>Cache Size: {API_CACHE.size}</div>
+                            <div>Data Version: {dataVersion}</div>
+                            <div>Visible Sections: {Array.from(visibleSections).join(', ')}</div>
+                        </div>
+                    )}
                 </div>
             )}
 
