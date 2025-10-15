@@ -11,9 +11,6 @@ interface Property {
     property_type?: string;
     bedrooms?: number;
     bathrooms?: number;
-    is_claimed: boolean;
-    claim_type?: 'buyer' | 'seller';
-    claimed_by_user_id?: number;
     basket_count: number;
     formatted_price?: string;
     summary?: string;
@@ -24,6 +21,9 @@ interface BasketProperty {
     property: Property;
     notes?: string;
     is_favorite: boolean;
+    is_claimed: boolean;
+    claim_type?: 'buyer' | 'seller';
+    claimed_at?: string;
     created_at: string;
 }
 
@@ -37,10 +37,43 @@ const PropertyBasket: React.FC = () => {
     const [searchResults, setSearchResults] = useState<Property[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchingProperties, setSearchingProperties] = useState(false);
+    const [userChainRole, setUserChainRole] = useState<string | null>(null);
+    const [autoClaimType, setAutoClaimType] = useState<'buyer' | 'seller' | null>(null);
 
     useEffect(() => {
         loadBasketProperties();
+        loadUserChainRole();
     }, []);
+
+    const loadUserChainRole = async () => {
+        try {
+            const response = await fetch('/api/chain-checker', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.data?.chain_checker) {
+                    const chainRole = data.data.chain_checker.chain_role;
+                    setUserChainRole(chainRole);
+                    
+                    // Set default claim type based on role
+                    if (chainRole === 'first_time_buyer') {
+                        setAutoClaimType('buyer');
+                    } else if (chainRole === 'seller_only') {
+                        setAutoClaimType('seller');
+                    }
+                    // For 'buyer_seller', we don't set a default - let user choose
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load user chain role:', error);
+        }
+    };
 
     const loadBasketProperties = async () => {
         try {
@@ -85,7 +118,7 @@ const PropertyBasket: React.FC = () => {
         }
     };
 
-    const addPropertyToBasket = async () => {
+    const addPropertyToBasket = async (claimAfterAdd: boolean = false) => {
         if (!rightmoveUrl.trim()) {
             alert('Please enter a Rightmove URL');
             return;
@@ -99,6 +132,7 @@ const PropertyBasket: React.FC = () => {
 
         setAddingProperty(true);
         try {
+            // First, add to basket
             const response = await fetch('/api/properties/add-to-basket', {
                 method: 'POST',
                 headers: {
@@ -115,11 +149,40 @@ const PropertyBasket: React.FC = () => {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
+                    const propertyId = data.data.property.id;
+                    const basket = data.data.basket;
+                    let claimSuccessful = false;
+                    
+                    // Auto-claim if requested and we have a default claim type
+                    if (claimAfterAdd && autoClaimType && !basket.is_claimed) {
+                        try {
+                            claimSuccessful = await claimProperty(propertyId, autoClaimType, true);
+                        } catch (error) {
+                            console.warn('Auto-claim failed:', error);
+                            // The error details are already handled in claimProperty function
+                        }
+                    }
+                    
                     setRightmoveUrl('');
                     setPropertyNotes('');
                     setShowAddProperty(false);
                     loadBasketProperties();
-                    alert('Property added to your basket!');
+                    
+                    // Show appropriate message based on what happened
+                    let message = 'Property added to your basket!';
+                    if (claimAfterAdd && autoClaimType) {
+                        if (basket.is_claimed) {
+                            message = `Property added to your basket! (Already claimed as ${basket.claim_type} by you)`;
+                            console.log('Property was already claimed by user:', { propertyId, claimType: basket.claim_type });
+                        } else if (claimSuccessful) {
+                            message = `Property added to your basket and claimed as ${autoClaimType}!`;
+                            console.log('Property successfully auto-claimed:', { propertyId, claimType: autoClaimType });
+                        } else {
+                            message = `Property added to your basket! (Could not claim as ${autoClaimType})`;
+                            console.log('Auto-claim failed:', { propertyId, attemptedClaimType: autoClaimType });
+                        }
+                    }
+                    alert(message);
                 } else {
                     alert(data.message || 'Failed to add property');
                 }
@@ -162,9 +225,9 @@ const PropertyBasket: React.FC = () => {
         }
     };
 
-    const claimProperty = async (propertyId: number, claimType: 'buyer' | 'seller') => {
-        if (!confirm(`Are you sure you want to claim this property as a ${claimType}?`)) {
-            return;
+    const claimProperty = async (propertyId: number, claimType: 'buyer' | 'seller', skipConfirmation: boolean = false): Promise<boolean> => {
+        if (!skipConfirmation && !confirm(`Are you sure you want to claim this property as a ${claimType}?`)) {
+            return false;
         }
 
         try {
@@ -182,14 +245,24 @@ const PropertyBasket: React.FC = () => {
                 const data = await response.json();
                 if (data.success) {
                     loadBasketProperties();
-                    alert(`Property claimed as ${claimType}!`);
+                    if (!skipConfirmation) {
+                        alert(`Property claimed as ${claimType}!`);
+                    }
+                    return true;
                 } else {
-                    alert(data.message || 'Failed to claim property');
+                    if (!skipConfirmation) {
+                        alert(data.message || 'Failed to claim property');
+                    }
+                    return false;
                 }
             }
+            return false;
         } catch (error) {
             console.error('Failed to claim property:', error);
-            alert('Failed to claim property');
+            if (!skipConfirmation) {
+                alert('Failed to claim property');
+            }
+            return false;
         }
     };
 
@@ -217,8 +290,9 @@ const PropertyBasket: React.FC = () => {
         }
     };
 
-    const addExistingPropertyToBasket = async (property: Property) => {
+    const addExistingPropertyToBasket = async (property: Property, claimAfterAdd: boolean = false) => {
         try {
+            // First, add to basket
             const response = await fetch('/api/properties/add-to-basket', {
                 method: 'POST',
                 headers: {
@@ -235,8 +309,29 @@ const PropertyBasket: React.FC = () => {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
+                    let claimSuccessful = false;
+                    
+                    // Auto-claim if requested and we have a default claim type
+                    if (claimAfterAdd && autoClaimType) {
+                        try {
+                            claimSuccessful = await claimProperty(property.id, autoClaimType, true);
+                        } catch (error) {
+                            console.warn('Auto-claim failed:', error);
+                        }
+                    }
+                    
                     loadBasketProperties();
-                    alert('Property added to your basket!');
+                    
+                    // Show appropriate message based on what happened
+                    let message = 'Property added to your basket!';
+                    if (claimAfterAdd && autoClaimType) {
+                        if (claimSuccessful) {
+                            message = `Property added to your basket and claimed as ${autoClaimType}!`;
+                        } else {
+                            message = `Property added to your basket! (Could not claim as ${autoClaimType})`;
+                        }
+                    }
+                    alert(message);
                 }
             }
         } catch (error) {
@@ -257,7 +352,14 @@ const PropertyBasket: React.FC = () => {
             {/* Add Property Section */}
             <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-semibold text-gray-900">Add Property from Rightmove</h4>
+                    <div>
+                        <h4 className="font-semibold text-gray-900">Add Property from Rightmove</h4>
+                        {userChainRole && autoClaimType && (
+                            <p className="text-xs text-gray-500 mt-1">
+                                Based on your chain role ({userChainRole.replace('_', ' ')}), properties can be auto-claimed as {autoClaimType}
+                            </p>
+                        )}
+                    </div>
                     <button
                         onClick={() => setShowAddProperty(!showAddProperty)}
                         className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
@@ -285,6 +387,11 @@ const PropertyBasket: React.FC = () => {
                                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                     placeholder="https://www.rightmove.co.uk/properties/..."
                                 />
+                                {autoClaimType && (
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        💡 Tip: If you use "Add & Claim", the property will only be claimed if it's not already claimed by another user.
+                                    </p>
+                                )}
                             </div>
 
                             <div>
@@ -301,16 +408,32 @@ const PropertyBasket: React.FC = () => {
                             </div>
 
                             <div className="flex items-center space-x-3">
-                                <button
-                                    onClick={addPropertyToBasket}
-                                    disabled={addingProperty}
-                                    className="px-4 py-2 bg-[#00BCD4] text-white rounded-lg hover:bg-[#00ACC1] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                                >
-                                    {addingProperty && (
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <div className="flex items-center space-x-3">
+                                    <button
+                                        onClick={() => addPropertyToBasket(false)}
+                                        disabled={addingProperty}
+                                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                                    >
+                                        {addingProperty && (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
+                                        )}
+                                        <span>Add to Basket</span>
+                                    </button>
+                                    
+                                    {autoClaimType && (
+                                        <button
+                                            onClick={() => addPropertyToBasket(true)}
+                                            disabled={addingProperty}
+                                            className="px-4 py-2 bg-[#00BCD4] text-white rounded-lg hover:bg-[#00ACC1] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                                            title={`Add to basket and attempt to claim as ${autoClaimType}. Will only succeed if property is not already claimed.`}
+                                        >
+                                            {addingProperty && (
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            )}
+                                            <span>Add & Claim as {autoClaimType === 'buyer' ? 'Buyer' : 'Seller'}</span>
+                                        </button>
                                     )}
-                                    <span>Add to Basket</span>
-                                </button>
+                                </div>
                             </div>
                         </motion.div>
                     )}
@@ -348,16 +471,26 @@ const PropertyBasket: React.FC = () => {
                                     <div className="text-sm text-gray-600">
                                         {property.formatted_price} • {property.summary}
                                     </div>
-                                    <div className="text-xs text-gray-500">
-                                        {property.basket_count} users interested
+                                    <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
+                                        <span>{property.basket_count} users interested</span>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => addExistingPropertyToBasket(property)}
-                                    className="px-3 py-1 text-sm bg-[#00BCD4] text-white rounded hover:bg-[#00ACC1] transition-colors"
-                                >
-                                    Add
-                                </button>
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={() => addExistingPropertyToBasket(property, false)}
+                                        className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                                    >
+                                        Add
+                                    </button>
+                                    {autoClaimType && (
+                                        <button
+                                            onClick={() => addExistingPropertyToBasket(property, true)}
+                                            className="px-3 py-1 text-sm bg-[#00BCD4] text-white rounded hover:bg-[#00ACC1] transition-colors"
+                                        >
+                                            Add & Claim
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -422,9 +555,9 @@ const PropertyBasket: React.FC = () => {
                                                 {/* Interest Stats */}
                                                 <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
                                                     <span>👥 {item.property.basket_count} interested</span>
-                                                    {item.property.is_claimed && (
-                                                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">
-                                                            Claimed as {item.property.claim_type}
+                                                    {item.is_claimed && (
+                                                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
+                                                            You claimed as {item.claim_type}
                                                         </span>
                                                     )}
                                                 </div>
@@ -462,20 +595,40 @@ const PropertyBasket: React.FC = () => {
                                                 View on Rightmove
                                             </a>
                                             
-                                            {!item.property.is_claimed && (
+                                            {!item.is_claimed && (
                                                 <>
-                                                    <button
-                                                        onClick={() => claimProperty(item.property.id, 'buyer')}
-                                                        className="text-sm text-green-600 hover:text-green-700 transition-colors"
-                                                    >
-                                                        Claim as Buyer
-                                                    </button>
-                                                    <button
-                                                        onClick={() => claimProperty(item.property.id, 'seller')}
-                                                        className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
-                                                    >
-                                                        Claim as Seller
-                                                    </button>
+                                                    {/* Show role-appropriate claim options */}
+                                                    {userChainRole === 'first_time_buyer' ? (
+                                                        <button
+                                                            onClick={() => claimProperty(item.property.id, 'buyer', false)}
+                                                            className="text-sm text-green-600 hover:text-green-700 transition-colors font-medium"
+                                                        >
+                                                            Claim as Buyer
+                                                        </button>
+                                                    ) : userChainRole === 'seller_only' ? (
+                                                        <button
+                                                            onClick={() => claimProperty(item.property.id, 'seller', false)}
+                                                            className="text-sm text-blue-600 hover:text-blue-700 transition-colors font-medium"
+                                                        >
+                                                            Claim as Seller
+                                                        </button>
+                                                    ) : (
+                                                        /* For buyer_seller or unknown role, show both options */
+                                                        <>
+                                                            <button
+                                                                onClick={() => claimProperty(item.property.id, 'buyer', false)}
+                                                                className="text-sm text-green-600 hover:text-green-700 transition-colors"
+                                                            >
+                                                                Claim as Buyer
+                                                            </button>
+                                                            <button
+                                                                onClick={() => claimProperty(item.property.id, 'seller', false)}
+                                                                className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                                                            >
+                                                                Claim as Seller
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </>
                                             )}
                                             

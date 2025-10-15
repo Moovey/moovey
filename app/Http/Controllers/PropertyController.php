@@ -28,11 +28,24 @@ class PropertyController extends Controller
         }
 
         try {
-            // Use the PropertyBasket model directly to ensure we get the right data
+            // Use the PropertyBasket model directly to ensure we get the right data with claim info
             $basketProperties = \App\Models\PropertyBasket::where('user_id', $user->id)
                 ->with('property')
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+                ->map(function ($basket) {
+                    return [
+                        'id' => $basket->id,
+                        'property' => $basket->property,
+                        'notes' => $basket->notes,
+                        'is_favorite' => $basket->is_favorite,
+                        'is_claimed' => $basket->is_claimed,
+                        'claim_type' => $basket->claim_type,
+                        'claimed_at' => $basket->claimed_at,
+                        'created_at' => $basket->created_at,
+                        'updated_at' => $basket->updated_at,
+                    ];
+                });
 
             Log::info('Basket properties for user ' . $user->id, [
                 'count' => $basketProperties->count(),
@@ -122,7 +135,7 @@ class PropertyController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'property' => $property,
+                'property' => $property->fresh(), // Ensure we have latest data including claim status
                 'basket' => $basket,
             ],
             'message' => 'Property added to basket successfully'
@@ -170,12 +183,33 @@ class PropertyController extends Controller
 
         $user = Auth::user();
         
-        $claimed = $property->claimProperty($user->id, $request->claim_type);
+        // Find or create the user's PropertyBasket entry for this property
+        $basket = \App\Models\PropertyBasket::firstOrCreate([
+            'user_id' => $user->id,
+            'property_id' => $property->id,
+        ]);
+        
+        // Check if user has already claimed this property
+        if ($basket->is_claimed) {
+            return response()->json([
+                'success' => false,
+                'message' => "You have already claimed this property as a {$basket->claim_type}",
+                'data' => [
+                    'property' => $property,
+                    'already_claimed' => true,
+                    'claim_type' => $basket->claim_type,
+                    'claimed_by_current_user' => true,
+                ]
+            ], 400);
+        }
+        
+        // Claim the property for this specific user
+        $claimed = $basket->claimProperty($request->claim_type);
         
         if (!$claimed) {
             return response()->json([
                 'success' => false,
-                'message' => 'Property is already claimed'
+                'message' => 'Failed to claim property'
             ], 400);
         }
 
@@ -195,7 +229,12 @@ class PropertyController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $property->fresh(),
+            'data' => [
+                'property' => $property->fresh(),
+                'basket' => $basket->fresh(),
+                'is_claimed' => true,
+                'claim_type' => $request->claim_type,
+            ],
             'message' => 'Property claimed successfully'
         ]);
     }
@@ -207,7 +246,12 @@ class PropertyController extends Controller
     {
         $user = Auth::user();
         
-        $property->load(['baskets', 'claimedByUser:id,name']);
+        $property->load('baskets');
+        
+        // Get user's specific basket entry for this property
+        $userBasket = \App\Models\PropertyBasket::where('user_id', $user->id)
+            ->where('property_id', $property->id)
+            ->first();
         
         return response()->json([
             'success' => true,
@@ -215,9 +259,15 @@ class PropertyController extends Controller
                 'property' => $property,
                 'is_in_user_basket' => $property->isInUserBasket($user->id),
                 'basket_count' => $property->basket_count,
-                'is_claimed' => $property->is_claimed,
-                'claim_type' => $property->claim_type,
-                'claimed_by_current_user' => $property->claimed_by_user_id === $user->id,
+                'user_claim_info' => $userBasket ? [
+                    'is_claimed' => $userBasket->is_claimed,
+                    'claim_type' => $userBasket->claim_type,
+                    'claimed_at' => $userBasket->claimed_at,
+                ] : [
+                    'is_claimed' => false,
+                    'claim_type' => null,
+                    'claimed_at' => null,
+                ],
             ]
         ]);
     }
