@@ -32,55 +32,55 @@ export default function ActiveFilters({ filters, onClearAll, onRemoveFilter }: A
             </div>
             <div className="flex flex-wrap gap-2">
                 {filters.searchTerm && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-sm border">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-sm border text-gray-800 shadow-sm">
                         Search: "{filters.searchTerm}"
                         <button 
                             onClick={() => onRemoveFilter('searchTerm')} 
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 ml-1"
                         >
                             ×
                         </button>
                     </span>
                 )}
                 {filters.category !== 'all' && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-sm border">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-sm border text-gray-800 shadow-sm">
                         Category: {filters.category}
                         <button 
                             onClick={() => onRemoveFilter('category')} 
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 ml-1"
                         >
                             ×
                         </button>
                     </span>
                 )}
                 {filters.location && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-sm border">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-sm border text-gray-800 shadow-sm">
                         Location: {filters.location}
                         <button 
                             onClick={() => onRemoveFilter('location')} 
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 ml-1"
                         >
                             ×
                         </button>
                     </span>
                 )}
                 {filters.condition !== 'all' && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-sm border">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-sm border text-gray-800 shadow-sm">
                         Condition: {filters.condition}
                         <button 
                             onClick={() => onRemoveFilter('condition')} 
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 ml-1"
                         >
                             ×
                         </button>
                     </span>
                 )}
                 {(filters.priceMin > 0 || filters.priceMax < 1000) && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-sm border">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-sm border text-gray-800 shadow-sm">
                         Price: £{filters.priceMin}-£{filters.priceMax}
                         <button 
                             onClick={() => onRemoveFilter('priceMin')} 
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 ml-1"
                         >
                             ×
                         </button>

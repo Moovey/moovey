@@ -185,18 +185,18 @@ export default function MarketplaceSidebar({
                                 min="0"
                                 value={filters.priceMin}
                                 onChange={(e) => onFiltersChange({ priceMin: Number(e.target.value) })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-sm"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-sm text-gray-900 placeholder-gray-500 bg-white"
                                 placeholder="£0"
                             />
                         </div>
                         <div className="flex-1">
-                            <label className="block text-xs text-gray-600 mb-1">Max Price</label>
+                            <label className="block text-xs text-gray-900 mb-1">Max Price</label>
                             <input
                                 type="number"
                                 min="0"
                                 value={filters.priceMax}
                                 onChange={(e) => onFiltersChange({ priceMax: Number(e.target.value) })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-sm"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-sm text-gray-900 placeholder-gray-500 bg-white"
                                 placeholder="£1000"
                             />
                         </div>
