@@ -10,6 +10,14 @@ import { usePage } from '@inertiajs/react';
 interface Message {
     id: number;
     content: string;
+    is_item_context?: boolean;
+    item_data?: {
+        id: number;
+        name: string;
+        price: number;
+        condition: string;
+        image?: string | null;
+    } | null;
     sender: {
         id: number;
         name: string;
@@ -318,15 +326,49 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                                                     )}
                                                                     
                                                                 {/* Message Bubble */}
-                                                                <div className={`max-w-[85%] sm:max-w-xs md:max-w-sm lg:max-w-md px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-2xl ${
-                                                                    message.is_from_me
-                                                                        ? 'bg-[#17B7C7] text-white'
-                                                                        : 'bg-gray-200 text-gray-900'
-                                                                }`}>
-                                                                    <p className="text-xs sm:text-sm break-words">
-                                                                        {message.content}
-                                                                    </p>
-                                                                </div>
+                                                                {message.is_item_context && message.item_data ? (
+                                                                    /* Item Context Message */
+                                                                    <div className="max-w-[85%] sm:max-w-xs md:max-w-sm lg:max-w-md bg-blue-50 border border-blue-200 rounded-2xl p-3 sm:p-4">
+                                                                        <div className="flex items-start space-x-3">
+                                                                            {message.item_data.image ? (
+                                                                                <img
+                                                                                    src={`/storage/${message.item_data.image}`}
+                                                                                    alt={message.item_data.name}
+                                                                                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover flex-shrink-0"
+                                                                                />
+                                                                            ) : (
+                                                                                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                                                    <span className="text-2xl">📦</span>
+                                                                                </div>
+                                                                            )}
+                                                                            <div className="min-w-0 flex-1">
+                                                                                <p className="text-xs sm:text-sm text-blue-600 font-medium mb-1">
+                                                                                    💬 {message.content}
+                                                                                </p>
+                                                                                <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">
+                                                                                    {message.item_data.name}
+                                                                                </h4>
+                                                                                <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600">
+                                                                                    <span className="font-medium">£{message.item_data.price}</span>
+                                                                                    <span className="capitalize bg-gray-100 px-2 py-0.5 rounded-full">
+                                                                                        {message.item_data.condition}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    /* Regular Message */
+                                                                    <div className={`max-w-[85%] sm:max-w-xs md:max-w-sm lg:max-w-md px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-2xl ${
+                                                                        message.is_from_me
+                                                                            ? 'bg-[#17B7C7] text-white'
+                                                                            : 'bg-gray-200 text-gray-900'
+                                                                    }`}>
+                                                                        <p className="text-xs sm:text-sm break-words">
+                                                                            {message.content}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
                                                                 </div>
                                                             );
                                                         })}

@@ -126,7 +126,28 @@ export default function ItemDetailModal({
             const data = await response.json();
             
             if (data.success) {
-                toast.success('Message sent successfully!');
+                const successMessage = data.data?.item_context 
+                    ? `Message sent! Item details added to conversation.`
+                    : 'Message sent successfully!';
+                    
+                toast.success(
+                    <div>
+                        <div>{successMessage}</div>
+                        {data.data?.conversation_id && (
+                            <div className="mt-2">
+                                <a 
+                                    href={`/messages/${data.data.conversation_id}`}
+                                    className="text-blue-600 hover:text-blue-800 underline text-sm"
+                                >
+                                    View conversation →
+                                </a>
+                            </div>
+                        )}
+                    </div>,
+                    {
+                        autoClose: 5000,
+                    }
+                );
                 setMessage('');
                 setShowMessageOptions(false);
                 setShowCustomMessage(false);
@@ -364,7 +385,10 @@ export default function ItemDetailModal({
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                                 </svg>
                                             </button>
-                                            <h4 className="font-medium text-gray-900">Send a message</h4>
+                                            <div>
+                                                <h4 className="font-medium text-gray-900">Send a message</h4>
+                                                <p className="text-xs text-gray-500">Item details will be shared in the conversation</p>
+                                            </div>
                                         </div>
                                         <textarea
                                             value={message}

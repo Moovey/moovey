@@ -40,11 +40,24 @@ class MessageController extends Controller
                         'name' => $otherUser->name,
                         'avatar' => $otherUser->avatar_url,
                     ],
-                    'latest_message' => $conversation->messages->isNotEmpty() ? [
-                        'content' => $conversation->messages->first()->content,
-                        'created_at' => $conversation->messages->first()->created_at->diffForHumans(),
-                        'is_from_me' => $conversation->messages->first()->sender_id === $user->id,
-                    ] : null,
+                    'latest_message' => $conversation->messages->isNotEmpty() ? (function() use ($conversation, $user) {
+                        $message = $conversation->messages->first();
+                        $content = $message->content;
+                        
+                        // Check if this is an item context message
+                        $decoded = json_decode($message->content, true);
+                        if (is_array($decoded) && isset($decoded['type']) && $decoded['type'] === 'item_context') {
+                            // For messages index, show a nice summary instead of JSON
+                            $itemName = $decoded['item']['name'] ?? 'Unknown item';
+                            $content = "💬 About: {$itemName}";
+                        }
+                        
+                        return [
+                            'content' => $content,
+                            'created_at' => $message->created_at->diffForHumans(),
+                            'is_from_me' => $message->sender_id === $user->id,
+                        ];
+                    })() : null,
                     'unread_count' => $conversation->messages()
                         ->where('sender_id', '!=', $user->id)
                         ->where('is_read', false)
@@ -93,9 +106,24 @@ class MessageController extends Controller
             ->with('sender:id,name,avatar')
             ->get()
             ->map(function ($message) use ($user) {
+                // Check if this is an item context message
+                $isItemContext = false;
+                $itemData = null;
+                $displayContent = $message->content;
+                
+                // Try to decode as JSON to check for item context
+                $decoded = json_decode($message->content, true);
+                if (is_array($decoded) && isset($decoded['type']) && $decoded['type'] === 'item_context') {
+                    $isItemContext = true;
+                    $itemData = $decoded['item'] ?? null;
+                    $displayContent = $decoded['message'] ?? $message->content;
+                }
+                
                 return [
                     'id' => $message->id,
-                    'content' => $message->content,
+                    'content' => $displayContent,
+                    'is_item_context' => $isItemContext,
+                    'item_data' => $itemData,
                     'sender' => [
                         'id' => $message->sender->id,
                         'name' => $message->sender->name,
@@ -226,6 +254,108 @@ class MessageController extends Controller
     }
 
     /**
+     * Send a marketplace message about an item
+     */
+    public function sendMarketplaceMessage(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'recipient_id' => 'required|exists:users,id|different:' . Auth::id(),
+                'message' => 'required|string|max:2000',
+                'item_id' => 'nullable|exists:declutter_items,id',
+                'item_name' => 'nullable|string|max:255',
+            ]);
+
+            $user = Auth::user();
+            $recipientId = $validated['recipient_id'];
+
+            // Ensure consistent ordering: lower ID is always user_one
+            $userOneId = min($user->id, $recipientId);
+            $userTwoId = max($user->id, $recipientId);
+
+            // Find or create conversation
+            $conversation = Conversation::firstOrCreate([
+                'user_one_id' => $userOneId,
+                'user_two_id' => $userTwoId
+            ], [
+                'last_message_at' => now()
+            ]);
+
+            // Prepare message content with item context if provided
+            $messageContent = $validated['message'];
+            $itemContext = null;
+            
+            if (isset($validated['item_id']) && $validated['item_id']) {
+                // Get item details
+                $item = \App\Models\DeclutterItem::find($validated['item_id']);
+                if ($item) {
+                    $itemContext = [
+                        'id' => $item->id,
+                        'name' => $item->name,
+                        'price' => $item->estimated_value,
+                        'condition' => $item->condition,
+                        'image' => $item->images ? $item->images[0] ?? null : null
+                    ];
+                    
+                    // Add item context to the beginning of the conversation if it's the first message
+                    if ($conversation->messages()->count() === 0) {
+                        $contextMessage = Message::create([
+                            'conversation_id' => $conversation->id,
+                            'sender_id' => $user->id,
+                            'content' => json_encode([
+                                'type' => 'item_context',
+                                'item' => $itemContext,
+                                'message' => "💬 Conversation about: {$item->name}"
+                            ]),
+                        ]);
+                    }
+                }
+            }
+
+            // Create the actual message
+            $message = Message::create([
+                'conversation_id' => $conversation->id,
+                'sender_id' => $user->id,
+                'content' => $messageContent,
+            ]);
+
+            // Update conversation's last message time
+            $conversation->update(['last_message_at' => now()]);
+
+            $message->load('sender:id,name,avatar');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Message sent successfully!',
+                'data' => [
+                    'id' => $message->id,
+                    'content' => $message->content,
+                    'conversation_id' => $conversation->id,
+                    'item_context' => $itemContext,
+                    'sender' => [
+                        'id' => $message->sender->id,
+                        'name' => $message->sender->name,
+                        'avatar' => $message->sender->avatar_url,
+                    ],
+                    'created_at' => $message->created_at->format('g:i A'),
+                    'formatted_date' => $message->created_at->format('M j, Y'),
+                ]
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send message: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get unread message count
      */
     public function getUnreadCount(): JsonResponse
@@ -266,6 +396,27 @@ class MessageController extends Controller
             ->get()
             ->map(function ($conversation) use ($user) {
                 $otherUser = $conversation->getOtherParticipant($user->id);
+                
+                $latestMessage = null;
+                if ($conversation->messages->isNotEmpty()) {
+                    $message = $conversation->messages->first();
+                    $content = $message->content;
+                    
+                    // Check if this is an item context message
+                    $decoded = json_decode($message->content, true);
+                    if (is_array($decoded) && isset($decoded['type']) && $decoded['type'] === 'item_context') {
+                        // For dropdown preview, show a nice summary instead of JSON
+                        $itemName = $decoded['item']['name'] ?? 'Unknown item';
+                        $content = "💬 About: {$itemName}";
+                    }
+                    
+                    $latestMessage = [
+                        'content' => $content,
+                        'created_at' => $message->created_at->diffForHumans(),
+                        'is_from_me' => $message->sender_id === $user->id,
+                    ];
+                }
+                
                 return [
                     'id' => $conversation->id,
                     'other_user' => [
@@ -273,11 +424,7 @@ class MessageController extends Controller
                         'name' => $otherUser->name,
                         'avatar' => $otherUser->avatar_url,
                     ],
-                    'latest_message' => $conversation->messages->isNotEmpty() ? [
-                        'content' => $conversation->messages->first()->content,
-                        'created_at' => $conversation->messages->first()->created_at->diffForHumans(),
-                        'is_from_me' => $conversation->messages->first()->sender_id === $user->id,
-                    ] : null,
+                    'latest_message' => $latestMessage,
                     'unread_count' => $conversation->messages()
                         ->where('sender_id', '!=', $user->id)
                         ->where('is_read', false)
