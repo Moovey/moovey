@@ -7,13 +7,15 @@ interface MarketplaceGridProps {
     loading: boolean;
     getImageUrl: (imagePath: string) => string;
     handleImageError: (e: React.SyntheticEvent<HTMLImageElement>, imagePath: string) => void;
+    onItemClick: (item: MarketplaceItem) => void;
 }
 
 export default function MarketplaceGrid({ 
     items, 
     loading, 
     getImageUrl, 
-    handleImageError 
+    handleImageError,
+    onItemClick
 }: MarketplaceGridProps) {
     if (loading) {
         return (
@@ -63,6 +65,7 @@ export default function MarketplaceGrid({
                     item={item}
                     getImageUrl={getImageUrl}
                     handleImageError={handleImageError}
+                    onItemClick={onItemClick}
                 />
             ))}
         </div>

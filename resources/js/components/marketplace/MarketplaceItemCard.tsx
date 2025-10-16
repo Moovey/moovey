@@ -4,12 +4,14 @@ interface MarketplaceItemCardProps {
     item: MarketplaceItem;
     getImageUrl: (imagePath: string) => string;
     handleImageError: (e: React.SyntheticEvent<HTMLImageElement>, imagePath: string) => void;
+    onItemClick: (item: MarketplaceItem) => void;
 }
 
 export default function MarketplaceItemCard({ 
     item, 
     getImageUrl, 
-    handleImageError 
+    handleImageError,
+    onItemClick 
 }: MarketplaceItemCardProps) {
     const getConditionColor = (condition: string) => {
         switch (condition) {
@@ -33,7 +35,10 @@ export default function MarketplaceItemCard({
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer">
+        <div 
+            onClick={() => onItemClick(item)}
+            className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer"
+        >
             {/* Image Display */}
             <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden">
                 {item.images && item.images.length > 0 ? (

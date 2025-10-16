@@ -13,12 +13,15 @@ import {
     type Filters,
     type MarketplaceStats
 } from '@/components/marketplace';
+import ItemDetailModal from '@/components/marketplace/ItemDetailModal';
 
 export default function Marketplace() {
     const [items, setItems] = useState<MarketplaceItem[]>([]);
     const [filteredItems, setFilteredItems] = useState<MarketplaceItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     // Helper function to get the correct image URL for cloud hosting
     const getImageUrl = (imagePath: string) => {
@@ -198,6 +201,18 @@ export default function Marketplace() {
         });
     };
 
+    // Handle item click to open modal
+    const handleItemClick = (item: MarketplaceItem) => {
+        setSelectedItem(item);
+        setIsModalOpen(true);
+    };
+
+    // Handle modal close
+    const handleModalClose = () => {
+        setIsModalOpen(false);
+        setSelectedItem(null);
+    };
+
     return (
         <>
             <Head title="Moovey Marketplace - Buy & Sell Preloved Items">
@@ -247,6 +262,7 @@ export default function Marketplace() {
                                     loading={loading}
                                     handleImageError={handleImageError}
                                     getImageUrl={getImageUrl}
+                                    onItemClick={handleItemClick}
                                 />
                             </div>
                         </div>
@@ -255,6 +271,17 @@ export default function Marketplace() {
 
                 <WelcomeFooter />
             </div>
+
+            {/* Item Detail Modal */}
+            {selectedItem && (
+                <ItemDetailModal
+                    item={selectedItem}
+                    isOpen={isModalOpen}
+                    onClose={handleModalClose}
+                    getImageUrl={getImageUrl}
+                    handleImageError={handleImageError}
+                />
+            )}
         </>
     );
 }
