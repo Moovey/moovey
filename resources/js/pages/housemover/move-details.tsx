@@ -4,6 +4,7 @@ import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
 import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
 import CompleteMovingJourney from '@/components/housemover/CompleteMovingJourney';
+import PropertyBasket from '@/components/housemover/chain-checker/PropertyBasket';
 import { toast } from 'react-toastify';
 
 type TaskCategory = 'pre-move' | 'in-move' | 'post-move';
@@ -470,23 +471,17 @@ export default function MoveDetails({ auth, moveDetails, taskData }: MoveDetails
                                     )}
                                     {activeSection === 3 && (
                                         <>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Target Area</label>
-                                                <input type="text" value={personalDetails.targetArea} onChange={e => updatePersonalDetail('targetArea', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-[#1A237E] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:border-[#00BCD4]" placeholder="e.g., South Manchester, Liverpool City Centre" />
-                                                <div className="mt-4">
-                                                    <Link href="/housemover/connections" className="inline-flex items-center justify-center space-x-2 w-full px-6 py-3 bg-gradient-to-r from-[#00BCD4] to-[#0aa5c0] text-white rounded-lg hover:from-[#0097A7] hover:to-[#00838f] transition-all duration-200 font-semibold shadow-lg transform hover:scale-105 border-2 border-white">
-                                                        <span className="text-xl">🏘️</span>
-                                                        <span>Find Estate Agents in This Area</span>
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                        </svg>
-                                                    </Link>
-                                                    <p className="text-xs text-gray-500 mt-2 text-center">Connect with local estate agents who know your target area</p>
+                                            <div className="col-span-1 md:col-span-2">
+                                                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                                        <span className="text-xl mr-2">�</span>
+                                                        Property Search & Basket
+                                                    </h4>
+                                                    <p className="text-sm text-gray-600 mb-6">
+                                                        Manage your property interests, add properties from Rightmove, and track your moving journey.
+                                                    </p>
+                                                    <PropertyBasket />
                                                 </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Property Requirements</label>
-                                                <textarea value={personalDetails.propertyRequirements} onChange={e => updatePersonalDetail('propertyRequirements', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-[#1A237E] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:border-[#00BCD4]" rows={3} placeholder="Bedrooms, garden, parking, schools nearby..." />
                                             </div>
                                         </>
                                     )}
