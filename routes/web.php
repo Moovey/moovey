@@ -103,6 +103,15 @@ Route::middleware('auth')->group(function () {
     // User Profile Get
     Route::get('/api/user/{user}/profile', [\App\Http\Controllers\UserProfileController::class, 'apiShow'])->name('api.user.profile.show');
     
+    // Messaging API Routes
+    Route::get('/messages', [\App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/{conversation}', [\App\Http\Controllers\MessageController::class, 'show'])->name('messages.show');
+    Route::post('/api/messages', [\App\Http\Controllers\MessageController::class, 'store'])->name('api.messages.store');
+    Route::post('/api/messages/conversation/start', [\App\Http\Controllers\MessageController::class, 'startConversation'])->name('api.messages.start-conversation');
+    Route::get('/api/messages/unread-count', [\App\Http\Controllers\MessageController::class, 'getUnreadCount'])->name('api.messages.unread-count');
+    Route::get('/api/messages/conversations-preview', [\App\Http\Controllers\MessageController::class, 'conversationsPreview'])->name('api.messages.conversations-preview');
+    Route::patch('/api/messages/conversations/{conversation}/mark-as-read', [\App\Http\Controllers\MessageController::class, 'markAsRead'])->name('api.messages.mark-as-read');
+    
     // Declutter Items API Routes
     Route::apiResource('api/declutter-items', \App\Http\Controllers\DeclutterItemController::class);
     Route::patch('/api/declutter-items/{id}/list-for-sale', [\App\Http\Controllers\DeclutterItemController::class, 'listForSale'])->name('api.declutter-items.list-for-sale');

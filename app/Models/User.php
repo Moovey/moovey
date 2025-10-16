@@ -235,4 +235,69 @@ class User extends Authenticatable
     {
         return $this->hasMany(Property::class, 'claimed_by_user_id');
     }
+
+    /**
+     * Get conversations where user is participant one.
+     */
+    public function conversationsAsUserOne(): HasMany
+    {
+        return $this->hasMany(Conversation::class, 'user_one_id');
+    }
+
+    /**
+     * Get conversations where user is participant two.
+     */
+    public function conversationsAsUserTwo(): HasMany
+    {
+        return $this->hasMany(Conversation::class, 'user_two_id');
+    }
+
+    /**
+     * Get all conversations for this user.
+     */
+    public function conversations()
+    {
+        return Conversation::where('user_one_id', $this->id)
+            ->orWhere('user_two_id', $this->id)
+            ->orderBy('last_message_at', 'desc');
+    }
+
+    /**
+     * Get sent messages.
+     */
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    /**
+     * Get unread message count for this user.
+     */
+    public function getUnreadMessageCount(): int
+    {
+        return Message::whereHas('conversation', function ($query) {
+            $query->where('user_one_id', $this->id)
+                  ->orWhere('user_two_id', $this->id);
+        })
+        ->where('sender_id', '!=', $this->id)
+        ->where('is_read', false)
+        ->count();
+    }
+
+    /**
+     * Get or create conversation with another user.
+     */
+    public function getConversationWith(User $user): Conversation
+    {
+        // Ensure consistent ordering: lower ID is always user_one
+        $userOneId = min($this->id, $user->id);
+        $userTwoId = max($this->id, $user->id);
+
+        return Conversation::firstOrCreate(
+            [
+                'user_one_id' => $userOneId,
+                'user_two_id' => $userTwoId
+            ]
+        );
+    }
 }

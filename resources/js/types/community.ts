@@ -59,3 +59,32 @@ export interface FriendshipStatus {
     canAcceptRequest: boolean;
     canCancelRequest: boolean;
 }
+
+export interface Message {
+    id: number;
+    content: string;
+    sender: {
+        id: number;
+        name: string;
+        avatar: string | null;
+    };
+    is_from_me: boolean;
+    created_at: string;
+    formatted_date: string;
+}
+
+export interface Conversation {
+    id: number;
+    other_user: {
+        id: number;
+        name: string;
+        avatar: string | null;
+    };
+    latest_message: {
+        content: string;
+        created_at: string;
+        is_from_me: boolean;
+    } | null;
+    unread_count: number;
+    last_message_at: string | null;
+}
