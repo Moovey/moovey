@@ -303,10 +303,45 @@ export default function OptimizedCommunityFeed({
     }, [posts.length, pagination]);
 
     return (
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <section className="py-8 sm:py-12 lg:py-16 px-3 sm:px-6 lg:px-8 bg-gray-50">
             <div className="max-w-7xl mx-auto">
-                <div className="flex gap-8">
-                    {/* Left Sidebar - Memoized to prevent re-renders */}
+                {/* Mobile sidebar - shown as horizontal cards on mobile/tablet */}
+                <div className="lg:hidden mb-6 sm:mb-8 space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+                    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg">
+                        <div className="text-center">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-gradient-to-br from-[#17B7C7] to-[#1A237E] rounded-xl sm:rounded-2xl flex items-center justify-center">
+                                <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.8-9M7 13l-1.8-9m0 0h15.75M7 13v6a2 2 0 002 2h8a2 2 0 002-2v-6M9 9h6" />
+                                </svg>
+                            </div>
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Marketplace</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Find great deals</p>
+                            <Link
+                                href="/marketplace"
+                                className="w-full bg-gradient-to-r from-[#17B7C7] to-[#1A237E] text-white px-3 py-2 text-xs sm:text-sm rounded-lg font-medium hover:from-[#139AAA] hover:to-[#0D1957] transition-all duration-200 transform hover:scale-105 shadow-md inline-block text-center"
+                            >
+                                Browse
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg">
+                        <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Community Stats</h4>
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                            <div className="text-center">
+                                <div className="font-semibold text-[#17B7C7] text-sm sm:text-base">1,247+</div>
+                                <div className="text-xs text-gray-600">Members</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="font-semibold text-[#17B7C7] text-sm sm:text-base">42</div>
+                                <div className="text-xs text-gray-600">Today</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="lg:flex lg:gap-6 xl:gap-8">
+                    {/* Left Sidebar - Desktop only */}
                     <div className="hidden lg:flex lg:w-64 xl:w-80 flex-col space-y-6">
                         <div className="bg-white rounded-3xl p-6 shadow-lg">
                             <div className="text-center">
@@ -379,13 +414,13 @@ export default function OptimizedCommunityFeed({
                     </div>
 
                     {/* Main Content Area */}
-                    <div className="flex-1 max-w-4xl">
+                    <div className="flex-1 w-full lg:max-w-4xl">
                         {/* User Profile Header */}
                         {isAuthenticated && currentUser && (
-                            <div className="bg-white rounded-3xl p-6 shadow-lg mb-6">
+                            <div className="bg-white rounded-2xl lg:rounded-3xl p-4 sm:p-6 shadow-lg mb-4 sm:mb-6">
                                 <button 
                                     onClick={() => window.location.href = `/user/${currentUser.id}`}
-                                    className="w-full flex items-center space-x-4 p-2 rounded-xl hover:bg-gray-50 transition-colors group"
+                                    className="w-full flex items-center space-x-3 sm:space-x-4 p-2 rounded-xl hover:bg-gray-50 transition-colors group"
                                 >
                                     <UserAvatar 
                                         userId={currentUser.id}
@@ -394,16 +429,16 @@ export default function OptimizedCommunityFeed({
                                         size="large"
                                         clickable={false}
                                     />
-                                    <div className="flex-1 text-left">
-                                        <h3 className="text-xl font-semibold text-[#1A237E] group-hover:text-[#17B7C7] transition-colors">
+                                    <div className="flex-1 text-left min-w-0">
+                                        <h3 className="text-lg sm:text-xl font-semibold text-[#1A237E] group-hover:text-[#17B7C7] transition-colors truncate">
                                             {currentUser.name}
                                         </h3>
-                                        <p className="text-gray-600 text-sm">
+                                        <p className="text-gray-600 text-xs sm:text-sm">
                                             Click to view your profile and posts
                                         </p>
                                     </div>
-                                    <div className="text-[#17B7C7] opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="text-[#17B7C7] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                         </svg>
                                     </div>
@@ -411,25 +446,26 @@ export default function OptimizedCommunityFeed({
                             </div>
                         )}
 
-                        <div className="bg-white rounded-3xl p-8 shadow-lg">
-                            <div className="flex justify-between items-center mb-8">
-                                <div>
-                                    <h2 className="text-3xl font-bold text-[#1A237E] mb-2">Community Feed</h2>
-                                    <p className="text-gray-600">Share your moving journey and connect with others</p>
+                        <div className="bg-white rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-lg">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+                                <div className="w-full sm:w-auto">
+                                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#1A237E] mb-1 sm:mb-2">Community Feed</h2>
+                                    <p className="text-sm sm:text-base text-gray-600">Share your moving journey and connect with others</p>
                                 </div>
                                 {isAuthenticated ? (
                                     <button 
                                         onClick={() => setShowPostForm(!showPostForm)}
-                                        className="bg-[#17B7C7] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors shadow-lg"
+                                        className="w-full sm:w-auto bg-[#17B7C7] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors shadow-lg text-sm sm:text-base"
                                     >
-                                        Create Post
+                                        <span className="sm:hidden">✏️ Create Post</span>
+                                        <span className="hidden sm:inline">Create Post</span>
                                     </button>
                                 ) : (
-                                    <div className="text-center">
-                                        <p className="text-sm text-gray-600 mb-2">Want to create posts?</p>
+                                    <div className="w-full sm:w-auto text-center sm:text-right">
+                                        <p className="text-xs sm:text-sm text-gray-600 mb-2">Want to create posts?</p>
                                         <a 
                                             href="/login" 
-                                            className="bg-[#17B7C7] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors shadow-lg text-sm inline-block"
+                                            className="w-full sm:w-auto bg-[#17B7C7] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors shadow-lg text-sm inline-block"
                                         >
                                             Log In
                                         </a>
@@ -439,13 +475,13 @@ export default function OptimizedCommunityFeed({
                             
                             {/* Post Creation Form */}
                             {showPostForm && (
-                                <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-8">
-                                    <div className="p-4">
+                                <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6 sm:mb-8">
+                                    <div className="p-3 sm:p-4">
                                         <textarea
                                             value={newPostContent}
                                             onChange={(e) => setNewPostContent(e.target.value)}
                                             placeholder="What's on your mind? Share your moving experience, ask questions, or offer advice to fellow movers..."
-                                            className="w-full p-3 border-none resize-none focus:outline-none text-gray-900 text-lg placeholder-gray-500"
+                                            className="w-full p-2 sm:p-3 border-none resize-none focus:outline-none text-gray-900 text-sm sm:text-base lg:text-lg placeholder-gray-500"
                                             rows={3}
                                             disabled={isSubmitting}
                                         />
@@ -455,25 +491,25 @@ export default function OptimizedCommunityFeed({
                                             value={newPostLocation}
                                             onChange={(e) => setNewPostLocation(e.target.value)}
                                             placeholder="📍 Add location (optional)"
-                                            className="w-full p-3 mt-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900"
+                                            className="w-full p-2 sm:p-3 mt-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 text-sm sm:text-base"
                                             disabled={isSubmitting}
                                         />
                                         
                                         {/* Media Preview */}
                                         {(selectedImages.length > 0 || selectedVideo) && (
-                                            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                                            <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
                                                 {selectedImages.length > 0 && (
-                                                    <div className="grid grid-cols-2 gap-2">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                         {selectedImages.map((image, index) => (
                                                             <div key={index} className="relative">
                                                                 <img
                                                                     src={URL.createObjectURL(image)}
                                                                     alt={`Preview ${index + 1}`}
-                                                                    className="w-full h-32 object-cover rounded-lg"
+                                                                    className="w-full h-24 sm:h-32 object-cover rounded-lg"
                                                                 />
                                                                 <button
                                                                     onClick={() => removeImage(index)}
-                                                                    className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-90"
+                                                                    className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center hover:bg-opacity-90 text-xs sm:text-sm"
                                                                 >
                                                                     ×
                                                                 </button>
@@ -486,12 +522,12 @@ export default function OptimizedCommunityFeed({
                                                     <div className="relative">
                                                         <video
                                                             src={URL.createObjectURL(selectedVideo)}
-                                                            className="w-full h-48 object-cover rounded-lg"
+                                                            className="w-full h-36 sm:h-48 object-cover rounded-lg"
                                                             controls
                                                         />
                                                         <button
                                                             onClick={removeVideo}
-                                                            className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-90"
+                                                            className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center hover:bg-opacity-90 text-xs sm:text-sm"
                                                         >
                                                             ×
                                                         </button>
@@ -503,14 +539,14 @@ export default function OptimizedCommunityFeed({
                                     
                                     {/* Emoji Picker */}
                                     {showEmojiPicker && (
-                                        <div className="px-4 pb-4">
-                                            <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                                                <div className="grid grid-cols-8 gap-2">
+                                        <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+                                            <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 shadow-lg">
+                                                <div className="grid grid-cols-6 sm:grid-cols-8 gap-1 sm:gap-2">
                                                     {['😀', '😂', '😊', '😍', '🤔', '😢', '😮', '👍', '👎', '❤️', '🎉', '🏠', '📦', '🚚', '✨', '💪'].map(emoji => (
                                                         <button
                                                             key={emoji}
                                                             onClick={() => addEmoji(emoji)}
-                                                            className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                                                            className="text-lg sm:text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
                                                         >
                                                             {emoji}
                                                         </button>
@@ -521,13 +557,13 @@ export default function OptimizedCommunityFeed({
                                     )}
                                     
                                     {/* Action Bar */}
-                                    <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
-                                        <div className="flex items-center space-x-2">
-                                            <label className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
-                                                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <div className="px-3 sm:px-4 py-2 sm:py-3 border-t border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                                        <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto w-full sm:w-auto">
+                                            <label className="flex items-center space-x-1 px-2 sm:px-3 py-1 sm:py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors flex-shrink-0">
+                                                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                                                 </svg>
-                                                <span className="text-sm font-medium">Photo</span>
+                                                <span className="text-xs sm:text-sm font-medium">Photo</span>
                                                 <input
                                                     type="file"
                                                     multiple
@@ -538,11 +574,11 @@ export default function OptimizedCommunityFeed({
                                                 />
                                             </label>
                                             
-                                            <label className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
-                                                <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <label className="flex items-center space-x-1 px-2 sm:px-3 py-1 sm:py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors flex-shrink-0">
+                                                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                                                     <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
                                                 </svg>
-                                                <span className="text-sm font-medium">Video</span>
+                                                <span className="text-xs sm:text-sm font-medium">Video</span>
                                                 <input
                                                     type="file"
                                                     accept="video/*"
@@ -554,15 +590,15 @@ export default function OptimizedCommunityFeed({
                                             
                                             <button
                                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                                className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                                className="flex items-center space-x-1 px-2 sm:px-3 py-1 sm:py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
                                                 disabled={isSubmitting}
                                             >
-                                                <span className="text-lg">😊</span>
-                                                <span className="text-sm font-medium">Emoji</span>
+                                                <span className="text-base sm:text-lg">😊</span>
+                                                <span className="text-xs sm:text-sm font-medium">Emoji</span>
                                             </button>
                                         </div>
                                         
-                                        <div className="flex items-center space-x-3">
+                                        <div className="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
                                             <button
                                                 onClick={() => {
                                                     setShowPostForm(false);
@@ -570,7 +606,7 @@ export default function OptimizedCommunityFeed({
                                                     setSelectedVideo(null);
                                                     setShowEmojiPicker(false);
                                                 }}
-                                                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                                                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors text-sm sm:text-base"
                                                 disabled={isSubmitting}
                                             >
                                                 Cancel
@@ -578,7 +614,7 @@ export default function OptimizedCommunityFeed({
                                             <button
                                                 onClick={handleCreatePost}
                                                 disabled={!newPostContent.trim() || isSubmitting}
-                                                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="flex-1 sm:flex-none bg-[#17B7C7] text-white px-4 sm:px-6 py-2 rounded-lg font-medium hover:bg-[#139AAA] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                                             >
                                                 {isSubmitting ? 'Posting...' : 'Post'}
                                             </button>
@@ -588,7 +624,7 @@ export default function OptimizedCommunityFeed({
                             )}
                             
                             {/* Community Posts */}
-                            <div className="space-y-8">
+                            <div className="space-y-4 sm:space-y-6 lg:space-y-8">
                                 {sortedPosts.map((post) => (
                                     <OptimizedPostCard
                                         key={`${post.id}-${post.timestamp}`}
@@ -606,22 +642,22 @@ export default function OptimizedCommunityFeed({
                                 
                                 {/* Loading skeleton */}
                                 {isLoadingMore && (
-                                    <div className="border-b border-gray-100 pb-8">
-                                        <div className="flex items-start space-x-4 animate-pulse">
-                                            <div className="w-14 h-14 bg-gray-200 rounded-full"></div>
+                                    <div className="border-b border-gray-100 pb-6 sm:pb-8">
+                                        <div className="flex items-start space-x-3 sm:space-x-4 animate-pulse">
+                                            <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gray-200 rounded-full"></div>
                                             <div className="flex-1">
-                                                <div className="flex items-center space-x-3 mb-3">
-                                                    <div className="h-4 bg-gray-200 rounded w-24"></div>
-                                                    <div className="h-3 bg-gray-200 rounded w-16"></div>
+                                                <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
+                                                    <div className="h-3 sm:h-4 bg-gray-200 rounded w-20 sm:w-24"></div>
+                                                    <div className="h-2 sm:h-3 bg-gray-200 rounded w-12 sm:w-16"></div>
                                                 </div>
-                                                <div className="space-y-2 mb-4">
-                                                    <div className="h-4 bg-gray-200 rounded"></div>
-                                                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                                                <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
+                                                    <div className="h-3 sm:h-4 bg-gray-200 rounded"></div>
+                                                    <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4"></div>
                                                 </div>
-                                                <div className="flex items-center space-x-8">
-                                                    <div className="h-6 bg-gray-200 rounded w-12"></div>
-                                                    <div className="h-6 bg-gray-200 rounded w-16"></div>
-                                                    <div className="h-6 bg-gray-200 rounded w-12"></div>
+                                                <div className="flex items-center space-x-4 sm:space-x-8">
+                                                    <div className="h-5 sm:h-6 bg-gray-200 rounded w-10 sm:w-12"></div>
+                                                    <div className="h-5 sm:h-6 bg-gray-200 rounded w-12 sm:w-16"></div>
+                                                    <div className="h-5 sm:h-6 bg-gray-200 rounded w-10 sm:w-12"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -631,9 +667,9 @@ export default function OptimizedCommunityFeed({
 
                             {/* End of posts message */}
                             {!pagination.hasMore && posts.length > 0 && (
-                                <div className="text-center mt-8 py-6 border-t border-gray-200">
-                                    <p className="text-gray-600 font-medium">🎉 You've seen all posts!</p>
-                                    <p className="text-sm text-gray-500 mt-1">
+                                <div className="text-center mt-6 sm:mt-8 py-4 sm:py-6 border-t border-gray-200">
+                                    <p className="text-sm sm:text-base text-gray-600 font-medium">🎉 You've seen all posts!</p>
+                                    <p className="text-xs sm:text-sm text-gray-500 mt-1">
                                         Total posts: {pagination.total}
                                     </p>
                                 </div>

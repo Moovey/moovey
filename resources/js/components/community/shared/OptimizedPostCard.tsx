@@ -54,7 +54,7 @@ const PostImage = memo(({ image, index, totalImages }: {
             <img
                 src={imageUrl}
                 alt={`Post image ${index + 1}`}
-                className="w-full h-64 object-cover hover:opacity-95 transition-opacity cursor-pointer"
+                className="w-full h-40 sm:h-48 lg:h-64 object-cover hover:opacity-95 transition-opacity cursor-pointer rounded-lg"
                 onError={(e) => handleImageError(e, image)}
                 data-attempt="0"
                 onClick={() => window.open(imageUrl, '_blank')}
@@ -68,11 +68,11 @@ PostImage.displayName = 'PostImage';
 
 // Memoized video component
 const PostVideo = memo(({ video }: { video: string }) => (
-    <div className="mb-4">
+    <div className="mb-3 sm:mb-4">
         <video
             src={video}
             controls
-            className="w-full max-h-96 rounded-lg"
+            className="w-full max-h-64 sm:max-h-80 lg:max-h-96 rounded-lg"
             preload="metadata"
         >
             Your browser does not support the video tag.
@@ -190,8 +190,8 @@ const OptimizedPostCard = memo(({
     }, [post, isSharedPost, onPostChange]);
 
     return (
-        <div className="border-b border-gray-100 pb-8 last:border-b-0">
-            <div className="flex items-start space-x-4">
+        <div className="border-b border-gray-100 pb-4 sm:pb-6 lg:pb-8 last:border-b-0">
+            <div className="flex items-start space-x-3 sm:space-x-4">
                 <UserAvatar 
                     userId={isSharedPost ? post.user_id : displayUserId}
                     userName={isSharedPost ? post.userName : displayUserName}
@@ -202,46 +202,46 @@ const OptimizedPostCard = memo(({
                 <div className="flex-1">
                     {/* Shared post header */}
                     {isSharedPost && (
-                        <div className="mb-3">
-                            <div className="flex items-center space-x-2 mb-2">
+                        <div className="mb-2 sm:mb-3">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 mb-2">
                                 <button 
                                     onClick={() => window.location.href = `/user/${post.user_id}`}
-                                    className="font-semibold text-[#1A237E] hover:text-[#17B7C7] transition-colors cursor-pointer"
+                                    className="font-semibold text-sm sm:text-base text-[#1A237E] hover:text-[#17B7C7] transition-colors cursor-pointer"
                                 >
                                     {post.userName}
                                 </button>
-                                <span className="text-sm text-gray-500">shared a post</span>
-                                <span className="text-sm text-gray-500">{post.timestamp}</span>
+                                <span className="text-xs sm:text-sm text-gray-500">shared a post</span>
+                                <span className="text-xs sm:text-sm text-gray-500">{post.timestamp}</span>
                             </div>
                             {post.content && (
-                                <p className="text-gray-700 mb-3">{post.content}</p>
+                                <p className="text-sm sm:text-base text-gray-700 mb-2 sm:mb-3">{post.content}</p>
                             )}
                         </div>
                     )}
                     
                     {/* Original post content */}
-                    <div className={isSharedPost ? "bg-gray-50 border border-gray-200 rounded-lg p-4" : ""}>
-                        <div className="flex items-center space-x-3 mb-3">
+                    <div className={isSharedPost ? "bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4" : ""}>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-1 sm:space-y-0 sm:space-x-3 mb-2 sm:mb-3">
                             <button 
                                 onClick={() => window.location.href = `/user/${displayUserId}`}
-                                className="font-semibold text-[#1A237E] hover:text-[#17B7C7] transition-colors cursor-pointer"
+                                className="font-semibold text-sm sm:text-base text-[#1A237E] hover:text-[#17B7C7] transition-colors cursor-pointer"
                             >
                                 {displayUserName}
                             </button>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-xs sm:text-sm text-gray-500">
                                 {isSharedPost ? displayPost.timestamp : post.timestamp}
                             </span>
                             {displayLocation && (
-                                <span className="text-xs bg-[#E0F7FA] text-[#1A237E] px-2 py-1 rounded-full">
+                                <span className="text-xs bg-[#E0F7FA] text-[#1A237E] px-2 py-1 rounded-full mt-1 sm:mt-0">
                                     📍 {displayLocation}
                                 </span>
                             )}
                         </div>
-                        <p className="text-gray-700 mb-4 leading-relaxed">{displayContent}</p>
+                        <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4 leading-relaxed">{displayContent}</p>
                         
                         {/* Media Display */}
                         {displayPost.media_type === 'images' && displayPost.images && displayPost.images.length > 0 && (
-                            <div className="mb-4">
+                            <div className="mb-3 sm:mb-4">
                                 <div className={mediaGridClass}>
                                     {displayPost.images.map((image, index) => (
                                         <PostImage
