@@ -8,7 +8,7 @@ interface ChainStagesProps {
 
 const ChainStages: React.FC<ChainStagesProps> = ({ chainData, onUpdate }) => {
     const [updatingStage, setUpdatingStage] = useState<string | null>(null);
-    const [stageNotes, setStageNotes] = useState<Record<string, string>>({});
+    const [stageProgress, setStageProgress] = useState<Record<string, number>>({});
 
     const stages = [
         {
@@ -19,18 +19,25 @@ const ChainStages: React.FC<ChainStagesProps> = ({ chainData, onUpdate }) => {
             tips: ['Celebrate this milestone!', 'Start arranging mortgage', 'Book property survey']
         },
         {
-            id: 'searches_surveys',
-            title: 'Searches & Surveys',
-            description: 'Legal searches and property survey completed',
-            icon: '🔍',
-            tips: ['Chase solicitor for updates', 'Review survey results', 'Negotiate if issues found']
-        },
-        {
-            id: 'mortgage_approval',
-            title: 'Mortgage Approval',
+            id: 'mortgage_approved',
+            title: 'Mortgage Approved',
             description: 'Mortgage application approved and offer issued',
             icon: '💰',
             tips: ['Submit all required documents', 'Arrange building insurance', 'Confirm completion date']
+        },
+        {
+            id: 'searches_complete',
+            title: 'Searches Complete',
+            description: 'Legal searches and property survey completed',
+            icon: '🔍',
+            tips: ['Chase solicitor for updates', 'Review search results', 'Negotiate if issues found']
+        },
+        {
+            id: 'surveys_complete',
+            title: 'Surveys Complete',
+            description: 'Property survey and valuation completed',
+            icon: '🏠',
+            tips: ['Review survey report', 'Address any issues found', 'Renegotiate if necessary']
         },
         {
             id: 'contracts_exchanged',
@@ -41,23 +48,37 @@ const ChainStages: React.FC<ChainStagesProps> = ({ chainData, onUpdate }) => {
         },
         {
             id: 'completion',
-            title: 'Completion',
+            title: 'Completion Achieved',
             description: 'Keys collected and move completed',
             icon: '🔑',
             tips: ['Final walk-through', 'Collect keys', 'Update address everywhere']
         }
     ];
 
-    const getStageStatus = (stageId: string) => {
-        const status = chainData.chain_status?.[stageId];
-        return {
-            completed: status?.completed || false,
-            notes: status?.notes || '',
-            updated_at: status?.updated_at,
-        };
-    };
+    const progressOptions = [
+        { value: 0, label: 'Not Started', color: 'text-red-600', bgColor: 'bg-red-500' },
+        { value: 25, label: 'In Progress', color: 'text-orange-600', bgColor: 'bg-orange-500' },
+        { value: 50, label: 'Awaiting Response', color: 'text-yellow-600', bgColor: 'bg-yellow-500' },
+        { value: 75, label: 'Pending Completion', color: 'text-blue-600', bgColor: 'bg-blue-500' },
+        { value: 100, label: 'Complete', color: 'text-green-600', bgColor: 'bg-green-500' }
+    ];
 
-    const handleStageToggle = async (stageId: string, completed: boolean) => {
+    // Initialize stage progress from chain data
+    React.useEffect(() => {
+        const initialProgress: Record<string, number> = {};
+        stages.forEach(stage => {
+            const status = chainData.chain_status?.[stage.id];
+            if (status?.completed) {
+                initialProgress[stage.id] = 100;
+            } else {
+                // Check for stored percentage progress
+                initialProgress[stage.id] = status?.progress || 0;
+            }
+        });
+        setStageProgress(initialProgress);
+    }, [chainData]);
+
+    const handleProgressUpdate = async (stageId: string, progress: number) => {
         setUpdatingStage(stageId);
         
         try {
@@ -70,16 +91,17 @@ const ChainStages: React.FC<ChainStagesProps> = ({ chainData, onUpdate }) => {
                 },
                 body: JSON.stringify({
                     stage: stageId,
-                    completed: completed,
-                    notes: stageNotes[stageId] || '',
+                    completed: progress === 100,
+                    progress: progress,
+                    notes: `Progress updated to ${progress}%`,
                 }),
             });
 
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
+                    setStageProgress(prev => ({ ...prev, [stageId]: progress }));
                     onUpdate();
-                    setStageNotes(prev => ({ ...prev, [stageId]: '' }));
                 }
             }
         } catch (error) {
@@ -89,146 +111,204 @@ const ChainStages: React.FC<ChainStagesProps> = ({ chainData, onUpdate }) => {
         }
     };
 
-    const calculateOverallProgress = () => {
-        const completedStages = stages.filter(stage => 
-            getStageStatus(stage.id).completed
-        ).length;
-        return Math.round((completedStages / stages.length) * 100);
+    const calculateOverallLinkHealth = () => {
+        const totalProgress = Object.values(stageProgress).reduce((sum, progress) => sum + progress, 0);
+        const maxProgress = stages.length * 100;
+        return Math.round((totalProgress / maxProgress) * 100);
     };
+
+    const getProgressOption = (progress: number) => {
+        return progressOptions.find(option => option.value === progress) || progressOptions[0];
+    };
+
+    const isUserOwnedProperty = () => {
+        // Check if this is a property the user owns and can edit
+        // For now, we'll assume user can edit if they have a chain_role
+        return chainData.chain_role && (
+            chainData.chain_role === 'first_time_buyer' ||
+            chainData.chain_role === 'seller_only' ||
+            chainData.chain_role === 'buyer_seller'
+        );
+    };
+
+    if (!isUserOwnedProperty()) {
+        return (
+            <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100 text-center">
+                <div className="text-gray-400 text-6xl mb-4">🔒</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    View-Only Access
+                </h3>
+                <p className="text-gray-600">
+                    You can only view progress for properties you don't own. 
+                    Contact the property owner to request updates.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8">
-            {/* Progress Overview */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            {/* Progress Tracking Header */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm p-6 border border-blue-100">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Overall Progress</h3>
-                    <span className="text-sm text-gray-600">
-                        {stages.filter(s => getStageStatus(s.id).completed).length} of {stages.length} stages completed
-                    </span>
+                    <div>
+                        <h3 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
+                            <span className="text-blue-500">📊</span>
+                            <span>Progress Tracking</span>
+                        </h3>
+                        <p className="text-gray-600 mt-1">Update your property link progress</p>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-3xl font-bold text-blue-600">
+                            {calculateOverallLinkHealth()}%
+                        </div>
+                        <div className="text-sm text-gray-600">Link Health</div>
+                    </div>
                 </div>
                 
-                <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                {/* Overall Progress Bar */}
+                <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
                     <div 
-                        className="bg-gradient-to-r from-[#00BCD4] to-[#00ACC1] h-3 rounded-full transition-all duration-500"
-                        style={{ width: `${calculateOverallProgress()}%` }}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-500 h-4 rounded-full transition-all duration-500"
+                        style={{ width: `${calculateOverallLinkHealth()}%` }}
                     ></div>
                 </div>
                 
-                <div className="text-center text-2xl font-bold text-gray-900">
-                    {calculateOverallProgress()}% Complete
+                <div className="text-center text-sm text-gray-600">
+                    Overall property link completion
                 </div>
             </div>
 
-            {/* Stages List */}
-            <div className="space-y-4">
+            {/* Individual Stage Progress */}
+            <div className="space-y-6">
+                <h4 className="text-lg font-semibold text-gray-900">Stage Progress</h4>
+                
                 {stages.map((stage, index) => {
-                    const status = getStageStatus(stage.id);
+                    const currentProgress = stageProgress[stage.id] || 0;
                     const isUpdating = updatingStage === stage.id;
+                    const progressOption = getProgressOption(currentProgress);
                     
                     return (
                         <motion.div
                             key={stage.id}
-                            className={`
-                                bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden
-                                ${status.completed ? 'ring-2 ring-green-500 ring-opacity-20' : ''}
-                            `}
+                            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                         >
                             <div className="p-6">
                                 <div className="flex items-start space-x-4">
-                                    {/* Stage Icon & Status */}
+                                    {/* Stage Icon */}
                                     <div className="flex-shrink-0">
                                         <div className={`
                                             w-12 h-12 rounded-full border-2 flex items-center justify-center text-xl
-                                            ${status.completed 
+                                            ${currentProgress === 100 
                                                 ? 'border-green-500 bg-green-50' 
+                                                : currentProgress > 0
+                                                ? 'border-blue-500 bg-blue-50'
                                                 : 'border-gray-300 bg-gray-50'
                                             }
                                         `}>
-                                            {status.completed ? '✅' : stage.icon}
+                                            {currentProgress === 100 ? '✅' : stage.icon}
                                         </div>
                                     </div>
                                     
                                     {/* Stage Content */}
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-start justify-between">
+                                        <div className="flex items-start justify-between mb-4">
                                             <div>
-                                                <h4 className="text-lg font-semibold text-gray-900">
+                                                <h5 className="text-lg font-semibold text-gray-900">
                                                     {stage.title}
-                                                </h4>
+                                                </h5>
                                                 <p className="text-gray-600 mt-1">
                                                     {stage.description}
                                                 </p>
-                                                
-                                                {status.updated_at && (
-                                                    <p className="text-sm text-gray-500 mt-2">
-                                                        Last updated: {new Date(status.updated_at).toLocaleDateString()}
-                                                    </p>
-                                                )}
                                             </div>
                                             
-                                            {/* Toggle Button */}
-                                            <button
-                                                onClick={() => handleStageToggle(stage.id, !status.completed)}
-                                                disabled={isUpdating}
-                                                className={`
-                                                    px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50
-                                                    ${status.completed
-                                                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                                        : 'bg-[#00BCD4] text-white hover:bg-[#00ACC1]'
-                                                    }
-                                                `}
-                                            >
-                                                {isUpdating ? (
-                                                    <div className="flex items-center space-x-2">
-                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                                        <span>Updating...</span>
-                                                    </div>
-                                                ) : (
-                                                    status.completed ? 'Mark as Pending' : 'Mark as Complete'
-                                                )}
-                                            </button>
+                                            {/* Current Status Badge */}
+                                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${progressOption.color} bg-gray-100`}>
+                                                {progressOption.label} ({currentProgress}%)
+                                            </div>
                                         </div>
                                         
-                                        {/* Stage Notes */}
-                                        {status.notes && (
-                                            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                                                <p className="text-sm text-gray-700">
-                                                    <span className="font-medium">Notes:</span> {status.notes}
-                                                </p>
+                                        {/* Progress Bar */}
+                                        <div className="mb-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-medium text-gray-700">Progress</span>
+                                                <span className="text-sm text-gray-600">{currentProgress}%</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                                <div 
+                                                    className={`h-2 rounded-full transition-all duration-500 ${progressOption.bgColor}`}
+                                                    style={{ width: `${currentProgress}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Progress Selection Radio Buttons */}
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                                Update Progress:
+                                            </label>
+                                            <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+                                                {progressOptions.map((option) => (
+                                                    <label
+                                                        key={option.value}
+                                                        className={`
+                                                            relative flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all
+                                                            ${currentProgress === option.value
+                                                                ? 'border-blue-500 bg-blue-50'
+                                                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                                                            }
+                                                            ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}
+                                                        `}
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name={`progress-${stage.id}`}
+                                                            value={option.value}
+                                                            checked={currentProgress === option.value}
+                                                            onChange={() => handleProgressUpdate(stage.id, option.value)}
+                                                            disabled={isUpdating}
+                                                            className="sr-only"
+                                                        />
+                                                        <div className="text-center">
+                                                            <div className={`text-lg font-bold ${option.color}`}>
+                                                                {option.value}%
+                                                            </div>
+                                                            <div className="text-xs text-gray-600 mt-1">
+                                                                {option.label}
+                                                            </div>
+                                                        </div>
+                                                        {currentProgress === option.value && (
+                                                            <div className="absolute top-1 right-1 w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center">
+                                                                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                                                            </div>
+                                                        )}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Loading State */}
+                                        {isUpdating && (
+                                            <div className="flex items-center justify-center mt-4 p-2 bg-blue-50 rounded-lg">
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+                                                <span className="text-sm text-blue-600">Updating progress...</span>
                                             </div>
                                         )}
-                                        
-                                        {/* Add Notes Section */}
-                                        <div className="mt-4">
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Add notes for this stage (optional):
-                                            </label>
-                                            <textarea
-                                                value={stageNotes[stage.id] || ''}
-                                                onChange={(e) => setStageNotes(prev => ({
-                                                    ...prev,
-                                                    [stage.id]: e.target.value
-                                                }))}
-                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-sm text-gray-900"
-                                                rows={2}
-                                                placeholder="Any updates or comments about this stage..."
-                                            />
-                                        </div>
                                         
                                         {/* Tips */}
                                         <div className="mt-4">
                                             <details className="group">
-                                                <summary className="cursor-pointer text-sm font-medium text-[#00BCD4] hover:text-[#00ACC1] transition-colors">
+                                                <summary className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
                                                     💡 Tips for this stage
                                                 </summary>
                                                 <div className="mt-2 ml-4">
                                                     <ul className="space-y-1">
                                                         {stage.tips.map((tip, tipIndex) => (
                                                             <li key={tipIndex} className="text-sm text-gray-600 flex items-start space-x-2">
-                                                                <span className="text-[#00BCD4] mt-0.5">•</span>
+                                                                <span className="text-blue-500 mt-0.5">•</span>
                                                                 <span>{tip}</span>
                                                             </li>
                                                         ))}
@@ -244,75 +324,38 @@ const ChainStages: React.FC<ChainStagesProps> = ({ chainData, onUpdate }) => {
                 })}
             </div>
 
-            {/* Next Steps Recommendations */}
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border border-yellow-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                    <span>🎯</span>
-                    <span>Recommended Next Steps</span>
-                </h3>
+            {/* Summary Section */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <span>📈</span>
+                    <span>Progress Summary</span>
+                </h4>
                 
-                <div className="space-y-3">
-                    {(() => {
-                        const nextStage = stages.find(stage => !getStageStatus(stage.id).completed);
-                        if (!nextStage) {
-                            return (
-                                <div className="bg-green-100 rounded-lg p-4">
-                                    <div className="flex items-center space-x-2">
-                                        <span className="text-2xl">🎉</span>
-                                        <div>
-                                            <div className="font-semibold text-green-800">Congratulations!</div>
-                                            <div className="text-green-700">All stages completed. Your move is done!</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        }
-                        
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                    {stages.map((stage) => {
+                        const progress = stageProgress[stage.id] || 0;
+                        const option = getProgressOption(progress);
                         return (
-                            <div className="bg-white rounded-lg p-4 border border-yellow-300">
-                                <div className="flex items-start space-x-3">
-                                    <div className="text-2xl">{nextStage.icon}</div>
-                                    <div>
-                                        <div className="font-semibold text-gray-900">
-                                            Focus on: {nextStage.title}
-                                        </div>
-                                        <div className="text-gray-700 mt-1">
-                                            {nextStage.description}
-                                        </div>
-                                        <div className="mt-2">
-                                            <div className="text-sm font-medium text-gray-700 mb-1">Action items:</div>
-                                            <ul className="space-y-1">
-                                                {nextStage.tips.slice(0, 2).map((tip, index) => (
-                                                    <li key={index} className="text-sm text-gray-600 flex items-start space-x-2">
-                                                        <span className="text-yellow-600 mt-0.5">•</span>
-                                                        <span>{tip}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
+                            <div key={stage.id} className="text-center">
+                                <div className="text-2xl mb-1">{stage.icon}</div>
+                                <div className="text-xs text-gray-600 mb-1">{stage.title}</div>
+                                <div className={`text-sm font-bold ${option.color}`}>
+                                    {progress}%
                                 </div>
                             </div>
                         );
-                    })()}
+                    })}
                 </div>
+                
+                {calculateOverallLinkHealth() === 100 && (
+                    <div className="mt-6 text-center">
+                        <div className="text-4xl mb-2">🎉</div>
+                        <div className="text-lg font-semibold text-green-800">
+                            Congratulations! Your property link is 100% complete!
+                        </div>
+                    </div>
+                )}
             </div>
-
-            {/* Complete Chain Button */}
-            {calculateOverallProgress() === 100 && (
-                <div className="text-center">
-                    <button
-                        onClick={() => {
-                            if (confirm('Are you sure you want to mark your entire chain as completed? This will close your chain tracker.')) {
-                                // Handle chain completion
-                            }
-                        }}
-                        className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-semibold shadow-lg"
-                    >
-                        🎉 Mark Move Complete
-                    </button>
-                </div>
-            )}
         </div>
     );
 };

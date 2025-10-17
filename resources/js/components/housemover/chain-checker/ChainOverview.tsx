@@ -21,12 +21,12 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
 }) => {
     const [showModal, setShowModal] = useState(false);
 
-    // Mock stage data - replace with real data later
+    // Mock stage data with percentage-based progress - replace with real data later
     const stages = [
-        { name: 'Offer Accepted', progress: isUnknown ? 0 : (type === 'buying' ? 100 : 100), color: 'green' },
-        { name: 'Mortgage Approved', progress: isUnknown ? 0 : (type === 'buying' ? 100 : 75), color: 'orange' },
-        { name: 'Searches Complete', progress: isUnknown ? 0 : (type === 'buying' ? 50 : 50), color: 'orange' },
-        { name: 'Surveys Complete', progress: isUnknown ? 0 : (type === 'buying' ? 50 : 50), color: 'orange' },
+        { name: 'Offer Accepted', progress: isUnknown ? 0 : (type === 'buying' ? 100 : type === 'selling' ? 100 : 0), color: 'green' },
+        { name: 'Mortgage Approved', progress: isUnknown ? 0 : (type === 'buying' ? 100 : type === 'selling' ? 75 : 0), color: 'orange' },
+        { name: 'Searches Complete', progress: isUnknown ? 0 : (type === 'buying' ? 50 : type === 'selling' ? 50 : 0), color: 'orange' },
+        { name: 'Surveys Complete', progress: isUnknown ? 0 : (type === 'buying' ? 50 : type === 'selling' ? 50 : 0), color: 'orange' },
         { name: 'Contracts Exchanged', progress: isUnknown ? 0 : 0, color: 'red' },
         { name: 'Completion Achieved', progress: isUnknown ? 0 : 0, color: 'red' },
     ];
@@ -54,9 +54,21 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
     };
 
     const getProgressBarColor = (progress: number) => {
-        if (progress === 100) return 'bg-green-500';
-        if (progress > 0) return 'bg-orange-500';
-        return 'bg-red-500';
+        if (progress >= 100) return 'bg-green-500';
+        if (progress >= 75) return 'bg-blue-500';
+        if (progress >= 50) return 'bg-yellow-500';
+        if (progress >= 25) return 'bg-orange-500';
+        if (progress > 0) return 'bg-red-500';
+        return 'bg-gray-300';
+    };
+
+    const getProgressLabel = (progress: number) => {
+        if (progress >= 100) return 'Complete';
+        if (progress >= 75) return 'Pending';
+        if (progress >= 50) return 'Awaiting';
+        if (progress >= 25) return 'Progress';
+        if (progress > 0) return 'Started';
+        return 'Not Started';
     };
 
     return (
@@ -108,13 +120,19 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
                 <div className="text-xs text-gray-600 mt-1">Link Health</div>
             </div>
 
-            {/* Progress Stages */}
+            {/* Progress Stages with Percentage-based Display */}
             <div className="space-y-2 mb-6">
                 <div className="text-xs font-medium text-gray-700 mb-2">Link Progress</div>
                 {stages.map((stage, index) => (
                     <div key={index} className="flex items-center justify-between text-xs">
                         <div className="flex items-center space-x-2 flex-1">
-                            <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                            <div className={`w-2 h-2 rounded-full ${
+                                stage.progress >= 100 ? 'bg-green-500' :
+                                stage.progress >= 75 ? 'bg-blue-500' :
+                                stage.progress >= 50 ? 'bg-yellow-500' :
+                                stage.progress >= 25 ? 'bg-orange-500' :
+                                stage.progress > 0 ? 'bg-red-500' : 'bg-gray-300'
+                            }`}></div>
                             <span className="text-gray-700 truncate">{stage.name}</span>
                         </div>
                         <div className="flex items-center space-x-2 ml-2">
