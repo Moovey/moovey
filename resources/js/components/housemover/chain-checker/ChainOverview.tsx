@@ -199,68 +199,68 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-xl p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 pr-4">
                         {isUnknown ? 'Build Link' : isEditable ? 'Update Progress' : 'Contact Link Owner'}
                     </h3>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                     {isUnknown ? (
                         <>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                                     Property Rightmove Link
                                 </label>
                                 <input
                                     type="url"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                     placeholder="https://rightmove.co.uk/properties/..."
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                                     Estate Agent Name
                                 </label>
                                 <input
                                     type="text"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                     placeholder="Agent name (if known)"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                                     Agent Email
                                 </label>
                                 <input
                                     type="email"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                     placeholder="agent@agency.com"
                                 />
                             </div>
                         </>
                     ) : isEditable ? (
                         <div>
-                            <h4 className="font-medium text-gray-900 mb-3">Update Stage Progress</h4>
-                            <div className="space-y-3">
+                            <h4 className="text-sm sm:text-base font-medium text-gray-900 mb-3">Update Stage Progress</h4>
+                            <div className="space-y-2 sm:space-y-3">
                                 {['Offer Accepted', 'Mortgage Approved', 'Searches Complete', 'Surveys Complete', 'Contracts Exchanged', 'Completion Achieved'].map((stage, index) => (
                                     <div key={index} className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-700">{stage}</span>
+                                        <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">{stage}</span>
                                         <input
                                             type="range"
                                             min="0"
                                             max="100"
-                                            className="w-24"
+                                            className="w-16 sm:w-24"
                                             defaultValue={index < 2 ? "100" : index < 4 ? "50" : "0"}
                                         />
                                     </div>
@@ -269,9 +269,9 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                         </div>
                     ) : (
                         <div>
-                            <h4 className="font-medium text-gray-900 mb-3">Send Message</h4>
+                            <h4 className="text-sm sm:text-base font-medium text-gray-900 mb-3">Send Message</h4>
                             <textarea
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                 rows={4}
                                 placeholder="Request an update on the property progress..."
                             ></textarea>
@@ -279,16 +279,16 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                     )}
                 </div>
 
-                <div className="flex space-x-3 mt-6">
+                <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-6">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={onClose}
-                        className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
                     >
                         {isUnknown ? 'Build Link' : isEditable ? 'Update' : 'Send Message'}
                     </button>
