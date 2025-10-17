@@ -426,7 +426,7 @@ export default function Connections() {
                 tabs={[
                     { id: 'overview', icon: '🏠', label: 'OVERVIEW', route: '/dashboard' },
                     { id: 'chain-checker', icon: '⛓️', label: 'CHAIN CHECKER', route: '/housemover/chain-checker' },
-                    { id: 'move-details', icon: '📋', label: 'MOVE DETAILS', route: '/housemover/move-details' },
+                    { id: 'move-details', icon: '📋', label: 'MY MOVE', route: '/housemover/move-details' },
                     { id: 'achievements', icon: '🏆', label: 'ACHIEVEMENTS', route: '/housemover/achievements' },
                     { id: 'connections', icon: '🔗', label: 'CONNECTIONS' },
                     { id: 'settings', icon: '⚙️', label: 'SETTINGS', route: '/profile-settings' },

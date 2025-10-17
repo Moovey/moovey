@@ -362,7 +362,7 @@ export default function ProfileSettings() {
                 tabs={[
                     { id: 'overview', icon: '🏠', label: 'OVERVIEW', route: '/dashboard' },
                     { id: 'chain-checker', icon: '⛓️', label: 'CHAIN CHECKER', route: '/housemover/chain-checker' },
-                    { id: 'move-details', icon: '📋', label: 'MOVE DETAILS', route: '/housemover/move-details' },
+                    { id: 'move-details', icon: '📋', label: 'MY MOVE', route: '/housemover/move-details' },
                     { id: 'achievements', icon: '🏆', label: 'ACHIEVEMENTS', route: '/housemover/achievements' },
                     { id: 'connections', icon: '🔗', label: 'CONNECTIONS', route: '/housemover/connections' },
                     { id: 'settings', icon: '⚙️', label: 'SETTINGS' },
