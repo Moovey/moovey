@@ -80,21 +80,7 @@ const MortgageCalculator = memo(function MortgageCalculator({}: MortgageCalculat
 
     const { formData, results, errors, saveMessage } = state;
 
-    // Query for real-time mortgage rates (cached for 5 minutes)
-    const { data: currentRates } = useQuery({
-        queryKey: ['mortgage-rates'],
-        queryFn: async () => {
-            // Simulate API call for current mortgage rates
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            return {
-                conventional30: 7.2,
-                conventional15: 6.8,
-                fha30: 6.9,
-                va30: 6.7
-            };
-        },
-        staleTime: 5 * 60 * 1000, // 5 minutes
-    });
+    // Removed current rates query as users should research their own rates
 
     // Memoized validation function
     const validateForm = useCallback((): {[key: string]: string} => {
@@ -197,35 +183,22 @@ const MortgageCalculator = memo(function MortgageCalculator({}: MortgageCalculat
                 <p className="text-gray-600">
                     Calculate your monthly mortgage payments based on loan amount, interest rate, and term.
                 </p>
-                
-                {/* Current rates display */}
-                {currentRates && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-blue-800 mb-2">Current Average Rates:</p>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                            <div>30-yr Fixed: {currentRates.conventional30}%</div>
-                            <div>15-yr Fixed: {currentRates.conventional15}%</div>
-                            <div>FHA 30-yr: {currentRates.fha30}%</div>
-                            <div>VA 30-yr: {currentRates.va30}%</div>
-                        </div>
-                    </div>
-                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Loan Amount */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Loan Amount ($)
+                        Loan Amount (£)
                     </label>
                     <input
                         type="number"
                         value={formData.loanAmount}
                         onChange={(e) => handleInputChange('loanAmount', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#17B7C7] ${
+                        className={`w-full px-3 py-2 border rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#17B7C7] text-gray-900 ${
                             errors.loanAmount ? 'border-red-300 bg-red-50' : 'border-gray-300'
                         }`}
-                        placeholder="e.g., 400000"
+                        placeholder="e.g., 400,000"
                     />
                     {errors.loanAmount && (
                         <p className="mt-1 text-sm text-red-600">{errors.loanAmount}</p>
@@ -242,7 +215,7 @@ const MortgageCalculator = memo(function MortgageCalculator({}: MortgageCalculat
                         step="0.01"
                         value={formData.interestRate}
                         onChange={(e) => handleInputChange('interestRate', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#17B7C7] ${
+                        className={`w-full px-3 py-2 border rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#17B7C7] text-gray-900 ${
                             errors.interestRate ? 'border-red-300 bg-red-50' : 'border-gray-300'
                         }`}
                         placeholder="e.g., 6.5"
@@ -260,7 +233,7 @@ const MortgageCalculator = memo(function MortgageCalculator({}: MortgageCalculat
                     <select
                         value={formData.loanTerm}
                         onChange={(e) => handleInputChange('loanTerm', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#17B7C7] ${
+                        className={`w-full px-3 py-2 border rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#17B7C7] text-gray-900 ${
                             errors.loanTerm ? 'border-red-300 bg-red-50' : 'border-gray-300'
                         }`}
                     >
@@ -278,16 +251,16 @@ const MortgageCalculator = memo(function MortgageCalculator({}: MortgageCalculat
                 {/* Down Payment */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Down Payment ($) - Optional
+                        Down Payment (£) - Optional
                     </label>
                     <input
                         type="number"
                         value={formData.downPayment}
                         onChange={(e) => handleInputChange('downPayment', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#17B7C7] ${
+                        className={`w-full px-3 py-2 border rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#17B7C7] text-gray-900 ${
                             errors.downPayment ? 'border-red-300 bg-red-50' : 'border-gray-300'
                         }`}
-                        placeholder="e.g., 80000"
+                        placeholder="e.g., 80,000"
                     />
                     {errors.downPayment && (
                         <p className="mt-1 text-sm text-red-600">{errors.downPayment}</p>
@@ -327,21 +300,21 @@ const MortgageCalculator = memo(function MortgageCalculator({}: MortgageCalculat
                         <div className="bg-white p-4 rounded-lg border border-green-200">
                             <p className="text-sm text-gray-600 mb-1">Monthly Payment</p>
                             <p className="text-2xl font-bold text-gray-900">
-                                ${(results?.monthlyPayment || calculationResults?.monthlyPayment || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                £{(results?.monthlyPayment || calculationResults?.monthlyPayment || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
                         
                         <div className="bg-white p-4 rounded-lg border border-green-200">
                             <p className="text-sm text-gray-600 mb-1">Total Interest</p>
                             <p className="text-2xl font-bold text-gray-900">
-                                ${(results?.totalInterest || calculationResults?.totalInterest || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                £{(results?.totalInterest || calculationResults?.totalInterest || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
                         
                         <div className="bg-white p-4 rounded-lg border border-green-200">
                             <p className="text-sm text-gray-600 mb-1">Total Amount</p>
                             <p className="text-2xl font-bold text-gray-900">
-                                ${(results?.totalAmount || calculationResults?.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                £{(results?.totalAmount || calculationResults?.totalAmount || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
                     </div>
@@ -350,7 +323,7 @@ const MortgageCalculator = memo(function MortgageCalculator({}: MortgageCalculat
                         <div className="bg-white p-4 rounded-lg border border-green-200">
                             <p className="text-sm text-gray-600 mb-1">Property Price</p>
                             <p className="text-lg font-semibold text-gray-900">
-                                ${(results?.propertyPrice || calculationResults?.propertyPrice || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                £{(results?.propertyPrice || calculationResults?.propertyPrice || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
                         
@@ -392,15 +365,38 @@ const MortgageCalculator = memo(function MortgageCalculator({}: MortgageCalculat
                 </div>
             )}
 
-            {/* Tips */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h5 className="font-medium text-blue-800 mb-2">💡 Tips for Better Mortgage Planning:</h5>
-                <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• A 20% down payment helps you avoid PMI (Private Mortgage Insurance)</li>
-                    <li>• Shorter loan terms mean less interest paid over time</li>
-                    <li>• Consider your debt-to-income ratio when determining affordability</li>
-                    <li>• Factor in property taxes, insurance, and maintenance costs</li>
-                </ul>
+            {/* Important Disclaimer */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <h5 className="font-medium text-amber-800 mb-2">⚠️ Important Disclaimer:</h5>
+                <p className="text-sm text-amber-700 mb-3">
+                    This calculator is for illustration purposes only and does not constitute financial advice. 
+                    Mortgage calculations are estimates and actual terms may vary based on your individual 
+                    circumstances, credit history, and lender requirements. You should always seek professional 
+                    advice from a qualified mortgage advisor before making any financial decisions.
+                </p>
+                <p className="text-sm text-amber-700">
+                    Interest rates, fees, and lending criteria can change frequently and vary between lenders.
+                </p>
+            </div>
+
+            {/* Connect with Mortgage Advisors CTA */}
+            <div className="bg-gradient-to-r from-[#17B7C7] to-[#1A237E] rounded-lg p-6 text-center">
+                <h5 className="font-semibold text-white mb-2">Need Professional Mortgage Advice?</h5>
+                <p className="text-white/90 text-sm mb-4">
+                    Connect with qualified mortgage advisors in your area who can help you find the best deals 
+                    and guide you through the entire mortgage process.
+                </p>
+                <button 
+                    onClick={() => {
+                        // This could be updated to navigate to a mortgage advisors section
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        // TODO: Implement navigation to mortgage advisors section
+                        alert('Mortgage advisors section coming soon! This will connect you with local mortgage professionals.');
+                    }}
+                    className="bg-white text-[#17B7C7] font-medium px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#17B7C7]"
+                >
+                    Find Mortgage Advisors Near Me
+                </button>
             </div>
         </div>
     );
