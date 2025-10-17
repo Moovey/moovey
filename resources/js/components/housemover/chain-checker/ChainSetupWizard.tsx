@@ -21,7 +21,10 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
             solicitor: { name: '', email: '', phone: '', firm: '' },
             known_buyer_agent: { name: '', email: '', phone: '', firm: '' },
             known_buyer_solicitor: { name: '', email: '', phone: '', firm: '' },
-            unknown_buyer_details: false
+            buyer_property_agent: { name: '', email: '', phone: '', firm: '' },
+            buyer_property_solicitor: { name: '', email: '', phone: '', firm: '' },
+            unknown_buyer_details: false,
+            unknown_buyer_chain_up: false
         },
         
         // Buying side chain data
@@ -32,7 +35,10 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
             my_solicitor: { name: '', email: '', phone: '', firm: '' },
             known_seller_chain_agent: { name: '', email: '', phone: '', firm: '' },
             known_seller_chain_solicitor: { name: '', email: '', phone: '', firm: '' },
-            unknown_seller_chain: false
+            seller_onward_chain_agent: { name: '', email: '', phone: '', firm: '' },
+            seller_onward_chain_solicitor: { name: '', email: '', phone: '', firm: '' },
+            unknown_seller_chain: false,
+            unknown_seller_chain_down: false
         },
         
         // Legacy fields for backward compatibility
@@ -212,6 +218,65 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
     const handleSubmit = async () => {
         setLoading(true);
         try {
+            // Calculate chain length based on role
+            let calculatedChainLength = 1; // Default minimum
+            if (formData.chain_role === 'buyer_seller') {
+                calculatedChainLength = 2; // Both buying and selling
+            } else if (formData.chain_role === 'first_time_buyer') {
+                calculatedChainLength = 1; // Just buying
+            } else if (formData.chain_role === 'seller_only') {
+                calculatedChainLength = 1; // Just selling
+            }
+
+            // Transform the new nested structure to the expected backend format
+            const transformedData = {
+                chain_role: formData.chain_role,
+                move_type: formData.move_type,
+                buying_properties: formData.buying_properties,
+                selling_properties: formData.selling_properties,
+                chain_length: calculatedChainLength, // Add required field
+                estimated_completion: formData.estimated_completion,
+                consent_agent_contact: formData.consent_agent_contact,
+                
+                // Transform selling property details to legacy format
+                agent_name: formData.selling_property_details.estate_agent.name || formData.agent_name,
+                agent_email: formData.selling_property_details.estate_agent.email || formData.agent_email,
+                
+                // Buying agent details (for selling property's estate agent)
+                buying_agent_details: {
+                    name: formData.selling_property_details.estate_agent.name,
+                    email: formData.selling_property_details.estate_agent.email,
+                    phone: formData.selling_property_details.estate_agent.phone,
+                    firm: formData.selling_property_details.estate_agent.firm
+                },
+                
+                // Buying solicitor details (for selling property's solicitor)
+                buying_solicitor_details: {
+                    name: formData.selling_property_details.solicitor.name,
+                    email: formData.selling_property_details.solicitor.email,
+                    phone: formData.selling_property_details.solicitor.phone,
+                    firm: formData.selling_property_details.solicitor.firm
+                },
+                
+                // Selling agent details (for buying property's seller agent)
+                selling_agent_details: {
+                    name: formData.buying_property_details.seller_estate_agent.name,
+                    email: formData.buying_property_details.seller_estate_agent.email,
+                    phone: formData.buying_property_details.seller_estate_agent.phone,
+                    firm: formData.buying_property_details.seller_estate_agent.firm
+                },
+                
+                // Selling solicitor details (for buying property's my solicitor)
+                selling_solicitor_details: {
+                    name: formData.buying_property_details.my_solicitor.name,
+                    email: formData.buying_property_details.my_solicitor.email,
+                    phone: formData.buying_property_details.my_solicitor.phone,
+                    firm: formData.buying_property_details.my_solicitor.firm
+                }
+            };
+
+            console.log('Submitting data:', transformedData); // Debug log
+
             const response = await fetch('/api/chain-checker', {
                 method: 'POST',
                 headers: {
@@ -219,7 +284,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(transformedData),
             });
 
             if (response.ok) {
@@ -231,13 +296,15 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                 }
             } else {
                 const errorData = await response.json();
+                console.error('API Error:', errorData);
                 if (errorData.errors) {
                     setErrors(errorData.errors);
                 } else {
-                    setErrors({ submit: 'Failed to create chain checker' });
+                    setErrors({ submit: errorData.message || 'Failed to create chain checker' });
                 }
             }
         } catch (error) {
+            console.error('Network error:', error);
             setErrors({ submit: 'Network error occurred' });
         } finally {
             setLoading(false);
@@ -782,6 +849,321 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Extended Chain Knowledge Section */}
+                                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg mt-8">
+                                    <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+                                        <span className="text-purple-500 mr-2">🔗</span>
+                                        Extended Chain Knowledge
+                                    </h4>
+                                    <p className="text-sm text-gray-600 mb-6">
+                                        If you know details about other properties further up or down the chain, add them here to build a more complete picture.
+                                    </p>
+
+                                    {/* Selling Side Extended Chain */}
+                                    {(formData.chain_role === 'seller_only' || formData.chain_role === 'buyer_seller') && (
+                                        <div className="mb-6">
+                                            <h5 className="font-medium text-gray-900 mb-4 flex items-center">
+                                                <span className="text-green-500 mr-2">📈</span>
+                                                Your Buyer's Chain (Up the Chain)
+                                            </h5>
+                                            
+                                            <div className="flex items-center mb-4">
+                                                <input
+                                                    type="checkbox"
+                                                    id="unknown_buyer_chain"
+                                                    checked={formData.selling_property_details.unknown_buyer_chain_up}
+                                                    onChange={(e) => setFormData(prev => ({
+                                                        ...prev,
+                                                        selling_property_details: {
+                                                            ...prev.selling_property_details,
+                                                            unknown_buyer_chain_up: e.target.checked
+                                                        }
+                                                    }))}
+                                                    className="h-4 w-4 text-[#00BCD4] focus:ring-[#00BCD4] border-gray-300 rounded"
+                                                />
+                                                <label htmlFor="unknown_buyer_chain" className="ml-2 text-sm text-gray-700">
+                                                    I don't know the details of my buyer's onward chain yet
+                                                </label>
+                                            </div>
+
+                                            {!formData.selling_property_details.unknown_buyer_chain_up && (
+                                                <div className="bg-white rounded-lg p-4 space-y-4">
+                                                    <h6 className="text-sm font-medium text-gray-800">Your Buyer's Property Details</h6>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                Buyer's Estate Agent
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.selling_property_details.buyer_property_agent.name}
+                                                                onChange={(e) => setFormData(prev => ({
+                                                                    ...prev,
+                                                                    selling_property_details: {
+                                                                        ...prev.selling_property_details,
+                                                                        buyer_property_agent: {
+                                                                            ...prev.selling_property_details.buyer_property_agent,
+                                                                            name: e.target.value
+                                                                        }
+                                                                    }
+                                                                }))}
+                                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                                                                placeholder="Agent name (if known)"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                Agent Email
+                                                            </label>
+                                                            <input
+                                                                type="email"
+                                                                value={formData.selling_property_details.buyer_property_agent.email}
+                                                                onChange={(e) => setFormData(prev => ({
+                                                                    ...prev,
+                                                                    selling_property_details: {
+                                                                        ...prev.selling_property_details,
+                                                                        buyer_property_agent: {
+                                                                            ...prev.selling_property_details.buyer_property_agent,
+                                                                            email: e.target.value
+                                                                        }
+                                                                    }
+                                                                }))}
+                                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                                                                placeholder="agent@agency.com"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                Buyer's Solicitor
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.selling_property_details.buyer_property_solicitor.name}
+                                                                onChange={(e) => setFormData(prev => ({
+                                                                    ...prev,
+                                                                    selling_property_details: {
+                                                                        ...prev.selling_property_details,
+                                                                        buyer_property_solicitor: {
+                                                                            ...prev.selling_property_details.buyer_property_solicitor,
+                                                                            name: e.target.value
+                                                                        }
+                                                                    }
+                                                                }))}
+                                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                                                                placeholder="Solicitor name (if known)"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                Solicitor Email
+                                                            </label>
+                                                            <input
+                                                                type="email"
+                                                                value={formData.selling_property_details.buyer_property_solicitor.email}
+                                                                onChange={(e) => setFormData(prev => ({
+                                                                    ...prev,
+                                                                    selling_property_details: {
+                                                                        ...prev.selling_property_details,
+                                                                        buyer_property_solicitor: {
+                                                                            ...prev.selling_property_details.buyer_property_solicitor,
+                                                                            email: e.target.value
+                                                                        }
+                                                                    }
+                                                                }))}
+                                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                                                                placeholder="solicitor@lawfirm.com"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Buying Side Extended Chain */}
+                                    {(formData.chain_role === 'first_time_buyer' || formData.chain_role === 'buyer_seller') && (
+                                        <div className="mb-6">
+                                            <h5 className="font-medium text-gray-900 mb-4 flex items-center">
+                                                <span className="text-blue-500 mr-2">📉</span>
+                                                Your Seller's Chain (Down the Chain)
+                                            </h5>
+                                            
+                                            <div className="flex items-center mb-4">
+                                                <input
+                                                    type="checkbox"
+                                                    id="unknown_seller_chain"
+                                                    checked={formData.buying_property_details.unknown_seller_chain_down}
+                                                    onChange={(e) => setFormData(prev => ({
+                                                        ...prev,
+                                                        buying_property_details: {
+                                                            ...prev.buying_property_details,
+                                                            unknown_seller_chain_down: e.target.checked
+                                                        }
+                                                    }))}
+                                                    className="h-4 w-4 text-[#00BCD4] focus:ring-[#00BCD4] border-gray-300 rounded"
+                                                />
+                                                <label htmlFor="unknown_seller_chain" className="ml-2 text-sm text-gray-700">
+                                                    I don't know the details of my seller's onward chain yet
+                                                </label>
+                                            </div>
+
+                                            {!formData.buying_property_details.unknown_seller_chain_down && (
+                                                <div className="bg-white rounded-lg p-4 space-y-4">
+                                                    <h6 className="text-sm font-medium text-gray-800">Your Seller's Onward Property Details</h6>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                Seller's Onward Agent
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.buying_property_details.seller_onward_chain_agent.name}
+                                                                onChange={(e) => setFormData(prev => ({
+                                                                    ...prev,
+                                                                    buying_property_details: {
+                                                                        ...prev.buying_property_details,
+                                                                        seller_onward_chain_agent: {
+                                                                            ...prev.buying_property_details.seller_onward_chain_agent,
+                                                                            name: e.target.value
+                                                                        }
+                                                                    }
+                                                                }))}
+                                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                                                                placeholder="Agent name (if known)"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                Agent Email
+                                                            </label>
+                                                            <input
+                                                                type="email"
+                                                                value={formData.buying_property_details.seller_onward_chain_agent.email}
+                                                                onChange={(e) => setFormData(prev => ({
+                                                                    ...prev,
+                                                                    buying_property_details: {
+                                                                        ...prev.buying_property_details,
+                                                                        seller_onward_chain_agent: {
+                                                                            ...prev.buying_property_details.seller_onward_chain_agent,
+                                                                            email: e.target.value
+                                                                        }
+                                                                    }
+                                                                }))}
+                                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                                                                placeholder="agent@agency.com"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                Seller's Onward Solicitor
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={formData.buying_property_details.seller_onward_chain_solicitor.name}
+                                                                onChange={(e) => setFormData(prev => ({
+                                                                    ...prev,
+                                                                    buying_property_details: {
+                                                                        ...prev.buying_property_details,
+                                                                        seller_onward_chain_solicitor: {
+                                                                            ...prev.buying_property_details.seller_onward_chain_solicitor,
+                                                                            name: e.target.value
+                                                                        }
+                                                                    }
+                                                                }))}
+                                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                                                                placeholder="Solicitor name (if known)"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                Solicitor Email
+                                                            </label>
+                                                            <input
+                                                                type="email"
+                                                                value={formData.buying_property_details.seller_onward_chain_solicitor.email}
+                                                                onChange={(e) => setFormData(prev => ({
+                                                                    ...prev,
+                                                                    buying_property_details: {
+                                                                        ...prev.buying_property_details,
+                                                                        seller_onward_chain_solicitor: {
+                                                                            ...prev.buying_property_details.seller_onward_chain_solicitor,
+                                                                            email: e.target.value
+                                                                        }
+                                                                    }
+                                                                }))}
+                                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                                                                placeholder="solicitor@lawfirm.com"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Chain Visualization Preview */}
+                                    <div className="bg-white rounded-lg p-4 mt-6">
+                                        <h6 className="text-sm font-medium text-gray-800 mb-3">Chain Preview</h6>
+                                        <div className="flex items-center space-x-2 overflow-x-auto">
+                                            {/* Generate chain visualization based on role and known data */}
+                                            {formData.chain_role === 'first_time_buyer' && (
+                                                <>
+                                                    <div className="flex-shrink-0 text-center">
+                                                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">YOU</div>
+                                                        <div className="text-xs mt-1">Buying</div>
+                                                    </div>
+                                                    <div className="w-4 h-0.5 bg-gray-300"></div>
+                                                    <div className="flex-shrink-0 text-center">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                                                            formData.buying_property_details.unknown_seller_chain_down ? 'bg-gray-300 text-gray-500' : 'bg-orange-500 text-white'
+                                                        }`}>?</div>
+                                                        <div className="text-xs mt-1">Seller</div>
+                                                    </div>
+                                                </>
+                                            )}
+                                            
+                                            {formData.chain_role === 'seller_only' && (
+                                                <>
+                                                    <div className="flex-shrink-0 text-center">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                                                            formData.selling_property_details.unknown_buyer_chain_up ? 'bg-gray-300 text-gray-500' : 'bg-orange-500 text-white'
+                                                        }`}>?</div>
+                                                        <div className="text-xs mt-1">Buyer</div>
+                                                    </div>
+                                                    <div className="w-4 h-0.5 bg-gray-300"></div>
+                                                    <div className="flex-shrink-0 text-center">
+                                                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">YOU</div>
+                                                        <div className="text-xs mt-1">Selling</div>
+                                                    </div>
+                                                </>
+                                            )}
+                                            
+                                            {formData.chain_role === 'buyer_seller' && (
+                                                <>
+                                                    <div className="flex-shrink-0 text-center">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                                                            formData.buying_property_details.unknown_seller_chain_down ? 'bg-gray-300 text-gray-500' : 'bg-orange-500 text-white'
+                                                        }`}>?</div>
+                                                        <div className="text-xs mt-1">Down</div>
+                                                    </div>
+                                                    <div className="w-4 h-0.5 bg-gray-300"></div>
+                                                    <div className="flex-shrink-0 text-center">
+                                                        <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">YOU</div>
+                                                        <div className="text-xs mt-1">Both</div>
+                                                    </div>
+                                                    <div className="w-4 h-0.5 bg-gray-300"></div>
+                                                    <div className="flex-shrink-0 text-center">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                                                            formData.selling_property_details.unknown_buyer_chain_up ? 'bg-gray-300 text-gray-500' : 'bg-orange-500 text-white'
+                                                        }`}>?</div>
+                                                        <div className="text-xs mt-1">Up</div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
 

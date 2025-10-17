@@ -2,6 +2,284 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import PropertyBasket from './PropertyBasket';
 
+interface PropertyHouseBlockProps {
+    title: string;
+    linkHealth: number;
+    isUserOwned: boolean;
+    isEditable: boolean;
+    type: 'buying' | 'selling' | 'unknown';
+    isUnknown?: boolean;
+}
+
+const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
+    title,
+    linkHealth,
+    isUserOwned,
+    isEditable,
+    type,
+    isUnknown = false
+}) => {
+    const [showModal, setShowModal] = useState(false);
+
+    // Mock stage data - replace with real data later
+    const stages = [
+        { name: 'Offer Accepted', progress: isUnknown ? 0 : (type === 'buying' ? 100 : 100), color: 'green' },
+        { name: 'Mortgage Approved', progress: isUnknown ? 0 : (type === 'buying' ? 100 : 75), color: 'orange' },
+        { name: 'Searches Complete', progress: isUnknown ? 0 : (type === 'buying' ? 50 : 50), color: 'orange' },
+        { name: 'Surveys Complete', progress: isUnknown ? 0 : (type === 'buying' ? 50 : 50), color: 'orange' },
+        { name: 'Contracts Exchanged', progress: isUnknown ? 0 : 0, color: 'red' },
+        { name: 'Completion Achieved', progress: isUnknown ? 0 : 0, color: 'red' },
+    ];
+
+    const getButtonText = () => {
+        if (isUnknown) return 'Build this Link';
+        if (isEditable && isUserOwned) return 'Update my Link';
+        return 'Contact Link Owner';
+    };
+
+    const getButtonAction = () => {
+        if (isUnknown || (isEditable && isUserOwned)) {
+            setShowModal(true);
+        } else {
+            // Contact link owner logic
+            setShowModal(true);
+        }
+    };
+
+    const getHealthColor = (health: number) => {
+        if (health >= 75) return 'text-green-500';
+        if (health >= 50) return 'text-yellow-500';
+        if (health >= 25) return 'text-orange-500';
+        return 'text-red-500';
+    };
+
+    const getProgressBarColor = (progress: number) => {
+        if (progress === 100) return 'bg-green-500';
+        if (progress > 0) return 'bg-orange-500';
+        return 'bg-red-500';
+    };
+
+    return (
+        <motion.div
+            className={`relative bg-white rounded-xl shadow-lg border-2 p-6 min-w-[280px] hover:shadow-xl transition-all duration-300 ${
+                isUnknown ? 'border-gray-300 bg-gray-50' : 'border-gray-200'
+            }`}
+            style={{
+                clipPath: 'polygon(0 20%, 20% 0, 80% 0, 100% 20%, 100% 100%, 0 100%)'
+            }}
+            whileHover={{ y: -2 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+        >
+            {/* House Title */}
+            <div className="text-center mb-4">
+                <h4 className="font-semibold text-gray-900 text-sm">{title}</h4>
+            </div>
+
+            {/* Link Health Circle */}
+            <div className="flex flex-col items-center mb-4">
+                <div className="relative w-20 h-20">
+                    <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
+                        <path
+                            d="M18 2.0845
+                               a 15.9155 15.9155 0 0 1 0 31.831
+                               a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="#e5e7eb"
+                            strokeWidth="2"
+                        />
+                        <path
+                            d="M18 2.0845
+                               a 15.9155 15.9155 0 0 1 0 31.831
+                               a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke={isUnknown ? '#9ca3af' : linkHealth >= 75 ? '#22c55e' : linkHealth >= 50 ? '#eab308' : linkHealth >= 25 ? '#f97316' : '#ef4444'}
+                            strokeWidth="2"
+                            strokeDasharray={`${linkHealth}, 100`}
+                        />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <span className={`text-lg font-bold ${isUnknown ? 'text-gray-400' : getHealthColor(linkHealth)}`}>
+                            {isUnknown ? '?' : `${linkHealth}%`}
+                        </span>
+                    </div>
+                </div>
+                <div className="text-xs text-gray-600 mt-1">Link Health</div>
+            </div>
+
+            {/* Progress Stages */}
+            <div className="space-y-2 mb-6">
+                <div className="text-xs font-medium text-gray-700 mb-2">Link Progress</div>
+                {stages.map((stage, index) => (
+                    <div key={index} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-2 flex-1">
+                            <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                            <span className="text-gray-700 truncate">{stage.name}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-2">
+                            <div className="w-12 h-1 bg-gray-200 rounded-full">
+                                <div
+                                    className={`h-1 rounded-full transition-all duration-300 ${getProgressBarColor(stage.progress)}`}
+                                    style={{ width: `${isUnknown ? 0 : stage.progress}%` }}
+                                ></div>
+                            </div>
+                            <span className="text-gray-600 w-8 text-right">
+                                {isUnknown ? '?' : `${stage.progress}%`}
+                            </span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Action Button */}
+            <button
+                onClick={getButtonAction}
+                className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                    isUnknown
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : isEditable && isUserOwned
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-gray-600 text-white hover:bg-gray-700'
+                }`}
+            >
+                {getButtonText()}
+            </button>
+
+            {/* Modal for editing/building links */}
+            {showModal && (
+                <PropertyModal
+                    isOpen={showModal}
+                    onClose={() => setShowModal(false)}
+                    title={title}
+                    type={type}
+                    isUnknown={isUnknown}
+                    isEditable={isEditable}
+                />
+            )}
+        </motion.div>
+    );
+};
+
+interface PropertyModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    type: 'buying' | 'selling' | 'unknown';
+    isUnknown: boolean;
+    isEditable: boolean;
+}
+
+const PropertyModal: React.FC<PropertyModalProps> = ({
+    isOpen,
+    onClose,
+    title,
+    type,
+    isUnknown,
+    isEditable
+}) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                        {isUnknown ? 'Build Link' : isEditable ? 'Update Progress' : 'Contact Link Owner'}
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div className="space-y-4">
+                    {isUnknown ? (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Property Rightmove Link
+                                </label>
+                                <input
+                                    type="url"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="https://rightmove.co.uk/properties/..."
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Estate Agent Name
+                                </label>
+                                <input
+                                    type="text"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Agent name (if known)"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Agent Email
+                                </label>
+                                <input
+                                    type="email"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="agent@agency.com"
+                                />
+                            </div>
+                        </>
+                    ) : isEditable ? (
+                        <div>
+                            <h4 className="font-medium text-gray-900 mb-3">Update Stage Progress</h4>
+                            <div className="space-y-3">
+                                {['Offer Accepted', 'Mortgage Approved', 'Searches Complete', 'Surveys Complete', 'Contracts Exchanged', 'Completion Achieved'].map((stage, index) => (
+                                    <div key={index} className="flex items-center justify-between">
+                                        <span className="text-sm text-gray-700">{stage}</span>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            className="w-24"
+                                            defaultValue={index < 2 ? "100" : index < 4 ? "50" : "0"}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            <h4 className="font-medium text-gray-900 mb-3">Send Message</h4>
+                            <textarea
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                rows={4}
+                                placeholder="Request an update on the property progress..."
+                            ></textarea>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex space-x-3 mt-6">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        {isUnknown ? 'Build Link' : isEditable ? 'Update' : 'Send Message'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 interface ChainOverviewProps {
     chainData: any;
     onRefresh: () => void;
@@ -137,10 +415,10 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                 </div>
             </div>
 
-            {/* Chain Visualization */}
+            {/* Property Chain Visualization */}
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">Chain Visualization</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Property Chain</h3>
                     <button
                         onClick={onRefresh}
                         className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
@@ -149,74 +427,101 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                     </button>
                 </div>
                 
-                <div className="relative">
-                    {/* Desktop Chain View */}
-                    <div className="hidden md:flex items-center justify-center space-x-4 overflow-x-auto pb-4">
-                        {chainLinks.map((link, index) => (
-                            <div key={link.id} className="flex items-center">
-                                {/* Property Node */}
-                                <motion.div
-                                    className={`
-                                        relative flex flex-col items-center p-4 rounded-xl border-2 min-w-[120px]
-                                        ${link.status === 'completed' ? 'border-green-500 bg-green-50' :
-                                          link.status === 'in-progress' ? 'border-[#00BCD4] bg-blue-50' :
-                                          'border-gray-300 bg-gray-50'}
-                                    `}
-                                    initial={{ scale: 0.9 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ delay: index * 0.1 }}
-                                >
-                                    <div className="text-2xl mb-2">
-                                        {link.status === 'completed' ? '✅' :
-                                         link.status === 'in-progress' ? '🔄' : '⏳'}
-                                    </div>
-                                    <div className="text-sm font-medium text-center text-gray-900">
-                                        {link.title}
-                                    </div>
-                                    <div className="text-xs text-gray-500 mt-1 capitalize">
-                                        {link.type}
-                                    </div>
-                                    
-                                    {/* Status indicator */}
-                                    <div className={`
-                                        absolute -top-2 -right-2 w-4 h-4 rounded-full border-2 border-white
-                                        ${link.status === 'completed' ? 'bg-green-500' :
-                                          link.status === 'in-progress' ? 'bg-[#00BCD4]' :
-                                          'bg-gray-400'}
-                                    `}></div>
-                                </motion.div>
-                                
-                                {/* Chain Link */}
-                                {index < chainLinks.length - 1 && (
-                                    <div className={`
-                                        w-8 h-1 mx-2
-                                        ${link.status === 'completed' ? 'bg-green-500' : 'bg-gray-300'}
-                                    `}></div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                    
-                    {/* Mobile Chain View */}
-                    <div className="md:hidden space-y-4">
-                        {chainLinks.map((link, index) => (
-                            <div key={link.id} className="flex items-center space-x-4">
-                                <div className={`
-                                    w-12 h-12 rounded-full border-2 flex items-center justify-center
-                                    ${link.status === 'completed' ? 'border-green-500 bg-green-50' :
-                                      link.status === 'in-progress' ? 'border-[#00BCD4] bg-blue-50' :
-                                      'border-gray-300 bg-gray-50'}
-                                `}>
-                                    {link.status === 'completed' ? '✅' :
-                                     link.status === 'in-progress' ? '🔄' : '⏳'}
-                                </div>
-                                <div className="flex-1">
-                                    <div className="font-medium text-gray-900">{link.title}</div>
-                                    <div className="text-sm text-gray-500 capitalize">{link.type}</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                {/* Chain Houses Container */}
+                <div className="flex items-center justify-center space-x-8 overflow-x-auto pb-4">
+                    {/* Generate chain based on user role */}
+                    {chainData.chain_role === 'first_time_buyer' && (
+                        <>
+                            {/* User's Buying Property */}
+                            <PropertyHouseBlock
+                                title="The house I'm buying"
+                                linkHealth={50}
+                                isUserOwned={true}
+                                isEditable={true}
+                                type="buying"
+                            />
+                            {/* Chain Connector */}
+                            <div className="w-8 h-1 bg-gray-300 rounded"></div>
+                            {/* Unknown/Seller's Property */}
+                            <PropertyHouseBlock
+                                title="Seller's onward property"
+                                linkHealth={0}
+                                isUserOwned={false}
+                                isEditable={false}
+                                type="unknown"
+                                isUnknown={true}
+                            />
+                        </>
+                    )}
+
+                    {chainData.chain_role === 'seller_only' && (
+                        <>
+                            {/* Unknown/Buyer's Property */}
+                            <PropertyHouseBlock
+                                title="Buyer's onward property"
+                                linkHealth={0}
+                                isUserOwned={false}
+                                isEditable={false}
+                                type="unknown"
+                                isUnknown={true}
+                            />
+                            {/* Chain Connector */}
+                            <div className="w-8 h-1 bg-gray-300 rounded"></div>
+                            {/* User's Selling Property */}
+                            <PropertyHouseBlock
+                                title="The house I'm selling"
+                                linkHealth={30}
+                                isUserOwned={true}
+                                isEditable={true}
+                                type="selling"
+                            />
+                        </>
+                    )}
+
+                    {chainData.chain_role === 'buyer_seller' && (
+                        <>
+                            {/* Unknown Down Chain */}
+                            <PropertyHouseBlock
+                                title="Down chain property"
+                                linkHealth={0}
+                                isUserOwned={false}
+                                isEditable={false}
+                                type="unknown"
+                                isUnknown={true}
+                            />
+                            {/* Chain Connector */}
+                            <div className="w-8 h-1 bg-gray-300 rounded"></div>
+                            {/* User's Selling Property */}
+                            <PropertyHouseBlock
+                                title="The house I'm selling"
+                                linkHealth={30}
+                                isUserOwned={true}
+                                isEditable={true}
+                                type="selling"
+                            />
+                            {/* Chain Connector */}
+                            <div className="w-8 h-1 bg-gray-300 rounded"></div>
+                            {/* User's Buying Property */}
+                            <PropertyHouseBlock
+                                title="The house I'm buying"
+                                linkHealth={50}
+                                isUserOwned={true}
+                                isEditable={true}
+                                type="buying"
+                            />
+                            {/* Chain Connector */}
+                            <div className="w-8 h-1 bg-gray-300 rounded"></div>
+                            {/* Unknown Up Chain */}
+                            <PropertyHouseBlock
+                                title="Up chain property"
+                                linkHealth={0}
+                                isUserOwned={false}
+                                isEditable={false}
+                                type="unknown"
+                                isUnknown={true}
+                            />
+                        </>
+                    )}
                 </div>
             </div>
 
