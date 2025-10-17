@@ -163,27 +163,26 @@ export default function MooveyAcademy({
                 <GlobalHeader currentPage="academy" />
 
                 {/* Hero Section with Moovey Crest */}
-                <section className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
+                <section className="py-8 sm:py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
                     <div className="max-w-4xl mx-auto text-center">
                         {/* Moovey Crest Logo */}
-                        <div className="mb-6 sm:mb-8 md:mb-10">
+                        <div className="mb-4 sm:mb-5 md:mb-6">
                             <div className="mx-auto">
                                 <img 
                                     src="/images/moovey-crest.png" 
                                     alt="Moovey Crest" 
-                                    className="w-28 h-28 xs:w-32 xs:h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 2xl:w-72 2xl:h-72 mx-auto object-contain"
+                                    className="w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 mx-auto object-contain"
                                 />
                             </div>
-                           
                         </div>
 
-                        <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 leading-tight px-2">
+                        <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 leading-tight px-2">
                             Welcome to Moovey School –<br className="hidden sm:block" />
                             <span className="block sm:inline"> Your</span><br className="sm:hidden" />
                             <span className="text-[#00BCD4]">Learning Journey</span> Starts Here!
                         </h1>
-                        <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8 md:mb-10 max-w-2xl mx-auto px-4">
-                            Get started with our elite structured e-learning modules.
+                        <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-4 sm:mb-6 max-w-xl mx-auto px-4">
+                            Master moving with our structured learning modules.
                         </p>
 
                         {/* Current Progress Indicator - Gauge Style */}
