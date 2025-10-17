@@ -13,33 +13,31 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
         move_type: 'buying' as 'buying' | 'selling' | 'both',
         buying_properties: [] as number[],
         selling_properties: [] as number[],
-        chain_length: 1,
+        
+        // Selling side chain data
+        selling_property_details: {
+            rightmove_link: '',
+            estate_agent: { name: '', email: '', phone: '', firm: '' },
+            solicitor: { name: '', email: '', phone: '', firm: '' },
+            known_buyer_agent: { name: '', email: '', phone: '', firm: '' },
+            known_buyer_solicitor: { name: '', email: '', phone: '', firm: '' },
+            unknown_buyer_details: false
+        },
+        
+        // Buying side chain data
+        buying_property_details: {
+            rightmove_link: '',
+            seller_estate_agent: { name: '', email: '', phone: '', firm: '' },
+            seller_solicitor: { name: '', email: '', phone: '', firm: '' },
+            my_solicitor: { name: '', email: '', phone: '', firm: '' },
+            known_seller_chain_agent: { name: '', email: '', phone: '', firm: '' },
+            known_seller_chain_solicitor: { name: '', email: '', phone: '', firm: '' },
+            unknown_seller_chain: false
+        },
+        
+        // Legacy fields for backward compatibility
         agent_name: '',
         agent_email: '',
-        buying_agent_details: {
-            name: '',
-            email: '',
-            phone: '',
-            firm: ''
-        },
-        selling_agent_details: {
-            name: '',
-            email: '',
-            phone: '',
-            firm: ''
-        },
-        buying_solicitor_details: {
-            name: '',
-            email: '',
-            phone: '',
-            firm: ''
-        },
-        selling_solicitor_details: {
-            name: '',
-            email: '',
-            phone: '',
-            firm: ''
-        },
         estimated_completion: '',
         consent_agent_contact: false,
     });
@@ -79,9 +77,8 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
     const steps = [
         { id: 1, title: 'Your Role', description: 'What is your position in the chain?' },
         { id: 2, title: 'Properties', description: 'Link your properties to the chain' },
-        { id: 3, title: 'Chain Length', description: 'How many properties are in your chain?' },
-        { id: 4, title: 'Professional Details', description: 'Agent and solicitor information' },
-        { id: 5, title: 'Timeline', description: 'When do you expect to complete?' },
+        { id: 3, title: 'Professional Details', description: 'Agent and solicitor information' },
+        { id: 4, title: 'Timeline', description: 'When do you expect to complete?' },
     ];
 
     const handleInputChange = (field: string, value: any) => {
@@ -103,10 +100,53 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
     };
 
     const handleProfessionalDetailsChange = (type: 'buying_agent' | 'selling_agent' | 'buying_solicitor' | 'selling_solicitor', field: string, value: string) => {
-        const detailsField = `${type}_details`;
-        handleInputChange(detailsField, {
-            ...formData[detailsField as keyof typeof formData] as any,
-            [field]: value
+        setFormData(prev => {
+            if (type === 'buying_agent') {
+                return {
+                    ...prev,
+                    selling_property_details: {
+                        ...prev.selling_property_details,
+                        estate_agent: {
+                            ...prev.selling_property_details.estate_agent,
+                            [field]: value
+                        }
+                    }
+                };
+            } else if (type === 'buying_solicitor') {
+                return {
+                    ...prev,
+                    selling_property_details: {
+                        ...prev.selling_property_details,
+                        solicitor: {
+                            ...prev.selling_property_details.solicitor,
+                            [field]: value
+                        }
+                    }
+                };
+            } else if (type === 'selling_agent') {
+                return {
+                    ...prev,
+                    buying_property_details: {
+                        ...prev.buying_property_details,
+                        seller_estate_agent: {
+                            ...prev.buying_property_details.seller_estate_agent,
+                            [field]: value
+                        }
+                    }
+                };
+            } else if (type === 'selling_solicitor') {
+                return {
+                    ...prev,
+                    buying_property_details: {
+                        ...prev.buying_property_details,
+                        my_solicitor: {
+                            ...prev.buying_property_details.my_solicitor,
+                            [field]: value
+                        }
+                    }
+                };
+            }
+            return prev;
         });
     };
 
@@ -120,22 +160,29 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                 }
                 break;
             case 2:
-                // Properties are optional, but warn if none selected
-                if (formData.chain_role === 'buyer_seller' && 
-                    formData.buying_properties.length === 0 && 
-                    formData.selling_properties.length === 0) {
-                    // Allow to proceed but could add warning
+                // Role-based property validation
+                if (formData.chain_role === 'first_time_buyer') {
+                    if (formData.buying_properties.length === 0) {
+                        newErrors.properties = 'You need to claim the property you are buying in order to continue.';
+                    }
+                } else if (formData.chain_role === 'seller_only') {
+                    if (formData.selling_properties.length === 0) {
+                        newErrors.properties = 'You need to claim the property you are selling in order to continue.';
+                    }
+                } else if (formData.chain_role === 'buyer_seller') {
+                    if (formData.buying_properties.length === 0 && formData.selling_properties.length === 0) {
+                        newErrors.properties = 'You need to claim both the property you are selling and the property you are buying in order to continue.';
+                    } else if (formData.buying_properties.length === 0) {
+                        newErrors.properties = 'You need to claim the property you are buying in order to continue.';
+                    } else if (formData.selling_properties.length === 0) {
+                        newErrors.properties = 'You need to claim the property you are selling in order to continue.';
+                    }
                 }
                 break;
             case 3:
-                if (formData.chain_length < 1 || formData.chain_length > 20) {
-                    newErrors.chain_length = 'Chain length must be between 1 and 20';
-                }
-                break;
-            case 4:
                 // Agent/solicitor details are optional
                 break;
-            case 5:
+            case 4:
                 if (formData.estimated_completion && new Date(formData.estimated_completion) <= new Date()) {
                     newErrors.estimated_completion = 'Completion date must be in the future';
                 }
@@ -195,6 +242,40 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
         } finally {
             setLoading(false);
         }
+    };
+
+    // Helper function to get dynamic prompt message based on role
+    const getPropertyPromptMessage = (): string => {
+        switch (formData.chain_role) {
+            case 'first_time_buyer':
+                return 'You need to claim the property you are buying in order to continue.';
+            case 'seller_only':
+                return 'You need to claim the property you are selling in order to continue.';
+            case 'buyer_seller':
+                return 'You need to claim both the property you are selling and the property you are buying in order to continue.';
+            default:
+                return 'You need to claim your properties in order to continue.';
+        }
+    };
+
+    // Helper function to check if user has the required properties for their role
+    const hasRequiredProperties = (): boolean => {
+        switch (formData.chain_role) {
+            case 'first_time_buyer':
+                return formData.buying_properties.length > 0;
+            case 'seller_only':
+                return formData.selling_properties.length > 0;
+            case 'buyer_seller':
+                return formData.buying_properties.length > 0 && formData.selling_properties.length > 0;
+            default:
+                return false;
+        }
+    };
+
+    // Function to navigate to Property Basket
+    const goToPropertyBasket = () => {
+        // Navigate to the dashboard page which has the Property Basket component
+        window.location.href = '/housemover/dashboard';
     };
 
     return (
@@ -300,7 +381,16 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                     <div className="text-center py-8">
                                         <div className="text-gray-400 text-4xl mb-4">🏠</div>
                                         <h3 className="text-lg font-medium text-gray-900 mb-2">No Properties Found</h3>
-                                        <p className="text-gray-600">Add properties to your Property Basket first to link them to your chain.</p>
+                                        <p className="text-gray-600 mb-6">{getPropertyPromptMessage()}</p>
+                                        <button
+                                            onClick={goToPropertyBasket}
+                                            className="inline-flex items-center px-6 py-3 bg-[#00BCD4] text-white font-medium rounded-lg hover:bg-[#00ACC1] transition-colors"
+                                        >
+                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            Go to Property Basket
+                                        </button>
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
@@ -336,6 +426,16 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                         </button>
                                                     ))}
                                                 </div>
+                                                {(formData.chain_role === 'first_time_buyer' || formData.chain_role === 'buyer_seller') && 
+                                                 formData.buying_properties.length === 0 && (
+                                                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                                        <p className="text-blue-800 text-sm">
+                                                            {formData.chain_role === 'first_time_buyer' 
+                                                                ? 'Please select the property you are buying.' 
+                                                                : 'Please select the property you are buying.'}
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                         
@@ -371,86 +471,96 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                         </button>
                                                     ))}
                                                 </div>
+                                                {(formData.chain_role === 'seller_only' || formData.chain_role === 'buyer_seller') && 
+                                                 formData.selling_properties.length === 0 && (
+                                                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                                        <p className="text-green-800 text-sm">
+                                                            Please select the property you are selling.
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
+
+                                        {/* Show error message and CTA if validation fails */}
+                                        {!hasRequiredProperties() && availableProperties.length > 0 && (
+                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                                <div className="flex items-start">
+                                                    <div className="flex-shrink-0">
+                                                        <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="ml-3">
+                                                        <p className="text-sm text-yellow-800 mb-3">
+                                                            {getPropertyPromptMessage()}
+                                                        </p>
+                                                        <button
+                                                            onClick={goToPropertyBasket}
+                                                            className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 transition-colors"
+                                                        >
+                                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                            </svg>
+                                                            Go to Property Basket
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {errors.properties && (
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                        <div className="flex items-start">
+                                            <div className="flex-shrink-0">
+                                                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                                </svg>
+                                            </div>
+                                            <div className="ml-3">
+                                                <p className="text-sm text-red-800 mb-3">{errors.properties}</p>
+                                                <button
+                                                    onClick={goToPropertyBasket}
+                                                    className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                                                >
+                                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                    </svg>
+                                                    Go to Property Basket
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         )}
 
                         {currentStep === 3 && (
-                            <div className="space-y-6">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                                        How many properties are in your chain?
-                                    </h3>
-                                    <p className="text-gray-600 mb-4">
-                                        Include your property and all connected properties in the chain.
-                                    </p>
-                                </div>
-                                
-                                <div className="max-w-xs">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Chain Length
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max="20"
-                                        value={formData.chain_length}
-                                        onChange={(e) => handleInputChange('chain_length', parseInt(e.target.value) || 1)}
-                                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">Typically 2-5 properties</p>
-                                </div>
-                                
-                                {errors.chain_length && (
-                                    <p className="text-red-600 text-sm">{errors.chain_length}</p>
-                                )}
-                            </div>
-                        )}
-
-                        {currentStep === 3 && (
-                            <div className="space-y-6">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                                        How many properties are in your chain?
-                                    </h3>
-                                    <p className="text-gray-600 mb-4">
-                                        Include your property and all connected properties in the chain.
-                                    </p>
-                                </div>
-                                
-                                <div className="max-w-xs">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Chain Length
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max="20"
-                                        value={formData.chain_length}
-                                        onChange={(e) => handleInputChange('chain_length', parseInt(e.target.value) || 1)}
-                                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">Typically 2-5 properties</p>
-                                </div>
-                                
-                                {errors.chain_length && (
-                                    <p className="text-red-600 text-sm">{errors.chain_length}</p>
-                                )}
-                            </div>
-                        )}
-
-                        {currentStep === 4 && (
                             <div className="space-y-8">
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                                        Professional Details
+                                        Build Your Chain
                                     </h3>
                                     <p className="text-gray-600 mb-4">
-                                        Add your agent and solicitor information to help coordinate your move (all optional).
+                                        Help us map your complete moving chain by providing property links and professional details. The more information you provide, the better we can track progress and coordinate with all parties.
                                     </p>
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                                        <div className="flex items-start">
+                                            <div className="flex-shrink-0">
+                                                <svg className="h-5 w-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <div className="ml-3">
+                                                <h4 className="text-sm font-medium text-blue-800">How Smart Chain Building Works</h4>
+                                                <p className="text-sm text-blue-700 mt-1">
+                                                    We'll use Rightmove links, agent details, and solicitor information to automatically detect connections between users and build your complete chain. Missing links appear greyed out until more information is available.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 {(formData.chain_role === 'first_time_buyer' || formData.chain_role === 'buyer_seller') && (
@@ -465,7 +575,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        value={formData.buying_agent_details.name}
+                                                        value={formData.selling_property_details.estate_agent.name}
                                                         onChange={(e) => handleProfessionalDetailsChange('buying_agent', 'name', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="John Smith"
@@ -477,7 +587,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="email"
-                                                        value={formData.buying_agent_details.email}
+                                                        value={formData.selling_property_details.estate_agent.email}
                                                         onChange={(e) => handleProfessionalDetailsChange('buying_agent', 'email', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="agent@agency.com"
@@ -489,7 +599,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="tel"
-                                                        value={formData.buying_agent_details.phone}
+                                                        value={formData.selling_property_details.estate_agent.phone}
                                                         onChange={(e) => handleProfessionalDetailsChange('buying_agent', 'phone', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="01234 567890"
@@ -501,7 +611,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        value={formData.buying_agent_details.firm}
+                                                        value={formData.selling_property_details.estate_agent.firm}
                                                         onChange={(e) => handleProfessionalDetailsChange('buying_agent', 'firm', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="ABC Estate Agents"
@@ -516,7 +626,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        value={formData.buying_solicitor_details.name}
+                                                        value={formData.selling_property_details.solicitor.name}
                                                         onChange={(e) => handleProfessionalDetailsChange('buying_solicitor', 'name', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="Jane Doe"
@@ -528,7 +638,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="email"
-                                                        value={formData.buying_solicitor_details.email}
+                                                        value={formData.selling_property_details.solicitor.email}
                                                         onChange={(e) => handleProfessionalDetailsChange('buying_solicitor', 'email', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="solicitor@lawfirm.com"
@@ -540,7 +650,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="tel"
-                                                        value={formData.buying_solicitor_details.phone}
+                                                        value={formData.selling_property_details.solicitor.phone}
                                                         onChange={(e) => handleProfessionalDetailsChange('buying_solicitor', 'phone', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="01234 567890"
@@ -552,7 +662,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        value={formData.buying_solicitor_details.firm}
+                                                        value={formData.selling_property_details.solicitor.firm}
                                                         onChange={(e) => handleProfessionalDetailsChange('buying_solicitor', 'firm', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="Smith & Associates"
@@ -575,7 +685,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        value={formData.selling_agent_details.name}
+                                                        value={formData.buying_property_details.seller_estate_agent.name}
                                                         onChange={(e) => handleProfessionalDetailsChange('selling_agent', 'name', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="John Smith"
@@ -587,7 +697,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="email"
-                                                        value={formData.selling_agent_details.email}
+                                                        value={formData.buying_property_details.seller_estate_agent.email}
                                                         onChange={(e) => handleProfessionalDetailsChange('selling_agent', 'email', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="agent@agency.com"
@@ -599,7 +709,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="tel"
-                                                        value={formData.selling_agent_details.phone}
+                                                        value={formData.buying_property_details.seller_estate_agent.phone}
                                                         onChange={(e) => handleProfessionalDetailsChange('selling_agent', 'phone', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="01234 567890"
@@ -611,7 +721,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        value={formData.selling_agent_details.firm}
+                                                        value={formData.buying_property_details.seller_estate_agent.firm}
                                                         onChange={(e) => handleProfessionalDetailsChange('selling_agent', 'firm', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="XYZ Estate Agents"
@@ -626,7 +736,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        value={formData.selling_solicitor_details.name}
+                                                        value={formData.buying_property_details.my_solicitor.name}
                                                         onChange={(e) => handleProfessionalDetailsChange('selling_solicitor', 'name', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="Jane Doe"
@@ -638,7 +748,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="email"
-                                                        value={formData.selling_solicitor_details.email}
+                                                        value={formData.buying_property_details.my_solicitor.email}
                                                         onChange={(e) => handleProfessionalDetailsChange('selling_solicitor', 'email', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="solicitor@lawfirm.com"
@@ -650,7 +760,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="tel"
-                                                        value={formData.selling_solicitor_details.phone}
+                                                        value={formData.buying_property_details.my_solicitor.phone}
                                                         onChange={(e) => handleProfessionalDetailsChange('selling_solicitor', 'phone', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="01234 567890"
@@ -662,7 +772,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        value={formData.selling_solicitor_details.firm}
+                                                        value={formData.buying_property_details.my_solicitor.firm}
                                                         onChange={(e) => handleProfessionalDetailsChange('selling_solicitor', 'firm', e.target.value)}
                                                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                                         placeholder="Brown & Co"
@@ -675,7 +785,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                             </div>
                         )}
 
-                        {currentStep === 5 && (
+                        {currentStep === 4 && (
                             <div className="space-y-6">
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
