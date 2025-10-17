@@ -976,7 +976,7 @@ export default function Dashboard({
             {/* Main Dashboard Content - Professional Layout with Performance Optimizations */}
             {activeTab === 'overview' && (
                 <div className="max-w-7xl mx-auto space-y-8">
-                    {/* Complete Moving Journey Timeline - Lazy Loaded */}
+                    {/* My House Move Progress Timeline - Lazy Loaded */}
                     {visibleSections.has('journey') ? (
                         <Suspense fallback={<LoadingSkeleton className="h-48" />}>
                             <CompleteMovingJourney

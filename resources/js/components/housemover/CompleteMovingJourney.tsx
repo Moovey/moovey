@@ -29,7 +29,7 @@ interface CompleteMovingJourneyProps {
  * Visual only – all logic (progress calculation, active section state) lives in parent.
  */
 const CompleteMovingJourney: React.FC<CompleteMovingJourneyProps> = ({
-    title = 'Your Complete Moving Journey',
+    title = 'My House Move Progress',
     subtitle = 'Track your progress through every stage of your move',
     overallProgress,
     moveSections,

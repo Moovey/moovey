@@ -223,7 +223,7 @@ export default function OverviewTab({
 
     return (
         <div className="max-w-7xl mx-auto space-y-8">
-            {/* Complete Moving Journey Timeline */}
+            {/* My House Move Progress Timeline */}
             <CompleteMovingJourney
                 overallProgress={computedOverallProgress}
                 moveSections={moveStages.map(stage => ({

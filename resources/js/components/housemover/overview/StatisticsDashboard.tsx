@@ -57,7 +57,7 @@ export default function StatisticsDashboard({
             changeType: 'increase',
             icon: '📊',
             category: 'progress',
-            description: 'Complete moving journey progress'
+            description: 'House move progress tracker'
         },
         {
             id: 'money-saved',
