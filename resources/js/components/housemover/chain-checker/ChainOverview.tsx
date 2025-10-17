@@ -73,7 +73,7 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
 
     return (
         <motion.div
-            className={`relative bg-white rounded-xl shadow-lg border-2 p-6 min-w-[280px] hover:shadow-xl transition-all duration-300 ${
+            className={`relative bg-white rounded-xl shadow-lg border-2 p-4 sm:p-6 min-w-[240px] sm:min-w-[280px] hover:shadow-xl transition-all duration-300 ${
                 isUnknown ? 'border-gray-300 bg-gray-50' : 'border-gray-200'
             }`}
             style={{
@@ -85,14 +85,14 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
             transition={{ duration: 0.3 }}
         >
             {/* House Title */}
-            <div className="text-center mb-4">
-                <h4 className="font-semibold text-gray-900 text-sm">{title}</h4>
+            <div className="text-center mb-3 sm:mb-4">
+                <h4 className="font-semibold text-gray-900 text-xs sm:text-sm">{title}</h4>
             </div>
 
             {/* Link Health Circle */}
-            <div className="flex flex-col items-center mb-4">
-                <div className="relative w-20 h-20">
-                    <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
+            <div className="flex flex-col items-center mb-3 sm:mb-4">
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+                    <svg className="w-16 h-16 sm:w-20 sm:h-20 transform -rotate-90" viewBox="0 0 36 36">
                         <path
                             d="M18 2.0845
                                a 15.9155 15.9155 0 0 1 0 31.831
@@ -112,7 +112,7 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
                         />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <span className={`text-lg font-bold ${isUnknown ? 'text-gray-400' : getHealthColor(linkHealth)}`}>
+                        <span className={`text-sm sm:text-lg font-bold ${isUnknown ? 'text-gray-400' : getHealthColor(linkHealth)}`}>
                             {isUnknown ? '?' : `${linkHealth}%`}
                         </span>
                     </div>
@@ -121,7 +121,7 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
             </div>
 
             {/* Progress Stages with Percentage-based Display */}
-            <div className="space-y-2 mb-6">
+            <div className="space-y-1 sm:space-y-2 mb-4 sm:mb-6">
                 <div className="text-xs font-medium text-gray-700 mb-2">Link Progress</div>
                 {stages.map((stage, index) => (
                     <div key={index} className="flex items-center justify-between text-xs">
@@ -133,16 +133,16 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
                                 stage.progress >= 25 ? 'bg-orange-500' :
                                 stage.progress > 0 ? 'bg-red-500' : 'bg-gray-300'
                             }`}></div>
-                            <span className="text-gray-700 truncate">{stage.name}</span>
+                            <span className="text-gray-700 truncate text-xs">{stage.name}</span>
                         </div>
-                        <div className="flex items-center space-x-2 ml-2">
-                            <div className="w-12 h-1 bg-gray-200 rounded-full">
+                        <div className="flex items-center space-x-1 sm:space-x-2 ml-2">
+                            <div className="w-8 sm:w-12 h-1 bg-gray-200 rounded-full">
                                 <div
                                     className={`h-1 rounded-full transition-all duration-300 ${getProgressBarColor(stage.progress)}`}
                                     style={{ width: `${isUnknown ? 0 : stage.progress}%` }}
                                 ></div>
                             </div>
-                            <span className="text-gray-600 w-8 text-right">
+                            <span className="text-gray-600 w-6 sm:w-8 text-right text-xs">
                                 {isUnknown ? '?' : `${stage.progress}%`}
                             </span>
                         </div>
@@ -153,7 +153,7 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
             {/* Action Button */}
             <button
                 onClick={getButtonAction}
-                className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                className={`w-full py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                     isUnknown
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
                         : isEditable && isUserOwned
@@ -298,6 +298,124 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
     );
 };
 
+// Mobile version of the PropertyHouseBlock component
+const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
+    title,
+    linkHealth,
+    isUserOwned,
+    isEditable,
+    type,
+    isUnknown = false
+}) => {
+    const [showModal, setShowModal] = useState(false);
+
+    const getButtonText = () => {
+        if (isUnknown) return 'Build this Link';
+        if (isEditable && isUserOwned) return 'Update my Link';
+        return 'Contact Link Owner';
+    };
+
+    const getButtonAction = () => {
+        if (isUnknown || (isEditable && isUserOwned)) {
+            setShowModal(true);
+        } else {
+            setShowModal(true);
+        }
+    };
+
+    const houseColor = type === 'buying' ? '#10B981' :
+                      type === 'selling' ? '#F59E0B' :
+                      '#6B7280';
+
+    return (
+        <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className={`bg-white rounded-xl p-4 border-2 ${
+                isUnknown ? 'border-gray-300 bg-gray-50' : 'border-gray-200'
+            }`}
+        >
+            <div className="flex items-center space-x-4">
+                {/* House Icon */}
+                <div className="flex-shrink-0">
+                    <div className={`w-12 h-12 relative ${isUserOwned ? 'cursor-pointer' : ''}`}
+                         onClick={isUserOwned ? getButtonAction : undefined}>
+                        <div 
+                            className="w-full h-full transition-all duration-200 hover:scale-105"
+                            style={{
+                                background: isUnknown ? '#9CA3AF' : houseColor,
+                                clipPath: 'polygon(50% 0%, 0% 70%, 15% 70%, 15% 100%, 85% 100%, 85% 70%, 100% 70%)',
+                                opacity: isUnknown ? 0.6 : 1
+                            }}
+                        />
+                        
+                        {/* Door and Windows */}
+                        {!isUnknown && (
+                            <>
+                                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-2 bg-white/30 rounded-sm"></div>
+                                <div className="absolute top-5 left-2 w-1 h-1 bg-white/40 rounded-sm"></div>
+                                <div className="absolute top-5 right-2 w-1 h-1 bg-white/40 rounded-sm"></div>
+                            </>
+                        )}
+
+                        {/* Question mark for unknown properties */}
+                        {isUnknown && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-white text-sm font-bold">?</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Property Info */}
+                <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-gray-900 truncate">{title}</h4>
+                    <p className="text-xs text-gray-600 mt-1">
+                        Health: {isUnknown ? 'Unknown' : `${linkHealth}%`}
+                    </p>
+                    {isUserOwned && (
+                        <button
+                            onClick={getButtonAction}
+                            className="mt-1 text-xs text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
+                        >
+                            Edit Progress
+                        </button>
+                    )}
+                </div>
+
+                {/* Progress Bar */}
+                <div className="flex-shrink-0">
+                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                            className="h-full transition-all duration-700 ease-out rounded-full"
+                            style={{ 
+                                width: `${isUnknown ? 0 : linkHealth}%`,
+                                backgroundColor: houseColor
+                            }}
+                        />
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1 text-center">
+                        {isUnknown ? '?' : `${linkHealth}%`}
+                    </p>
+                </div>
+            </div>
+
+            {/* Modal for editing/building links */}
+            {showModal && (
+                <PropertyModal
+                    isOpen={showModal}
+                    onClose={() => setShowModal(false)}
+                    title={title}
+                    type={type}
+                    isUnknown={isUnknown}
+                    isEditable={isEditable}
+                />
+            )}
+        </motion.div>
+    );
+};
+
 interface ChainOverviewProps {
     chainData: any;
     onRefresh: () => void;
@@ -377,19 +495,19 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
     }));
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
             {/* Chain Health Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+                <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-600">Chain Health</p>
-                            <p className={`text-3xl font-bold ${getHealthColor(chainData.progress_score)}`}>
+                            <p className="text-xs sm:text-sm font-medium text-gray-600">Chain Health</p>
+                            <p className={`text-2xl sm:text-3xl font-bold ${getHealthColor(chainData.progress_score)}`}>
                                 {chainData.progress_score}%
                             </p>
-                            <p className="text-sm text-gray-500">{getHealthStatus(chainData.progress_score)}</p>
+                            <p className="text-xs sm:text-sm text-gray-500">{getHealthStatus(chainData.progress_score)}</p>
                         </div>
-                        <div className="text-4xl">
+                        <div className="text-2xl sm:text-4xl">
                             {chainData.progress_score >= 80 ? '🟢' : 
                              chainData.progress_score >= 60 ? '🟡' : 
                              chainData.progress_score >= 40 ? '🟠' : '🔴'}
@@ -397,34 +515,34 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                     </div>
                 </div>
                 
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-600">Chain Length</p>
-                            <p className="text-3xl font-bold text-gray-900">{chainData.chain_length}</p>
-                            <p className="text-sm text-gray-500">Properties</p>
+                            <p className="text-xs sm:text-sm font-medium text-gray-600">Chain Length</p>
+                            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{chainData.chain_length}</p>
+                            <p className="text-xs sm:text-sm text-gray-500">Properties</p>
                         </div>
-                        <div className="text-4xl">⛓️</div>
+                        <div className="text-2xl sm:text-4xl">⛓️</div>
                     </div>
                 </div>
                 
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100 sm:col-span-2 lg:col-span-1">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-600">Your Role</p>
-                            <p className="text-lg font-bold text-gray-900">
+                            <p className="text-xs sm:text-sm font-medium text-gray-600">Your Role</p>
+                            <p className="text-sm sm:text-lg font-bold text-gray-900 leading-tight">
                                 {chainData.chain_role ? getRoleDisplay(chainData.chain_role).label : 
                                  (chainData.move_type === 'both' ? 'Buying & Selling' : 
                                   chainData.move_type === 'buying' ? 'Buying Only' : 'Selling Only')}
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs sm:text-sm text-gray-500">
                                 {chainData.buying_properties?.length > 0 && `${chainData.buying_properties.length} buying`}
                                 {chainData.buying_properties?.length > 0 && chainData.selling_properties?.length > 0 && ', '}
                                 {chainData.selling_properties?.length > 0 && `${chainData.selling_properties.length} selling`}
                                 {(!chainData.buying_properties?.length && !chainData.selling_properties?.length) && 'No linked properties'}
                             </p>
                         </div>
-                        <div className="text-4xl">
+                        <div className="text-2xl sm:text-4xl">
                             {chainData.chain_role ? getRoleDisplay(chainData.chain_role).icon :
                              (chainData.move_type === 'both' ? '🔄' : 
                               chainData.move_type === 'buying' ? '🏠' : '💰')}
@@ -434,112 +552,208 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
             </div>
 
             {/* Property Chain Visualization */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">Property Chain</h3>
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">Property Chain</h3>
                     <button
                         onClick={onRefresh}
-                        className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
+                        className="text-xs sm:text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
                     >
                         Refresh Status
                     </button>
                 </div>
                 
-                {/* Chain Houses Container */}
-                <div className="flex items-center justify-center space-x-8 overflow-x-auto pb-4">
-                    {/* Generate chain based on user role */}
-                    {chainData.chain_role === 'first_time_buyer' && (
-                        <>
-                            {/* User's Buying Property */}
-                            <PropertyHouseBlock
-                                title="The house I'm buying"
-                                linkHealth={50}
-                                isUserOwned={true}
-                                isEditable={true}
-                                type="buying"
-                            />
-                            {/* Chain Connector */}
-                            <div className="w-8 h-1 bg-gray-300 rounded"></div>
-                            {/* Unknown/Seller's Property */}
-                            <PropertyHouseBlock
-                                title="Seller's onward property"
-                                linkHealth={0}
-                                isUserOwned={false}
-                                isEditable={false}
-                                type="unknown"
-                                isUnknown={true}
-                            />
-                        </>
-                    )}
+                {/* Chain Houses Container - Responsive Layout */}
+                <div className="relative">
+                    {/* Desktop/Tablet View - Horizontal Chain */}
+                    <div className="hidden sm:flex items-center justify-center space-x-4 lg:space-x-8 overflow-x-auto pb-4">
+                        {/* Generate chain based on user role */}
+                        {chainData.chain_role === 'first_time_buyer' && (
+                            <>
+                                {/* User's Buying Property */}
+                                <PropertyHouseBlock
+                                    title="The house I'm buying"
+                                    linkHealth={50}
+                                    isUserOwned={true}
+                                    isEditable={true}
+                                    type="buying"
+                                />
+                                {/* Chain Connector */}
+                                <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
+                                {/* Unknown/Seller's Property */}
+                                <PropertyHouseBlock
+                                    title="Seller's onward property"
+                                    linkHealth={0}
+                                    isUserOwned={false}
+                                    isEditable={false}
+                                    type="unknown"
+                                    isUnknown={true}
+                                />
+                            </>
+                        )}
 
-                    {chainData.chain_role === 'seller_only' && (
-                        <>
-                            {/* Unknown/Buyer's Property */}
-                            <PropertyHouseBlock
-                                title="Buyer's onward property"
-                                linkHealth={0}
-                                isUserOwned={false}
-                                isEditable={false}
-                                type="unknown"
-                                isUnknown={true}
-                            />
-                            {/* Chain Connector */}
-                            <div className="w-8 h-1 bg-gray-300 rounded"></div>
-                            {/* User's Selling Property */}
-                            <PropertyHouseBlock
-                                title="The house I'm selling"
-                                linkHealth={30}
-                                isUserOwned={true}
-                                isEditable={true}
-                                type="selling"
-                            />
-                        </>
-                    )}
+                        {chainData.chain_role === 'seller_only' && (
+                            <>
+                                {/* Unknown/Buyer's Property */}
+                                <PropertyHouseBlock
+                                    title="Buyer's onward property"
+                                    linkHealth={0}
+                                    isUserOwned={false}
+                                    isEditable={false}
+                                    type="unknown"
+                                    isUnknown={true}
+                                />
+                                {/* Chain Connector */}
+                                <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
+                                {/* User's Selling Property */}
+                                <PropertyHouseBlock
+                                    title="The house I'm selling"
+                                    linkHealth={30}
+                                    isUserOwned={true}
+                                    isEditable={true}
+                                    type="selling"
+                                />
+                            </>
+                        )}
 
-                    {chainData.chain_role === 'buyer_seller' && (
-                        <>
-                            {/* Unknown Down Chain */}
-                            <PropertyHouseBlock
-                                title="Down chain property"
-                                linkHealth={0}
-                                isUserOwned={false}
-                                isEditable={false}
-                                type="unknown"
-                                isUnknown={true}
-                            />
-                            {/* Chain Connector */}
-                            <div className="w-8 h-1 bg-gray-300 rounded"></div>
-                            {/* User's Selling Property */}
-                            <PropertyHouseBlock
-                                title="The house I'm selling"
-                                linkHealth={30}
-                                isUserOwned={true}
-                                isEditable={true}
-                                type="selling"
-                            />
-                            {/* Chain Connector */}
-                            <div className="w-8 h-1 bg-gray-300 rounded"></div>
-                            {/* User's Buying Property */}
-                            <PropertyHouseBlock
-                                title="The house I'm buying"
-                                linkHealth={50}
-                                isUserOwned={true}
-                                isEditable={true}
-                                type="buying"
-                            />
-                            {/* Chain Connector */}
-                            <div className="w-8 h-1 bg-gray-300 rounded"></div>
-                            {/* Unknown Up Chain */}
-                            <PropertyHouseBlock
-                                title="Up chain property"
-                                linkHealth={0}
-                                isUserOwned={false}
-                                isEditable={false}
-                                type="unknown"
-                                isUnknown={true}
-                            />
-                        </>
-                    )}
+                        {chainData.chain_role === 'buyer_seller' && (
+                            <>
+                                {/* Unknown Down Chain */}
+                                <PropertyHouseBlock
+                                    title="Down chain property"
+                                    linkHealth={0}
+                                    isUserOwned={false}
+                                    isEditable={false}
+                                    type="unknown"
+                                    isUnknown={true}
+                                />
+                                {/* Chain Connector */}
+                                <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
+                                {/* User's Selling Property */}
+                                <PropertyHouseBlock
+                                    title="The house I'm selling"
+                                    linkHealth={30}
+                                    isUserOwned={true}
+                                    isEditable={true}
+                                    type="selling"
+                                />
+                                {/* Chain Connector */}
+                                <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
+                                {/* User's Buying Property */}
+                                <PropertyHouseBlock
+                                    title="The house I'm buying"
+                                    linkHealth={50}
+                                    isUserOwned={true}
+                                    isEditable={true}
+                                    type="buying"
+                                />
+                                {/* Chain Connector */}
+                                <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
+                                {/* Unknown Up Chain */}
+                                <PropertyHouseBlock
+                                    title="Up chain property"
+                                    linkHealth={0}
+                                    isUserOwned={false}
+                                    isEditable={false}
+                                    type="unknown"
+                                    isUnknown={true}
+                                />
+                            </>
+                        )}
+                    </div>
+
+                    {/* Mobile View - Vertical Chain */}
+                    <div className="sm:hidden space-y-4">
+                        {chainData.chain_role === 'first_time_buyer' && (
+                            <>
+                                <PropertyHouseBlockMobile
+                                    title="The house I'm buying"
+                                    linkHealth={50}
+                                    isUserOwned={true}
+                                    isEditable={true}
+                                    type="buying"
+                                />
+                                <div className="flex justify-center">
+                                    <div className="w-1 h-8 bg-gray-300 rounded"></div>
+                                </div>
+                                <PropertyHouseBlockMobile
+                                    title="Seller's onward property"
+                                    linkHealth={0}
+                                    isUserOwned={false}
+                                    isEditable={false}
+                                    type="unknown"
+                                    isUnknown={true}
+                                />
+                            </>
+                        )}
+
+                        {chainData.chain_role === 'seller_only' && (
+                            <>
+                                <PropertyHouseBlockMobile
+                                    title="Buyer's onward property"
+                                    linkHealth={0}
+                                    isUserOwned={false}
+                                    isEditable={false}
+                                    type="unknown"
+                                    isUnknown={true}
+                                />
+                                <div className="flex justify-center">
+                                    <div className="w-1 h-8 bg-gray-300 rounded"></div>
+                                </div>
+                                <PropertyHouseBlockMobile
+                                    title="The house I'm selling"
+                                    linkHealth={30}
+                                    isUserOwned={true}
+                                    isEditable={true}
+                                    type="selling"
+                                />
+                            </>
+                        )}
+
+                        {chainData.chain_role === 'buyer_seller' && (
+                            <>
+                                <PropertyHouseBlockMobile
+                                    title="Down chain property"
+                                    linkHealth={0}
+                                    isUserOwned={false}
+                                    isEditable={false}
+                                    type="unknown"
+                                    isUnknown={true}
+                                />
+                                <div className="flex justify-center">
+                                    <div className="w-1 h-8 bg-gray-300 rounded"></div>
+                                </div>
+                                <PropertyHouseBlockMobile
+                                    title="The house I'm selling"
+                                    linkHealth={30}
+                                    isUserOwned={true}
+                                    isEditable={true}
+                                    type="selling"
+                                />
+                                <div className="flex justify-center">
+                                    <div className="w-1 h-8 bg-gray-300 rounded"></div>
+                                </div>
+                                <PropertyHouseBlockMobile
+                                    title="The house I'm buying"
+                                    linkHealth={50}
+                                    isUserOwned={true}
+                                    isEditable={true}
+                                    type="buying"
+                                />
+                                <div className="flex justify-center">
+                                    <div className="w-1 h-8 bg-gray-300 rounded"></div>
+                                </div>
+                                <PropertyHouseBlockMobile
+                                    title="Up chain property"
+                                    linkHealth={0}
+                                    isUserOwned={false}
+                                    isEditable={false}
+                                    type="unknown"
+                                    isUnknown={true}
+                                />
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 

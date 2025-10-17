@@ -147,41 +147,41 @@ const ChainStages: React.FC<ChainStagesProps> = ({ chainData, onUpdate }) => {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
             {/* Progress Tracking Header */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm p-6 border border-blue-100">
-                <div className="flex items-center justify-between mb-4">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm p-4 sm:p-6 border border-blue-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                     <div>
-                        <h3 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center space-x-2">
                             <span className="text-blue-500">📊</span>
                             <span>Progress Tracking</span>
                         </h3>
-                        <p className="text-gray-600 mt-1">Update your property link progress</p>
+                        <p className="text-sm sm:text-base text-gray-600 mt-1">Update your property link progress</p>
                     </div>
-                    <div className="text-center">
-                        <div className="text-3xl font-bold text-blue-600">
+                    <div className="text-center sm:text-right">
+                        <div className="text-2xl sm:text-3xl font-bold text-blue-600">
                             {calculateOverallLinkHealth()}%
                         </div>
-                        <div className="text-sm text-gray-600">Link Health</div>
+                        <div className="text-xs sm:text-sm text-gray-600">Link Health</div>
                     </div>
                 </div>
                 
                 {/* Overall Progress Bar */}
-                <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
+                <div className="w-full bg-gray-200 rounded-full h-3 sm:h-4 mb-2">
                     <div 
-                        className="bg-gradient-to-r from-blue-500 to-indigo-500 h-4 rounded-full transition-all duration-500"
+                        className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 sm:h-4 rounded-full transition-all duration-500"
                         style={{ width: `${calculateOverallLinkHealth()}%` }}
                     ></div>
                 </div>
                 
-                <div className="text-center text-sm text-gray-600">
+                <div className="text-center text-xs sm:text-sm text-gray-600">
                     Overall property link completion
                 </div>
             </div>
 
             {/* Individual Stage Progress */}
-            <div className="space-y-6">
-                <h4 className="text-lg font-semibold text-gray-900">Stage Progress</h4>
+            <div className="space-y-4 sm:space-y-6">
+                <h4 className="text-base sm:text-lg font-semibold text-gray-900">Stage Progress</h4>
                 
                 {stages.map((stage, index) => {
                     const currentProgress = stageProgress[stage.id] || 0;
@@ -196,12 +196,12 @@ const ChainStages: React.FC<ChainStagesProps> = ({ chainData, onUpdate }) => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                         >
-                            <div className="p-6">
-                                <div className="flex items-start space-x-4">
+                            <div className="p-4 sm:p-6">
+                                <div className="flex items-start space-x-3 sm:space-x-4">
                                     {/* Stage Icon */}
                                     <div className="flex-shrink-0">
                                         <div className={`
-                                            w-12 h-12 rounded-full border-2 flex items-center justify-center text-xl
+                                            w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center text-lg sm:text-xl
                                             ${currentProgress === 100 
                                                 ? 'border-green-500 bg-green-50' 
                                                 : currentProgress > 0
@@ -215,27 +215,27 @@ const ChainStages: React.FC<ChainStagesProps> = ({ chainData, onUpdate }) => {
                                     
                                     {/* Stage Content */}
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div>
-                                                <h5 className="text-lg font-semibold text-gray-900">
+                                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
+                                            <div className="flex-1">
+                                                <h5 className="text-base sm:text-lg font-semibold text-gray-900">
                                                     {stage.title}
                                                 </h5>
-                                                <p className="text-gray-600 mt-1">
+                                                <p className="text-sm sm:text-base text-gray-600 mt-1">
                                                     {stage.description}
                                                 </p>
                                             </div>
                                             
                                             {/* Current Status Badge */}
-                                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${progressOption.color} bg-gray-100`}>
+                                            <div className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${progressOption.color} bg-gray-100 text-center`}>
                                                 {progressOption.label} ({currentProgress}%)
                                             </div>
                                         </div>
                                         
                                         {/* Progress Bar */}
-                                        <div className="mb-4">
+                                        <div className="mb-3 sm:mb-4">
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className="text-sm font-medium text-gray-700">Progress</span>
-                                                <span className="text-sm text-gray-600">{currentProgress}%</span>
+                                                <span className="text-xs sm:text-sm font-medium text-gray-700">Progress</span>
+                                                <span className="text-xs sm:text-sm text-gray-600">{currentProgress}%</span>
                                             </div>
                                             <div className="w-full bg-gray-200 rounded-full h-2">
                                                 <div 
@@ -247,15 +247,15 @@ const ChainStages: React.FC<ChainStagesProps> = ({ chainData, onUpdate }) => {
                                         
                                         {/* Progress Selection Radio Buttons */}
                                         <div className="space-y-2">
-                                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
                                                 Update Progress:
                                             </label>
-                                            <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+                                            <div className="grid grid-cols-5 gap-1 sm:gap-2">
                                                 {progressOptions.map((option) => (
                                                     <label
                                                         key={option.value}
                                                         className={`
-                                                            relative flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all
+                                                            relative flex items-center justify-center p-2 sm:p-3 rounded-lg border-2 cursor-pointer transition-all
                                                             ${currentProgress === option.value
                                                                 ? 'border-blue-500 bg-blue-50'
                                                                 : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
