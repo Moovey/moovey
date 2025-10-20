@@ -56,10 +56,37 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
         loadAvailableProperties();
     }, []);
 
+    // Load properties when role changes
+    useEffect(() => {
+        if (formData.chain_role) {
+            loadAvailableProperties();
+        }
+    }, [formData.chain_role]);
+
     const loadAvailableProperties = async () => {
         setLoadingProperties(true);
         try {
-            const response = await fetch('/api/properties/basket', {
+            let url = '/api/properties/basket';
+            
+            // Add claim type filtering based on selected role
+            if (formData.chain_role) {
+                const params = new URLSearchParams();
+                
+                if (formData.chain_role === 'first_time_buyer') {
+                    params.append('claim_type', 'buyer');
+                } else if (formData.chain_role === 'seller_only') {
+                    params.append('claim_type', 'seller');
+                } else if (formData.chain_role === 'buyer_seller') {
+                    // For buyer_seller, we want to show all properties (both buyer and seller)
+                    // No claim_type filter needed
+                }
+                
+                if (params.toString()) {
+                    url += `?${params.toString()}`;
+                }
+            }
+
+            const response = await fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Content-Type': 'application/json',
@@ -168,20 +195,33 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
             case 2:
                 // Role-based property validation
                 if (formData.chain_role === 'first_time_buyer') {
-                    if (formData.buying_properties.length === 0) {
-                        newErrors.properties = 'You need to claim the property you are buying in order to continue.';
+                    if (getPropertiesByClaimType('buyer').length === 0) {
+                        newErrors.properties = 'You need to claim a property as a buyer first. Go to Property Basket to claim a property.';
+                    } else if (formData.buying_properties.length === 0) {
+                        newErrors.properties = 'You need to select the property you are buying to continue.';
                     }
                 } else if (formData.chain_role === 'seller_only') {
-                    if (formData.selling_properties.length === 0) {
-                        newErrors.properties = 'You need to claim the property you are selling in order to continue.';
+                    if (getPropertiesByClaimType('seller').length === 0) {
+                        newErrors.properties = 'You need to claim a property as a seller first. Go to Property Basket to claim a property.';
+                    } else if (formData.selling_properties.length === 0) {
+                        newErrors.properties = 'You need to select the property you are selling to continue.';
                     }
                 } else if (formData.chain_role === 'buyer_seller') {
-                    if (formData.buying_properties.length === 0 && formData.selling_properties.length === 0) {
-                        newErrors.properties = 'You need to claim both the property you are selling and the property you are buying in order to continue.';
+                    const buyerProperties = getPropertiesByClaimType('buyer');
+                    const sellerProperties = getPropertiesByClaimType('seller');
+                    
+                    if (buyerProperties.length === 0 && sellerProperties.length === 0) {
+                        newErrors.properties = 'You need to claim properties as both buyer and seller first. Go to Property Basket to claim properties.';
+                    } else if (buyerProperties.length === 0) {
+                        newErrors.properties = 'You need to claim a property as a buyer first. Go to Property Basket to claim a property.';
+                    } else if (sellerProperties.length === 0) {
+                        newErrors.properties = 'You need to claim a property as a seller first. Go to Property Basket to claim a property.';
+                    } else if (formData.buying_properties.length === 0 && formData.selling_properties.length === 0) {
+                        newErrors.properties = 'You need to select both the property you are buying and the property you are selling to continue.';
                     } else if (formData.buying_properties.length === 0) {
-                        newErrors.properties = 'You need to claim the property you are buying in order to continue.';
+                        newErrors.properties = 'You need to select the property you are buying to continue.';
                     } else if (formData.selling_properties.length === 0) {
-                        newErrors.properties = 'You need to claim the property you are selling in order to continue.';
+                        newErrors.properties = 'You need to select the property you are selling to continue.';
                     }
                 }
                 break;
@@ -329,11 +369,14 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
     const hasRequiredProperties = (): boolean => {
         switch (formData.chain_role) {
             case 'first_time_buyer':
-                return formData.buying_properties.length > 0;
+                return formData.buying_properties.length > 0 && getPropertiesByClaimType('buyer').length > 0;
             case 'seller_only':
-                return formData.selling_properties.length > 0;
+                return formData.selling_properties.length > 0 && getPropertiesByClaimType('seller').length > 0;
             case 'buyer_seller':
-                return formData.buying_properties.length > 0 && formData.selling_properties.length > 0;
+                return formData.buying_properties.length > 0 && 
+                       formData.selling_properties.length > 0 && 
+                       getPropertiesByClaimType('buyer').length > 0 && 
+                       getPropertiesByClaimType('seller').length > 0;
             default:
                 return false;
         }
@@ -343,6 +386,16 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
     const goToPropertyBasket = () => {
         // Navigate to the dashboard page which has the Property Basket component
         window.location.href = '/housemover/dashboard';
+    };
+
+    // Helper function to filter properties by claim type
+    const getPropertiesByClaimType = (claimType: 'buyer' | 'seller') => {
+        return availableProperties.filter(property => property.claim_type === claimType);
+    };
+
+    // Helper function to get all properties (for buyer_seller role)
+    const getAllClaimedProperties = () => {
+        return availableProperties.filter(property => property.is_claimed);
     };
 
     return (
@@ -461,96 +514,168 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
-                                        {(formData.chain_role === 'buyer_seller' || formData.chain_role === 'first_time_buyer') && (
-                                            <div>
-                                                <h4 className="font-medium text-gray-900 mb-3">Properties You're Buying</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    {availableProperties.map((property) => (
-                                                        <button
-                                                            key={property.id}
-                                                            onClick={() => handlePropertyToggle(property.id, 'buying')}
-                                                            className={`
-                                                                p-3 border rounded-lg text-left transition-all hover:shadow-sm
-                                                                ${formData.buying_properties.includes(property.id)
-                                                                    ? 'border-[#00BCD4] bg-blue-50'
-                                                                    : 'border-gray-200 hover:border-gray-300'
-                                                                }
-                                                            `}
-                                                        >
-                                                            <div className="flex items-start justify-between">
-                                                                <div className="flex-1">
-                                                                    <div className="font-medium text-gray-900">
-                                                                        {property.address || 'Property Address'}
-                                                                    </div>
-                                                                    <div className="text-sm text-gray-600">
-                                                                        £{property.price?.toLocaleString() || 'Price on request'}
-                                                                    </div>
-                                                                </div>
-                                                                {formData.buying_properties.includes(property.id) && (
-                                                                    <div className="text-[#00BCD4]">✓</div>
-                                                                )}
-                                                            </div>
-                                                        </button>
-                                                    ))}
+                        {(formData.chain_role === 'buyer_seller' || formData.chain_role === 'first_time_buyer') && (
+                            <div>
+                                <h4 className="font-medium text-gray-900 mb-3">Properties You're Buying</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {(formData.chain_role === 'buyer_seller' 
+                                        ? getPropertiesByClaimType('buyer')
+                                        : getPropertiesByClaimType('buyer')).map((property) => (
+                                        <button
+                                            key={property.id}
+                                            onClick={() => handlePropertyToggle(property.id, 'buying')}
+                                            className={`
+                                                p-3 border rounded-lg text-left transition-all hover:shadow-sm
+                                                ${formData.buying_properties.includes(property.id)
+                                                    ? 'border-[#00BCD4] bg-blue-50'
+                                                    : 'border-gray-200 hover:border-gray-300'
+                                                }
+                                            `}
+                                        >
+                                            <div className="flex items-start space-x-3">
+                                                {/* Property Photo */}
+                                                <div className="flex-shrink-0">
+                                                    {property.property_photos && property.property_photos.length > 0 ? (
+                                                        <img
+                                                            src={property.property_photos[0]}
+                                                            alt="Property"
+                                                            className="w-12 h-12 object-cover rounded-md"
+                                                            onError={(e) => {
+                                                                e.currentTarget.src = '/images/placeholder-property.svg';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
+                                                            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v3H8V5z" />
+                                                            </svg>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                {(formData.chain_role === 'first_time_buyer' || formData.chain_role === 'buyer_seller') && 
-                                                 formData.buying_properties.length === 0 && (
-                                                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                                        <p className="text-blue-800 text-sm">
-                                                            {formData.chain_role === 'first_time_buyer' 
-                                                                ? 'Please select the property you are buying.' 
-                                                                : 'Please select the property you are buying.'}
-                                                        </p>
+
+                                                {/* Property Details */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-gray-900 truncate">
+                                                        {property.property_title || property.address || 'Property'}
                                                     </div>
-                                                )}
-                                            </div>
-                                        )}
-                                        
-                                        {(formData.chain_role === 'buyer_seller' || formData.chain_role === 'seller_only') && (
-                                            <div>
-                                                <h4 className="font-medium text-gray-900 mb-3">Properties You're Selling</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    {availableProperties.map((property) => (
-                                                        <button
-                                                            key={property.id}
-                                                            onClick={() => handlePropertyToggle(property.id, 'selling')}
-                                                            className={`
-                                                                p-3 border rounded-lg text-left transition-all hover:shadow-sm
-                                                                ${formData.selling_properties.includes(property.id)
-                                                                    ? 'border-[#00BCD4] bg-blue-50'
-                                                                    : 'border-gray-200 hover:border-gray-300'
-                                                                }
-                                                            `}
-                                                        >
-                                                            <div className="flex items-start justify-between">
-                                                                <div className="flex-1">
-                                                                    <div className="font-medium text-gray-900">
-                                                                        {property.address || 'Property Address'}
-                                                                    </div>
-                                                                    <div className="text-sm text-gray-600">
-                                                                        £{property.price?.toLocaleString() || 'Price on request'}
-                                                                    </div>
-                                                                </div>
-                                                                {formData.selling_properties.includes(property.id) && (
-                                                                    <div className="text-[#00BCD4]">✓</div>
-                                                                )}
-                                                            </div>
-                                                        </button>
-                                                    ))}
+                                                    {property.address && property.property_title && (
+                                                        <div className="text-sm text-gray-500 truncate">
+                                                            {property.address}
+                                                        </div>
+                                                    )}
+                                                    <div className="text-sm text-gray-600">
+                                                        {property.formatted_price || `£${property.price?.toLocaleString() || 'Price on request'}`}
+                                                    </div>
+                                                    {property.summary && (
+                                                        <div className="text-xs text-gray-500">
+                                                            {property.summary}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                {(formData.chain_role === 'seller_only' || formData.chain_role === 'buyer_seller') && 
-                                                 formData.selling_properties.length === 0 && (
-                                                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                                                        <p className="text-green-800 text-sm">
-                                                            Please select the property you are selling.
-                                                        </p>
-                                                    </div>
-                                                )}
+
+                                                {/* Selection Indicator */}
+                                                <div className="flex-shrink-0">
+                                                    {formData.buying_properties.includes(property.id) && (
+                                                        <div className="text-[#00BCD4]">✓</div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        )}
+                                        </button>
+                                    ))}
+                                </div>
+                                {(formData.chain_role === 'first_time_buyer' || formData.chain_role === 'buyer_seller') && 
+                                 getPropertiesByClaimType('buyer').length === 0 && (
+                                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <p className="text-blue-800 text-sm">
+                                            No properties claimed as 'buyer' found. You need to claim a property as a buyer first.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        
+                        {(formData.chain_role === 'buyer_seller' || formData.chain_role === 'seller_only') && (
+                            <div>
+                                <h4 className="font-medium text-gray-900 mb-3">Properties You're Selling</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {getPropertiesByClaimType('seller').map((property) => (
+                                        <button
+                                            key={property.id}
+                                            onClick={() => handlePropertyToggle(property.id, 'selling')}
+                                            className={`
+                                                p-3 border rounded-lg text-left transition-all hover:shadow-sm
+                                                ${formData.selling_properties.includes(property.id)
+                                                    ? 'border-[#00BCD4] bg-blue-50'
+                                                    : 'border-gray-200 hover:border-gray-300'
+                                                }
+                                            `}
+                                        >
+                                            <div className="flex items-start space-x-3">
+                                                {/* Property Photo */}
+                                                <div className="flex-shrink-0">
+                                                    {property.property_photos && property.property_photos.length > 0 ? (
+                                                        <img
+                                                            src={property.property_photos[0]}
+                                                            alt="Property"
+                                                            className="w-12 h-12 object-cover rounded-md"
+                                                            onError={(e) => {
+                                                                e.currentTarget.src = '/images/placeholder-property.svg';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
+                                                            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v3H8V5z" />
+                                                            </svg>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Property Details */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-gray-900 truncate">
+                                                        {property.property_title || property.address || 'Property'}
+                                                    </div>
+                                                    {property.address && property.property_title && (
+                                                        <div className="text-sm text-gray-500 truncate">
+                                                            {property.address}
+                                                        </div>
+                                                    )}
+                                                    <div className="text-sm text-gray-600">
+                                                        {property.formatted_price || `£${property.price?.toLocaleString() || 'Price on request'}`}
+                                                    </div>
+                                                    {property.summary && (
+                                                        <div className="text-xs text-gray-500">
+                                                            {property.summary}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Selection Indicator */}
+                                                <div className="flex-shrink-0">
+                                                    {formData.selling_properties.includes(property.id) && (
+                                                        <div className="text-[#00BCD4]">✓</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                                {(formData.chain_role === 'seller_only' || formData.chain_role === 'buyer_seller') && 
+                                 getPropertiesByClaimType('seller').length === 0 && (
+                                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                        <p className="text-green-800 text-sm">
+                                            No properties claimed as 'seller' found. You need to claim a property as a seller first.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                                         {/* Show error message and CTA if validation fails */}
-                                        {!hasRequiredProperties() && availableProperties.length > 0 && (
+                                        {availableProperties.length > 0 && !hasRequiredProperties() && (
                                             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                                 <div className="flex items-start">
                                                     <div className="flex-shrink-0">

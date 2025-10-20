@@ -17,7 +17,7 @@ class PropertyController extends Controller
     /**
      * Get user's property basket
      */
-    public function getBasket(): JsonResponse
+    public function getBasket(Request $request): JsonResponse
     {
         $user = Auth::user();
         
@@ -29,27 +29,42 @@ class PropertyController extends Controller
         }
 
         try {
+            // Get the claim_type filter from request
+            $claimTypeFilter = $request->get('claim_type');
+
             // Use the PropertyBasket model directly to ensure we get the right data with claim info
-            $basketProperties = \App\Models\PropertyBasket::where('user_id', $user->id)
+            $query = \App\Models\PropertyBasket::where('user_id', $user->id)
                 ->with('property')
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->map(function ($basket) {
-                    return [
-                        'id' => $basket->id,
-                        'property' => $basket->property,
-                        'notes' => $basket->notes,
-                        'is_favorite' => $basket->is_favorite,
-                        'is_claimed' => $basket->is_claimed,
-                        'claim_type' => $basket->claim_type,
-                        'claimed_at' => $basket->claimed_at,
-                        'created_at' => $basket->created_at,
-                        'updated_at' => $basket->updated_at,
-                    ];
-                });
+                ->orderBy('created_at', 'desc');
+
+            // Apply claim_type filter if provided
+            if ($claimTypeFilter && in_array($claimTypeFilter, ['buyer', 'seller'])) {
+                $query->where('claim_type', $claimTypeFilter);
+            }
+
+            $basketProperties = $query->get()
+                ->map(function ($basket) use ($user) {
+                    $property = $basket->property;
+                    if ($property) {
+                        // Add claim information from basket to property data
+                        $propertyData = $property->toArray();
+                        $propertyData['is_claimed'] = $basket->is_claimed;
+                        $propertyData['claim_type'] = $basket->claim_type;
+                        $propertyData['claimed_by_user_id'] = $user->id;
+                        $propertyData['basket_id'] = $basket->id;
+                        $propertyData['notes'] = $basket->notes;
+                        $propertyData['is_favorite'] = $basket->is_favorite;
+                        $propertyData['claimed_at'] = $basket->claimed_at;
+                        
+                        return $propertyData;
+                    }
+                    return null;
+                })
+                ->filter(); // Remove null entries
 
             Log::info('Basket properties for user ' . $user->id, [
                 'count' => $basketProperties->count(),
+                'claim_type_filter' => $claimTypeFilter,
                 'data' => $basketProperties->toArray()
             ]);
 
