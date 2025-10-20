@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class PropertyController extends Controller
@@ -355,6 +356,97 @@ class PropertyController extends Controller
             'success' => true,
             'data' => $properties
         ]);
+    }
+
+    /**
+     * Update property information
+     */
+    public function updateProperty(Request $request, Property $property): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'property_title' => 'required|string|max:255',
+            'property_address' => 'nullable|string|max:500',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            // Update property details
+            $property->update([
+                'property_title' => $request->property_title,
+                'address' => $request->property_address,
+            ]);
+
+            // Update basket notes for the current user
+            $user = Auth::user();
+            $basket = $property->baskets()->where('user_id', $user->id)->first();
+            if ($basket && $request->has('notes')) {
+                $basket->update(['notes' => $request->notes]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Property updated successfully',
+                'data' => $property->load('baskets')
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating property: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating property'
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete property completely
+     */
+    public function deleteProperty(Property $property): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            
+            // Check if user has this property in their basket (for authorization)
+            $hasProperty = $property->baskets()->where('user_id', $user->id)->exists();
+            
+            if (!$hasProperty) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You can only delete properties from your own basket'
+                ], 403);
+            }
+
+            // Delete associated photos if they exist
+            if ($property->property_photos && is_array($property->property_photos)) {
+                foreach ($property->property_photos as $photoPath) {
+                    if (str_starts_with($photoPath, '/storage/')) {
+                        $filePath = str_replace('/storage/', 'public/', $photoPath);
+                        Storage::delete($filePath);
+                    }
+                }
+            }
+
+            // Delete the property (this will cascade delete baskets due to foreign key)
+            $property->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Property deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting property: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error deleting property'
+            ], 500);
+        }
     }
 
     /**

@@ -45,6 +45,12 @@ const PropertyBasket: React.FC = () => {
     const [autoClaimType, setAutoClaimType] = useState<'buyer' | 'seller' | null>(null);
     const [selectedPropertyPhotos, setSelectedPropertyPhotos] = useState<string[] | null>(null);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
+    const [editingProperty, setEditingProperty] = useState<number | null>(null);
+    const [editFormData, setEditFormData] = useState({
+        property_title: '',
+        property_address: '',
+        notes: ''
+    });
 
     useEffect(() => {
         loadBasketProperties();
@@ -297,6 +303,81 @@ const PropertyBasket: React.FC = () => {
         } catch (error) {
             console.error('Failed to remove property:', error);
             alert('Failed to remove property');
+        }
+    };
+
+    const startEditProperty = (item: BasketProperty) => {
+        setEditingProperty(item.property.id);
+        setEditFormData({
+            property_title: item.property.property_title,
+            property_address: item.property.address || '',
+            notes: item.notes || ''
+        });
+    };
+
+    const cancelEditProperty = () => {
+        setEditingProperty(null);
+        setEditFormData({
+            property_title: '',
+            property_address: '',
+            notes: ''
+        });
+    };
+
+    const saveEditProperty = async (propertyId: number) => {
+        try {
+            const response = await fetch(`/api/properties/${propertyId}/update`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify(editFormData),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    setEditingProperty(null);
+                    loadBasketProperties();
+                    alert('Property updated successfully');
+                } else {
+                    alert(data.message || 'Failed to update property');
+                }
+            }
+        } catch (error) {
+            console.error('Failed to update property:', error);
+            alert('Failed to update property');
+        }
+    };
+
+    const deleteProperty = async (propertyId: number) => {
+        if (!confirm('Are you sure you want to delete this property completely? This will remove it from all users\' baskets.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/properties/${propertyId}/delete`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    loadBasketProperties();
+                    alert('Property deleted successfully');
+                } else {
+                    alert(data.message || 'Failed to delete property');
+                }
+            }
+        } catch (error) {
+            console.error('Failed to delete property:', error);
+            alert('Failed to delete property');
         }
     };
 
@@ -713,107 +794,168 @@ const PropertyBasket: React.FC = () => {
 
                                     {/* Property Details */}
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-start justify-between">
-                                            <div>
-                                                <h5 className="font-medium text-gray-900 truncate">
-                                                    {item.property.property_title}
-                                                </h5>
-                                                <div className="text-sm text-gray-600 mt-1">
-                                                    {item.property.formatted_price} • {item.property.summary}
+                                        {editingProperty === item.property.id ? (
+                                            /* Edit Mode */
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Property Name</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editFormData.property_title}
+                                                        onChange={(e) => setEditFormData({...editFormData, property_title: e.target.value})}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900 bg-white"
+                                                    />
                                                 </div>
-                                                {item.property.address && (
-                                                    <div className="text-xs text-gray-500 mt-1">
-                                                        {item.property.address}
-                                                    </div>
-                                                )}
-                                                
-                                                {/* Interest Stats */}
-                                                <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                                                    <span>👥 {item.property.basket_count} interested</span>
-                                                    {item.is_claimed && (
-                                                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
-                                                            You claimed as {item.claim_type}
-                                                        </span>
-                                                    )}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editFormData.property_address}
+                                                        onChange={(e) => setEditFormData({...editFormData, property_address: e.target.value})}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900 bg-white"
+                                                    />
                                                 </div>
-
-                                                {/* Notes */}
-                                                {item.notes && (
-                                                    <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-gray-700">
-                                                        <span className="font-medium">Notes:</span> {item.notes}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Actions */}
-                                            <div className="flex items-center space-x-2 ml-4">
-                                                <div className="relative">
-                                                    <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                                                        </svg>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                                    <textarea
+                                                        value={editFormData.notes}
+                                                        onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                                                        rows={2}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900 bg-white"
+                                                    />
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <button
+                                                        onClick={() => saveEditProperty(item.property.id)}
+                                                        className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                                                    >
+                                                        Save
                                                     </button>
-                                                    
-                                                    {/* Dropdown menu would go here */}
+                                                    <button
+                                                        onClick={cancelEditProperty}
+                                                        className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+                                                    >
+                                                        Cancel
+                                                    </button>
                                                 </div>
                                             </div>
-                                        </div>
+                                        ) : (
+                                            /* Display Mode */
+                                            <>
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <h5 className="font-medium text-gray-900 truncate">
+                                                            {item.property.property_title}
+                                                        </h5>
+                                                        <div className="text-sm text-gray-600 mt-1">
+                                                            {item.property.formatted_price} • {item.property.summary}
+                                                        </div>
+                                                        {item.property.address && (
+                                                            <div className="text-xs text-gray-500 mt-1">
+                                                                {item.property.address}
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Interest Stats */}
+                                                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                                                            <span>👥 {item.property.basket_count} interested</span>
+                                                            {item.is_claimed && (
+                                                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
+                                                                    You claimed as {item.claim_type}
+                                                                </span>
+                                                            )}
+                                                        </div>
 
-                                        {/* Action Buttons */}
-                                        <div className="flex items-center space-x-3 mt-3">
-                                            <a
-                                                href={item.property.rightmove_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
-                                            >
-                                                View on Rightmove
-                                            </a>
-                                            
-                                            {!item.is_claimed && (
-                                                <>
-                                                    {/* Show role-appropriate claim options */}
-                                                    {userChainRole === 'first_time_buyer' ? (
+                                                        {/* Notes */}
+                                                        {item.notes && (
+                                                            <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-gray-700">
+                                                                <span className="font-medium">Notes:</span> {item.notes}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Actions */}
+                                                    <div className="flex items-center space-x-2 ml-4">
                                                         <button
-                                                            onClick={() => claimProperty(item.property.id, 'buyer', false)}
-                                                            className="text-sm text-green-600 hover:text-green-700 transition-colors font-medium"
+                                                            onClick={() => startEditProperty(item)}
+                                                            className="p-2 text-blue-600 hover:text-blue-700 transition-colors"
+                                                            title="Edit Property"
                                                         >
-                                                            Claim as Buyer
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
                                                         </button>
-                                                    ) : userChainRole === 'seller_only' ? (
                                                         <button
-                                                            onClick={() => claimProperty(item.property.id, 'seller', false)}
-                                                            className="text-sm text-blue-600 hover:text-blue-700 transition-colors font-medium"
+                                                            onClick={() => deleteProperty(item.property.id)}
+                                                            className="p-2 text-red-600 hover:text-red-700 transition-colors"
+                                                            title="Delete Property"
                                                         >
-                                                            Claim as Seller
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
                                                         </button>
-                                                    ) : (
-                                                        /* For buyer_seller or unknown role, show both options */
-                                                        <>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {/* Action Buttons - Only show when not editing */}
+                                        {editingProperty !== item.property.id && (
+                                            <div className="flex items-center space-x-3 mt-3">
+                                                <a
+                                                    href={item.property.rightmove_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
+                                                >
+                                                    View on Rightmove
+                                                </a>
+                                                
+                                                {!item.is_claimed && (
+                                                    <>
+                                                        {/* Show role-appropriate claim options */}
+                                                        {userChainRole === 'first_time_buyer' ? (
                                                             <button
                                                                 onClick={() => claimProperty(item.property.id, 'buyer', false)}
-                                                                className="text-sm text-green-600 hover:text-green-700 transition-colors"
+                                                                className="text-sm text-green-600 hover:text-green-700 transition-colors font-medium"
                                                             >
                                                                 Claim as Buyer
                                                             </button>
+                                                        ) : userChainRole === 'seller_only' ? (
                                                             <button
                                                                 onClick={() => claimProperty(item.property.id, 'seller', false)}
-                                                                className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                                                                className="text-sm text-blue-600 hover:text-blue-700 transition-colors font-medium"
                                                             >
                                                                 Claim as Seller
                                                             </button>
-                                                        </>
-                                                    )}
-                                                </>
-                                            )}
-                                            
-                                            <button
-                                                onClick={() => removePropertyFromBasket(item.property.id)}
-                                                className="text-sm text-red-600 hover:text-red-700 transition-colors"
-                                            >
-                                                Remove
-                                            </button>
-                                        </div>
+                                                        ) : (
+                                                            /* For buyer_seller or unknown role, show both options */
+                                                            <>
+                                                                <button
+                                                                    onClick={() => claimProperty(item.property.id, 'buyer', false)}
+                                                                    className="text-sm text-green-600 hover:text-green-700 transition-colors"
+                                                                >
+                                                                    Claim as Buyer
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => claimProperty(item.property.id, 'seller', false)}
+                                                                    className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                                                                >
+                                                                    Claim as Seller
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </>
+                                                )}
+                                                
+                                                <button
+                                                    onClick={() => removePropertyFromBasket(item.property.id)}
+                                                    className="text-sm text-orange-600 hover:text-orange-700 transition-colors"
+                                                >
+                                                    Remove from Basket
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </motion.div>
