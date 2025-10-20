@@ -19,13 +19,25 @@ interface Property {
 
 interface BasketProperty {
     id: number;
-    property: Property;
+    rightmove_url: string;
+    property_title?: string;
+    property_photos?: string[];
+    property_description?: string;
+    address?: string;
+    price?: number;
+    property_type?: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    basket_count?: number;
+    metadata?: any;
     notes?: string;
     is_favorite: boolean;
     is_claimed: boolean;
     claim_type?: 'buyer' | 'seller';
     claimed_at?: string;
     created_at: string;
+    basket_id: number;
+    claimed_by_user_id?: number;
 }
 
 const PropertyBasket: React.FC = () => {
@@ -167,7 +179,7 @@ const PropertyBasket: React.FC = () => {
         setPhotoPreviewUrls(updatedPreviewUrls);
     };
 
-    const viewPropertyPhotos = (property: Property) => {
+    const viewPropertyPhotos = (property: BasketProperty) => {
         const photos: string[] = [];
         if (property.property_photos && property.property_photos.length > 0) {
             photos.push(...property.property_photos);
@@ -312,10 +324,10 @@ const PropertyBasket: React.FC = () => {
     };
 
     const startEditProperty = (item: BasketProperty) => {
-        setEditingProperty(item.property.id);
+        setEditingProperty(item.id);
         setEditFormData({
-            property_title: item.property.property_title,
-            property_address: item.property.address || '',
+            property_title: item.property_title || '',
+            property_address: item.address || '',
             notes: item.notes || ''
         });
     };
@@ -762,17 +774,17 @@ const PropertyBasket: React.FC = () => {
                                     <div className="flex-shrink-0">
                                         <div 
                                             className={`w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden relative ${
-                                                (item.property.property_photos && item.property.property_photos.length > 0) 
+                                                (item.property_photos && item.property_photos.length > 0) 
                                                     ? 'cursor-pointer hover:opacity-80 transition-opacity' 
                                                     : ''
                                             }`}
-                                            onClick={() => (item.property.property_photos && item.property.property_photos.length > 0) && viewPropertyPhotos(item.property)}
+                                            onClick={() => (item.property_photos && item.property_photos.length > 0) && viewPropertyPhotos(item)}
                                         >
-                                            {(item.property.property_photos && item.property.property_photos.length > 0) ? (
+                                            {(item.property_photos && item.property_photos.length > 0) ? (
                                                 <>
                                                     <img
-                                                        src={item.property.property_photos[0].startsWith('http') ? item.property.property_photos[0] : `${window.location.origin}${item.property.property_photos[0]}`}
-                                                        alt={item.property.property_title}
+                                                        src={item.property_photos[0].startsWith('http') ? item.property_photos[0] : `${window.location.origin}${item.property_photos[0]}`}
+                                                        alt={item.property_title}
                                                         className="w-full h-full object-cover rounded-lg"
                                                         onError={(e) => {
                                                             const target = e.target as HTMLImageElement;
@@ -783,9 +795,9 @@ const PropertyBasket: React.FC = () => {
                                                             }
                                                         }}
                                                     />
-                                                    {item.property.property_photos && item.property.property_photos.length > 1 && (
+                                                    {item.property_photos && item.property_photos.length > 1 && (
                                                         <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                                            +{item.property.property_photos.length - 1}
+                                                            +{item.property_photos.length - 1}
                                                         </div>
                                                     )}
                                                     <div className="absolute inset-0 hover:bg-black hover:bg-opacity-20 transition-colors flex items-center justify-center">
@@ -803,7 +815,7 @@ const PropertyBasket: React.FC = () => {
 
                                     {/* Property Details */}
                                     <div className="flex-1 min-w-0">
-                                        {editingProperty === item.property.id ? (
+                                        {editingProperty === item.id ? (
                                             /* Edit Mode */
                                             <div className="space-y-3">
                                                 <div>
@@ -835,7 +847,7 @@ const PropertyBasket: React.FC = () => {
                                                 </div>
                                                 <div className="flex items-center space-x-2">
                                                     <button
-                                                        onClick={() => saveEditProperty(item.property.id)}
+                                                        onClick={() => saveEditProperty(item.id)}
                                                         className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
                                                     >
                                                         Save
@@ -854,20 +866,20 @@ const PropertyBasket: React.FC = () => {
                                                 <div className="flex items-start justify-between">
                                                     <div>
                                                         <h5 className="font-medium text-gray-900 truncate">
-                                                            {item.property.property_title}
+                                                            {item.property_title}
                                                         </h5>
                                                         <div className="text-sm text-gray-600 mt-1">
-                                                            {item.property.formatted_price} • {item.property.summary}
+                                                            {item.price ? `£${item.price.toLocaleString()}` : 'Price on request'} • {item.bedrooms ? `${item.bedrooms} bed` : ''} {item.property_type ? item.property_type.toLowerCase() : ''}
                                                         </div>
-                                                        {item.property.address && (
+                                                        {item.address && (
                                                             <div className="text-xs text-gray-500 mt-1">
-                                                                {item.property.address}
+                                                                {item.address}
                                                             </div>
                                                         )}
                                                         
                                                         {/* Interest Stats */}
                                                         <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                                                            <span>👥 {item.property.basket_count} interested</span>
+                                                            <span>👥 {item.basket_count} interested</span>
                                                             {item.is_claimed && (
                                                                 <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
                                                                     You claimed as {item.claim_type}
@@ -895,7 +907,7 @@ const PropertyBasket: React.FC = () => {
                                                             </svg>
                                                         </button>
                                                         <button
-                                                            onClick={() => deleteProperty(item.property.id)}
+                                                            onClick={() => deleteProperty(item.id)}
                                                             className="p-2 text-red-600 hover:text-red-700 transition-colors"
                                                             title="Delete Property"
                                                         >
@@ -909,10 +921,10 @@ const PropertyBasket: React.FC = () => {
                                         )}
 
                                         {/* Action Buttons - Only show when not editing */}
-                                        {editingProperty !== item.property.id && (
+                                        {editingProperty !== item.id && (
                                             <div className="flex items-center space-x-3 mt-3">
                                                 <a
-                                                    href={item.property.rightmove_url}
+                                                    href={item.rightmove_url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
@@ -925,14 +937,14 @@ const PropertyBasket: React.FC = () => {
                                                         {/* Show role-appropriate claim options */}
                                                         {userChainRole === 'first_time_buyer' ? (
                                                             <button
-                                                                onClick={() => claimProperty(item.property.id, 'buyer', false)}
+                                                                onClick={() => claimProperty(item.id, 'buyer', false)}
                                                                 className="text-sm text-green-600 hover:text-green-700 transition-colors font-medium"
                                                             >
                                                                 Claim as Buyer
                                                             </button>
                                                         ) : userChainRole === 'seller_only' ? (
                                                             <button
-                                                                onClick={() => claimProperty(item.property.id, 'seller', false)}
+                                                                onClick={() => claimProperty(item.id, 'seller', false)}
                                                                 className="text-sm text-blue-600 hover:text-blue-700 transition-colors font-medium"
                                                             >
                                                                 Claim as Seller
@@ -941,13 +953,13 @@ const PropertyBasket: React.FC = () => {
                                                             /* For buyer_seller or unknown role, show both options */
                                                             <>
                                                                 <button
-                                                                    onClick={() => claimProperty(item.property.id, 'buyer', false)}
+                                                                    onClick={() => claimProperty(item.id, 'buyer', false)}
                                                                     className="text-sm text-green-600 hover:text-green-700 transition-colors"
                                                                 >
                                                                     Claim as Buyer
                                                                 </button>
                                                                 <button
-                                                                    onClick={() => claimProperty(item.property.id, 'seller', false)}
+                                                                    onClick={() => claimProperty(item.id, 'seller', false)}
                                                                     className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
                                                                 >
                                                                     Claim as Seller
@@ -958,7 +970,7 @@ const PropertyBasket: React.FC = () => {
                                                 )}
                                                 
                                                 <button
-                                                    onClick={() => removePropertyFromBasket(item.property.id)}
+                                                    onClick={() => removePropertyFromBasket(item.id)}
                                                     className="text-sm text-orange-600 hover:text-orange-700 transition-colors"
                                                 >
                                                     Remove from Basket
