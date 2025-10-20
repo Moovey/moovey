@@ -15,7 +15,7 @@ class Property extends Model
     protected $fillable = [
         'rightmove_url',
         'property_title',
-        'property_image',
+        'property_photos',
         'property_description',
         'address',
         'price',
@@ -33,6 +33,7 @@ class Property extends Model
         'price' => 'decimal:2',
         'is_claimed' => 'boolean',
         'metadata' => 'array',
+        'property_photos' => 'array',
     ];
 
     public function claimedByUser(): BelongsTo
@@ -143,5 +144,29 @@ class Property extends Model
         }
         
         return implode(' ', $parts) ?: 'Property';
+    }
+
+    /**
+     * Get all photos for this property
+     */
+    public function getAllPhotosAttribute(): array
+    {
+        if ($this->property_photos && is_array($this->property_photos)) {
+            return $this->property_photos;
+        }
+        
+        return [];
+    }
+
+    /**
+     * Get the main display image (first available photo)
+     */
+    public function getMainImageAttribute(): ?string
+    {
+        if ($this->property_photos && is_array($this->property_photos) && count($this->property_photos) > 0) {
+            return $this->property_photos[0];
+        }
+        
+        return null;
     }
 }

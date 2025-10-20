@@ -67,13 +67,16 @@ class PropertyController extends Controller
     }
 
     /**
-     * Add property to basket from Rightmove URL
+     * Add property to basket from Rightmove URL, custom name, or photos
      */
     public function addToBasket(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'rightmove_url' => 'required|url',
+            'property_name' => 'required|string|max:255',
+            'property_address' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:500',
+            'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB max per image
         ]);
 
         if ($validator->fails()) {
@@ -84,35 +87,81 @@ class PropertyController extends Controller
             ], 422);
         }
 
-        $url = $request->rightmove_url;
         $user = Auth::user();
+        
+        // Handle photo uploads
+        $photoUrls = [];
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                $filename = time() . '_' . uniqid() . '.' . $photo->getClientOriginalExtension();
+                $path = $photo->storeAs('property-photos', $filename, 'public');
+                $photoUrls[] = '/storage/' . $path;
+            }
+        }
 
-        // Check if property already exists
-        $property = Property::where('rightmove_url', $url)->first();
-
+        $property = null;
+        
+        // Check if property already exists with this Rightmove URL
+        $property = Property::where('rightmove_url', $request->rightmove_url)->first();
+        
         if (!$property) {
             // Scrape property data from Rightmove
-            $propertyData = $this->scrapePropertyData($url);
+            $propertyData = $this->scrapePropertyData($request->rightmove_url);
             
-            if (!$propertyData) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unable to fetch property data from Rightmove'
-                ], 400);
+            if ($propertyData) {
+                // Combine scraped image with user photos (exclude placeholder URLs)
+                $allPhotos = [];
+                if (isset($propertyData['image']) && 
+                    $propertyData['image'] && 
+                    !str_contains($propertyData['image'], 'placeholder')) {
+                    $allPhotos[] = $propertyData['image'];
+                }
+                if (!empty($photoUrls)) {
+                    $allPhotos = array_merge($allPhotos, $photoUrls);
+                }
+                
+                // Create new property with scraped data but use user's property name
+                $property = Property::create([
+                    'rightmove_url' => $request->rightmove_url,
+                    'property_title' => $request->property_name, // Use user's property name
+                    'property_photos' => !empty($allPhotos) ? $allPhotos : null,
+                    'property_description' => $propertyData['description'],
+                    'address' => $request->property_address ?: $propertyData['address'], // Use user address or fallback to scraped
+                    'price' => $propertyData['price'],
+                    'property_type' => $propertyData['type'],
+                    'bedrooms' => $propertyData['bedrooms'],
+                    'bathrooms' => $propertyData['bathrooms'],
+                    'metadata' => array_merge($propertyData['metadata'] ?? [], [
+                        'user_provided_name' => true,
+                        'original_scraped_title' => $propertyData['title'],
+                    ]),
+                ]);
             }
-
-            // Create new property
+        } else if (!empty($photoUrls)) {
+            // Add new photos to existing property
+            $existingPhotos = $property->property_photos ?? [];
+            $property->update([
+                'property_photos' => array_merge($existingPhotos, $photoUrls)
+            ]);
+        }
+        
+        // If no Rightmove URL or scraping failed, create property from user input
+        if (!$property) {
             $property = Property::create([
-                'rightmove_url' => $url,
-                'property_title' => $propertyData['title'],
-                'property_image' => $propertyData['image'],
-                'property_description' => $propertyData['description'],
-                'address' => $propertyData['address'],
-                'price' => $propertyData['price'],
-                'property_type' => $propertyData['type'],
-                'bedrooms' => $propertyData['bedrooms'],
-                'bathrooms' => $propertyData['bathrooms'],
-                'metadata' => $propertyData['metadata'] ?? [],
+                'rightmove_url' => $request->rightmove_url,
+                'property_title' => $request->property_name,
+                'property_photos' => !empty($photoUrls) ? $photoUrls : null,
+                'property_description' => 'Property added by user',
+                'address' => $request->property_address ?: 'Address not specified',
+                'price' => null,
+                'property_type' => 'property',
+                'bedrooms' => null,
+                'bathrooms' => null,
+                'metadata' => [
+                    'user_created' => true,
+                    'created_by_user_id' => $user->id,
+                    'created_at' => now()->toISOString(),
+                ],
             ]);
         }
 
@@ -327,7 +376,7 @@ class PropertyController extends Controller
             // Mock property data based on URL
             return [
                 'title' => 'Property in Great Location - ' . $propertyId,
-                'image' => 'https://via.placeholder.com/400x300?text=Property+Image',
+                'image' => null, // No placeholder image, only use user uploads
                 'description' => 'Beautiful property with excellent transport links and local amenities.',
                 'address' => 'Sample Address, Sample Area',
                 'price' => rand(200000, 800000),

@@ -5,7 +5,7 @@ interface Property {
     id: number;
     rightmove_url: string;
     property_title: string;
-    property_image?: string;
+    property_photos?: string[];
     address?: string;
     price?: number;
     property_type?: string;
@@ -33,17 +33,32 @@ const PropertyBasket: React.FC = () => {
     const [showAddProperty, setShowAddProperty] = useState(false);
     const [rightmoveUrl, setRightmoveUrl] = useState('');
     const [propertyNotes, setPropertyNotes] = useState('');
+    const [propertyName, setPropertyName] = useState('');
+    const [propertyAddress, setPropertyAddress] = useState('');
+    const [propertyPhotos, setPropertyPhotos] = useState<File[]>([]);
+    const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
     const [addingProperty, setAddingProperty] = useState(false);
     const [searchResults, setSearchResults] = useState<Property[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchingProperties, setSearchingProperties] = useState(false);
     const [userChainRole, setUserChainRole] = useState<string | null>(null);
     const [autoClaimType, setAutoClaimType] = useState<'buyer' | 'seller' | null>(null);
+    const [selectedPropertyPhotos, setSelectedPropertyPhotos] = useState<string[] | null>(null);
+    const [showPhotoModal, setShowPhotoModal] = useState(false);
 
     useEffect(() => {
         loadBasketProperties();
         loadUserChainRole();
     }, []);
+
+    // Cleanup preview URLs when component unmounts
+    useEffect(() => {
+        return () => {
+            photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+        };
+    }, [photoPreviewUrls]);
+
+
 
     const loadUserChainRole = async () => {
         try {
@@ -114,13 +129,59 @@ const PropertyBasket: React.FC = () => {
         }
     };
 
-    const addPropertyToBasket = async (claimAfterAdd: boolean = false) => {
-        if (!rightmoveUrl.trim()) {
-            alert('Please enter a Rightmove URL');
+    const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files) return;
+
+        const newFiles = Array.from(files);
+        const updatedPhotos = [...propertyPhotos, ...newFiles];
+        
+        // Limit to 5 photos
+        if (updatedPhotos.length > 5) {
+            alert('You can upload a maximum of 5 photos');
             return;
         }
 
-        // Basic Rightmove URL validation
+        setPropertyPhotos(updatedPhotos);
+
+        // Create preview URLs
+        const newPreviewUrls = newFiles.map(file => URL.createObjectURL(file));
+        setPhotoPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+    };
+
+    const removePhoto = (index: number) => {
+        const updatedPhotos = propertyPhotos.filter((_, i) => i !== index);
+        const updatedPreviewUrls = photoPreviewUrls.filter((_, i) => i !== index);
+        
+        // Revoke the URL to prevent memory leaks
+        URL.revokeObjectURL(photoPreviewUrls[index]);
+        
+        setPropertyPhotos(updatedPhotos);
+        setPhotoPreviewUrls(updatedPreviewUrls);
+    };
+
+    const viewPropertyPhotos = (property: Property) => {
+        const photos: string[] = [];
+        if (property.property_photos && property.property_photos.length > 0) {
+            photos.push(...property.property_photos);
+        }
+        setSelectedPropertyPhotos(photos);
+        setShowPhotoModal(true);
+    };
+
+    const addPropertyToBasket = async (claimAfterAdd: boolean = false) => {
+        // Validate that property name is provided
+        if (!propertyName.trim()) {
+            alert('Property name is required');
+            return;
+        }
+
+        // Validate Rightmove URL is required
+        if (!rightmoveUrl.trim()) {
+            alert('Rightmove URL is required');
+            return;
+        }
+        
         if (!rightmoveUrl.includes('rightmove.co.uk')) {
             alert('Please enter a valid Rightmove URL');
             return;
@@ -128,18 +189,32 @@ const PropertyBasket: React.FC = () => {
 
         setAddingProperty(true);
         try {
+            // Create FormData for file upload
+            const formData = new FormData();
+            
+            // Add text fields
+            formData.append('rightmove_url', rightmoveUrl);
+            formData.append('property_name', propertyName);
+            if (propertyAddress.trim()) {
+                formData.append('property_address', propertyAddress);
+            }
+            if (propertyNotes.trim()) {
+                formData.append('notes', propertyNotes);
+            }
+
+            // Add photos
+            propertyPhotos.forEach((photo, index) => {
+                formData.append(`photos[${index}]`, photo);
+            });
+
             // First, add to basket
             const response = await fetch('/api/properties/add-to-basket', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
-                body: JSON.stringify({
-                    rightmove_url: rightmoveUrl,
-                    notes: propertyNotes,
-                }),
+                body: formData,
             });
 
             if (response.ok) {
@@ -159,8 +234,15 @@ const PropertyBasket: React.FC = () => {
                         }
                     }
                     
+                    // Clear form
                     setRightmoveUrl('');
                     setPropertyNotes('');
+                    setPropertyName('');
+                    setPropertyAddress('');
+                    setPropertyPhotos([]);
+                    // Cleanup preview URLs
+                    photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+                    setPhotoPreviewUrls([]);
                     setShowAddProperty(false);
                     loadBasketProperties();
                     
@@ -346,7 +428,10 @@ const PropertyBasket: React.FC = () => {
             <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <div className="flex items-center justify-between mb-4">
                     <div>
-                        <h4 className="font-semibold text-gray-900">Add Property from Rightmove</h4>
+                        <h4 className="font-semibold text-gray-900">Add Property to Basket</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                            Add properties with Rightmove URL, custom name, and optional photos
+                        </p>
                         {userChainRole && autoClaimType && (
                             <p className="text-xs text-gray-500 mt-1">
                                 Based on your chain role ({userChainRole.replace('_', ' ')}), properties can be auto-claimed as {autoClaimType}
@@ -371,7 +456,7 @@ const PropertyBasket: React.FC = () => {
                         >
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Rightmove Property URL
+                                    Rightmove Property URL <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="url"
@@ -379,12 +464,71 @@ const PropertyBasket: React.FC = () => {
                                     onChange={(e) => setRightmoveUrl(e.target.value)}
                                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                                     placeholder="https://www.rightmove.co.uk/properties/..."
+                                    required
                                 />
-                                {autoClaimType && (
-                                    <p className="text-xs text-gray-500 mt-2">
-                                        💡 Tip: If you use "Add & Claim", the property will only be claimed if it's not already claimed by another user.
-                                    </p>
-                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Property Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={propertyName}
+                                    onChange={(e) => setPropertyName(e.target.value)}
+                                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                                    placeholder="e.g., 3 Bedroom House on Oak Street"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Property Address
+                                </label>
+                                <input
+                                    type="text"
+                                    value={propertyAddress}
+                                    onChange={(e) => setPropertyAddress(e.target.value)}
+                                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                                    placeholder="e.g., 123 Oak Street, London, SW1A 1AA"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Property Photos (Optional - Max 5)
+                                </label>
+                                <div className="space-y-3">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handlePhotoUpload}
+                                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#00BCD4] file:text-white hover:file:bg-[#00ACC1] file:cursor-pointer"
+                                    />
+                                    
+                                    {photoPreviewUrls.length > 0 && (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                                            {photoPreviewUrls.map((url, index) => (
+                                                <div key={index} className="relative group">
+                                                    <img
+                                                        src={url}
+                                                        alt={`Property photo ${index + 1}`}
+                                                        className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                                                    />
+                                                    <button
+                                                        onClick={() => removePhoto(index)}
+                                                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        type="button"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div>
@@ -400,11 +544,21 @@ const PropertyBasket: React.FC = () => {
                                 />
                             </div>
 
+                            {autoClaimType && (
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                    <p className="text-xs text-yellow-800">
+                                        💡 <strong>Auto-Claim Tip:</strong> Based on your chain role ({userChainRole?.replace('_', ' ')}), 
+                                        you can use "Add & Claim" to automatically claim this property as {autoClaimType}. 
+                                        This will only work if the property isn't already claimed by another user.
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="flex items-center space-x-3">
                                 <div className="flex items-center space-x-3">
                                     <button
                                         onClick={() => addPropertyToBasket(false)}
-                                        disabled={addingProperty}
+                                        disabled={addingProperty || !propertyName.trim() || !rightmoveUrl.trim()}
                                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                                     >
                                         {addingProperty && (
@@ -416,7 +570,7 @@ const PropertyBasket: React.FC = () => {
                                     {autoClaimType && (
                                         <button
                                             onClick={() => addPropertyToBasket(true)}
-                                            disabled={addingProperty}
+                                            disabled={addingProperty || !propertyName.trim() || !rightmoveUrl.trim()}
                                             className="px-4 py-2 bg-[#00BCD4] text-white rounded-lg hover:bg-[#00ACC1] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                                             title={`Add to basket and attempt to claim as ${autoClaimType}. Will only succeed if property is not already claimed.`}
                                         >
@@ -514,17 +668,45 @@ const PropertyBasket: React.FC = () => {
                                 animate={{ opacity: 1, y: 0 }}
                             >
                                 <div className="flex items-start space-x-4">
-                                    {/* Property Image */}
+                                    {/* Property Image(s) */}
                                     <div className="flex-shrink-0">
-                                        <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-                                            {item.property.property_image ? (
-                                                <img
-                                                    src={item.property.property_image}
-                                                    alt={item.property.property_title}
-                                                    className="w-full h-full object-cover"
-                                                />
+                                        <div 
+                                            className={`w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden relative ${
+                                                (item.property.property_photos && item.property.property_photos.length > 0) 
+                                                    ? 'cursor-pointer hover:opacity-80 transition-opacity' 
+                                                    : ''
+                                            }`}
+                                            onClick={() => (item.property.property_photos && item.property.property_photos.length > 0) && viewPropertyPhotos(item.property)}
+                                        >
+                                            {(item.property.property_photos && item.property.property_photos.length > 0) ? (
+                                                <>
+                                                    <img
+                                                        src={item.property.property_photos[0].startsWith('http') ? item.property.property_photos[0] : `${window.location.origin}${item.property.property_photos[0]}`}
+                                                        alt={item.property.property_title}
+                                                        className="w-full h-full object-cover rounded-lg"
+                                                        onError={(e) => {
+                                                            const target = e.target as HTMLImageElement;
+                                                            target.style.display = 'none';
+                                                            const parent = target.parentElement;
+                                                            if (parent) {
+                                                                parent.innerHTML = '<div class="w-full h-full bg-red-100 flex items-center justify-center rounded-lg"><span class="text-red-500 text-xs">Error</span></div>';
+                                                            }
+                                                        }}
+                                                    />
+                                                    {item.property.property_photos && item.property.property_photos.length > 1 && (
+                                                        <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                                            +{item.property.property_photos.length - 1}
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute inset-0 hover:bg-black hover:bg-opacity-20 transition-colors flex items-center justify-center">
+                                                        <span className="text-white text-xs opacity-0 hover:opacity-100 transition-opacity">👁️</span>
+                                                    </div>
+                                                </>
                                             ) : (
-                                                <span className="text-2xl">🏠</span>
+                                                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex flex-col items-center justify-center border border-gray-400 rounded-lg">
+                                                    <div className="text-2xl mb-1">🏠</div>
+                                                    <div className="text-xs text-gray-600 text-center px-1">No Image</div>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -639,6 +821,42 @@ const PropertyBasket: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Photo Modal */}
+            {showPhotoModal && selectedPropertyPhotos && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between p-4 border-b">
+                            <h3 className="text-lg font-semibold text-gray-900">Property Photos</h3>
+                            <button
+                                onClick={() => {
+                                    setShowPhotoModal(false);
+                                    setSelectedPropertyPhotos(null);
+                                }}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {selectedPropertyPhotos.map((photo, index) => (
+                                    <div key={index} className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                        <img
+                                            src={photo}
+                                            alt={`Property photo ${index + 1}`}
+                                            className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                                            onClick={() => window.open(photo, '_blank')}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
