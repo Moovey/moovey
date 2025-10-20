@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
 
 interface Property {
     id: number;
@@ -144,7 +145,7 @@ const PropertyBasket: React.FC = () => {
         
         // Limit to 5 photos
         if (updatedPhotos.length > 5) {
-            alert('You can upload a maximum of 5 photos');
+            toast.warning('You can upload a maximum of 5 photos');
             return;
         }
 
@@ -178,18 +179,18 @@ const PropertyBasket: React.FC = () => {
     const addPropertyToBasket = async (claimAfterAdd: boolean = false) => {
         // Validate that property name is provided
         if (!propertyName.trim()) {
-            alert('Property name is required');
+            toast.error('Property name is required');
             return;
         }
 
         // Validate Rightmove URL is required
         if (!rightmoveUrl.trim()) {
-            alert('Rightmove URL is required');
+            toast.error('Rightmove URL is required');
             return;
         }
         
         if (!rightmoveUrl.includes('rightmove.co.uk')) {
-            alert('Please enter a valid Rightmove URL');
+            toast.error('Please enter a valid Rightmove URL');
             return;
         }
 
@@ -253,27 +254,27 @@ const PropertyBasket: React.FC = () => {
                     loadBasketProperties();
                     
                     // Show appropriate message based on what happened
-                    let message = 'Property added to your basket!';
                     if (claimAfterAdd && autoClaimType) {
                         if (basket.is_claimed) {
-                            message = `Property added to your basket! (Already claimed as ${basket.claim_type} by you)`;
+                            toast.info(`Property added to your basket! (Already claimed as ${basket.claim_type} by you)`);
                         } else if (claimSuccessful) {
-                            message = `Property added to your basket and claimed as ${autoClaimType}!`;
+                            toast.success(`Property added to your basket and claimed as ${autoClaimType}!`);
                         } else {
-                            message = `Property added to your basket! (Could not claim as ${autoClaimType})`;
+                            toast.warning(`Property added to your basket! (Could not claim as ${autoClaimType})`);
                         }
+                    } else {
+                        toast.success('Property added to your basket!');
                     }
-                    alert(message);
                 } else {
-                    alert(data.message || 'Failed to add property');
+                    toast.error(data.message || 'Failed to add property');
                 }
             } else {
                 const errorData = await response.json();
-                alert(errorData.message || 'Failed to add property');
+                toast.error(errorData.message || 'Failed to add property');
             }
         } catch (error) {
             console.error('Failed to add property:', error);
-            alert('Network error occurred');
+            toast.error('Network error occurred');
         } finally {
             setAddingProperty(false);
         }
@@ -297,12 +298,16 @@ const PropertyBasket: React.FC = () => {
                 const data = await response.json();
                 if (data.success) {
                     loadBasketProperties();
-                    alert('Property removed from basket');
+                    toast.success('Property removed from basket');
+                } else {
+                    toast.error(data.message || 'Failed to remove property');
                 }
+            } else {
+                toast.error('Failed to remove property');
             }
         } catch (error) {
             console.error('Failed to remove property:', error);
-            alert('Failed to remove property');
+            toast.error('Network error occurred');
         }
     };
 
@@ -341,14 +346,16 @@ const PropertyBasket: React.FC = () => {
                 if (data.success) {
                     setEditingProperty(null);
                     loadBasketProperties();
-                    alert('Property updated successfully');
+                    toast.success('Property updated successfully');
                 } else {
-                    alert(data.message || 'Failed to update property');
+                    toast.error(data.message || 'Failed to update property');
                 }
+            } else {
+                toast.error('Failed to update property');
             }
         } catch (error) {
             console.error('Failed to update property:', error);
-            alert('Failed to update property');
+            toast.error('Network error occurred');
         }
     };
 
@@ -370,14 +377,16 @@ const PropertyBasket: React.FC = () => {
                 const data = await response.json();
                 if (data.success) {
                     loadBasketProperties();
-                    alert('Property deleted successfully');
+                    toast.success('Property deleted successfully');
                 } else {
-                    alert(data.message || 'Failed to delete property');
+                    toast.error(data.message || 'Failed to delete property');
                 }
+            } else {
+                toast.error('Failed to delete property');
             }
         } catch (error) {
             console.error('Failed to delete property:', error);
-            alert('Failed to delete property');
+            toast.error('Network error occurred');
         }
     };
 
@@ -402,12 +411,12 @@ const PropertyBasket: React.FC = () => {
                 if (data.success) {
                     loadBasketProperties();
                     if (!skipConfirmation) {
-                        alert(`Property claimed as ${claimType}!`);
+                        toast.success(`Property claimed as ${claimType}!`);
                     }
                     return true;
                 } else {
                     if (!skipConfirmation) {
-                        alert(data.message || 'Failed to claim property');
+                        toast.error(data.message || 'Failed to claim property');
                     }
                     return false;
                 }
@@ -416,7 +425,7 @@ const PropertyBasket: React.FC = () => {
         } catch (error) {
             console.error('Failed to claim property:', error);
             if (!skipConfirmation) {
-                alert('Failed to claim property');
+                toast.error('Failed to claim property');
             }
             return false;
         }
@@ -479,15 +488,15 @@ const PropertyBasket: React.FC = () => {
                     loadBasketProperties();
                     
                     // Show appropriate message based on what happened
-                    let message = 'Property added to your basket!';
                     if (claimAfterAdd && autoClaimType) {
                         if (claimSuccessful) {
-                            message = `Property added to your basket and claimed as ${autoClaimType}!`;
+                            toast.success(`Property added to your basket and claimed as ${autoClaimType}!`);
                         } else {
-                            message = `Property added to your basket! (Could not claim as ${autoClaimType})`;
+                            toast.warning(`Property added to your basket! (Could not claim as ${autoClaimType})`);
                         }
+                    } else {
+                        toast.success('Property added to your basket!');
                     }
-                    alert(message);
                 }
             }
         } catch (error) {
