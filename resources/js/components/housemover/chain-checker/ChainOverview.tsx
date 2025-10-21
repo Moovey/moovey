@@ -9,6 +9,8 @@ interface PropertyHouseBlockProps {
     isEditable: boolean;
     type: 'buying' | 'selling' | 'unknown';
     isUnknown?: boolean;
+    onRefresh?: () => void;
+    chainData?: any;
 }
 
 const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
@@ -17,18 +19,74 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
     isUserOwned,
     isEditable,
     type,
-    isUnknown = false
+    isUnknown = false,
+    onRefresh,
+    chainData
 }) => {
     const [showModal, setShowModal] = useState(false);
 
-    // Mock stage data with percentage-based progress - replace with real data later
+    // Get real stage data from chainData or use defaults
+    const getStageProgress = (stage: string) => {
+        if (isUnknown) return 0;
+        
+        const chainStatus = chainData?.chain_status || {};
+        
+        // Look for progress data in the type-specific section (buying/selling)
+        const typeSpecificStatus = chainStatus[type] || {};
+        const stageData = typeSpecificStatus[stage];
+        
+        if (stageData) {
+            // If we have a progress value, use it; otherwise use completed status
+            return stageData.progress !== undefined ? stageData.progress : (stageData.completed ? 100 : 0);
+        }
+        
+        // Fallback: check if there's legacy data in the root level (for backward compatibility)
+        const legacyStageData = chainStatus[stage];
+        if (legacyStageData) {
+            return legacyStageData.progress !== undefined ? legacyStageData.progress : (legacyStageData.completed ? 100 : 0);
+        }
+        
+        // Final fallback to mock data for stages that don't exist yet
+        const fallbacks: { [key: string]: number } = {
+            'offer_accepted': type === 'buying' ? 100 : type === 'selling' ? 100 : 0,
+            'mortgage_approval': type === 'buying' ? 100 : type === 'selling' ? 75 : 0,
+            'searches_surveys': type === 'buying' ? 50 : type === 'selling' ? 50 : 0,
+            'surveys_complete': type === 'buying' ? 50 : type === 'selling' ? 50 : 0,
+            'contracts_exchanged': 0,
+            'completion': 0,
+        };
+        
+        return fallbacks[stage] || 0;
+    };
+
+    // Calculate real link health based on stage progress
+    const calculateLinkHealth = () => {
+        if (isUnknown) return 0;
+        
+        const stages = [
+            'offer_accepted',
+            'mortgage_approval', 
+            'searches_surveys',
+            'surveys_complete',
+            'contracts_exchanged',
+            'completion'
+        ];
+        
+        const totalProgress = stages.reduce((sum, stage) => sum + getStageProgress(stage), 0);
+        const averageProgress = totalProgress / stages.length;
+        
+        return Math.round(averageProgress);
+    };
+
+    const actualLinkHealth = calculateLinkHealth();
+
     const stages = [
-        { name: 'Offer Accepted', progress: isUnknown ? 0 : (type === 'buying' ? 100 : type === 'selling' ? 100 : 0), color: 'green' },
-        { name: 'Mortgage Approved', progress: isUnknown ? 0 : (type === 'buying' ? 100 : type === 'selling' ? 75 : 0), color: 'orange' },
-        { name: 'Searches Complete', progress: isUnknown ? 0 : (type === 'buying' ? 50 : type === 'selling' ? 50 : 0), color: 'orange' },
-        { name: 'Surveys Complete', progress: isUnknown ? 0 : (type === 'buying' ? 50 : type === 'selling' ? 50 : 0), color: 'orange' },
-        { name: 'Contracts Exchanged', progress: isUnknown ? 0 : 0, color: 'red' },
-        { name: 'Completion Achieved', progress: isUnknown ? 0 : 0, color: 'red' },
+        { name: 'Offer Accepted', progress: getStageProgress('offer_accepted'), color: 'green' },
+        { name: 'Mortgage Approved', progress: getStageProgress('mortgage_approval'), color: 'orange' },
+        { name: 'Searches Complete', progress: getStageProgress('searches_surveys'), color: 'orange' },
+        { name: 'Surveys Complete', progress: getStageProgress('surveys_complete'), color: 'orange' },
+        { name: 'Contracts Exchanged', progress: getStageProgress('contracts_exchanged'), color: 'red' },
+        { name: 'Completion Achieved', progress: getStageProgress('completion'), color: 'red' },
     ];
 
     const getButtonText = () => {
@@ -106,14 +164,14 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
                                a 15.9155 15.9155 0 0 1 0 31.831
                                a 15.9155 15.9155 0 0 1 0 -31.831"
                             fill="none"
-                            stroke={isUnknown ? '#9ca3af' : linkHealth >= 75 ? '#22c55e' : linkHealth >= 50 ? '#eab308' : linkHealth >= 25 ? '#f97316' : '#ef4444'}
+                            stroke={isUnknown ? '#9ca3af' : actualLinkHealth >= 75 ? '#22c55e' : actualLinkHealth >= 50 ? '#eab308' : actualLinkHealth >= 25 ? '#f97316' : '#ef4444'}
                             strokeWidth="2"
-                            strokeDasharray={`${linkHealth}, 100`}
+                            strokeDasharray={`${actualLinkHealth}, 100`}
                         />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <span className={`text-sm sm:text-lg font-bold ${isUnknown ? 'text-gray-400' : getHealthColor(linkHealth)}`}>
-                            {isUnknown ? '?' : `${linkHealth}%`}
+                        <span className={`text-sm sm:text-lg font-bold ${isUnknown ? 'text-gray-400' : getHealthColor(actualLinkHealth)}`}>
+                            {isUnknown ? '?' : `${actualLinkHealth}%`}
                         </span>
                     </div>
                 </div>
@@ -173,6 +231,14 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
                     type={type}
                     isUnknown={isUnknown}
                     isEditable={isEditable}
+                    chainData={chainData}
+                    onUpdate={(data) => {
+                        // Handle update callback - refresh parent component
+                        console.log('Property updated:', data);
+                        if (onRefresh) {
+                            onRefresh();
+                        }
+                    }}
                 />
             )}
         </motion.div>
@@ -186,6 +252,8 @@ interface PropertyModalProps {
     type: 'buying' | 'selling' | 'unknown';
     isUnknown: boolean;
     isEditable: boolean;
+    onUpdate?: (data: any) => void;
+    chainData?: any;
 }
 
 const PropertyModal: React.FC<PropertyModalProps> = ({
@@ -194,8 +262,151 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
     title,
     type,
     isUnknown,
-    isEditable
+    isEditable,
+    onUpdate,
+    chainData
 }) => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+    // Helper function to get current progress from chainData
+    const getCurrentProgress = (stage: string, fallback: number) => {
+        if (!isEditable || !chainData?.chain_status) return fallback;
+        
+        const chainStatus = chainData.chain_status;
+        
+        // First check type-specific status
+        const typeSpecificStatus = chainStatus[type] || {};
+        const stageData = typeSpecificStatus[stage];
+        if (stageData) {
+            return stageData.progress !== undefined ? stageData.progress : (stageData.completed ? 100 : 0);
+        }
+        
+        // Fallback: check legacy data in root level
+        const legacyStageData = chainStatus[stage];
+        if (legacyStageData) {
+            return legacyStageData.progress !== undefined ? legacyStageData.progress : (legacyStageData.completed ? 100 : 0);
+        }
+        
+        return fallback;
+    };
+
+    const [formData, setFormData] = useState({
+        // For unknown properties
+        rightmoveLink: '',
+        agentName: '',
+        agentEmail: '',
+        // For progress updates - initialize with current or fallback values
+        stages: {
+            offerAccepted: getCurrentProgress('offer_accepted', type === 'buying' ? 100 : type === 'selling' ? 100 : 0),
+            mortgageApproved: getCurrentProgress('mortgage_approval', type === 'buying' ? 100 : type === 'selling' ? 75 : 0),
+            searchesComplete: getCurrentProgress('searches_surveys', type === 'buying' ? 50 : type === 'selling' ? 50 : 0),
+            surveysComplete: getCurrentProgress('surveys_complete', type === 'buying' ? 50 : type === 'selling' ? 50 : 0),
+            contractsExchanged: getCurrentProgress('contracts_exchanged', 0),
+            completionAchieved: getCurrentProgress('completion', 0)
+        },
+        // For contact messages
+        message: ''
+    });
+
+    const handleStageChange = (stage: string, value: number) => {
+        setFormData(prev => ({
+            ...prev,
+            stages: {
+                ...prev.stages,
+                [stage]: value
+            }
+        }));
+    };
+
+    const handleSubmit = async () => {
+        setIsLoading(true);
+        setErrorMessage('');
+        setSuccessMessage('');
+        
+        try {
+            if (isUnknown) {
+                // Handle building new link
+                const response = await fetch('/api/chain/build-link', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                    body: JSON.stringify({
+                        type,
+                        rightmove_link: formData.rightmoveLink,
+                        agent_name: formData.agentName,
+                        agent_email: formData.agentEmail
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    setSuccessMessage('Chain link built successfully!');
+                    setTimeout(() => {
+                        onUpdate?.(result.data);
+                        onClose();
+                    }, 1500);
+                } else {
+                    setErrorMessage('Failed to build link: ' + (result.message || 'Unknown error'));
+                }
+            } else if (isEditable) {
+                // Handle progress update
+                const response = await fetch('/api/chain/update-progress', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                    body: JSON.stringify({
+                        type,
+                        stages: formData.stages
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    setSuccessMessage('Progress updated successfully!');
+                    setTimeout(() => {
+                        onUpdate?.(result.data);
+                        onClose();
+                    }, 1500);
+                } else {
+                    setErrorMessage('Failed to update progress: ' + (result.message || 'Unknown error'));
+                }
+            } else {
+                // Handle contact message
+                const response = await fetch('/api/chain/send-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                    body: JSON.stringify({
+                        type,
+                        message: formData.message
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    setSuccessMessage('Message sent successfully!');
+                    setTimeout(() => {
+                        onClose();
+                    }, 1500);
+                } else {
+                    setErrorMessage('Failed to send message: ' + (result.message || 'Unknown error'));
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            setErrorMessage('An error occurred. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -215,6 +426,25 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                     </button>
                 </div>
 
+                {/* Success/Error Messages */}
+                {successMessage && (
+                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center">
+                        <svg className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-green-700 text-sm">{successMessage}</span>
+                    </div>
+                )}
+
+                {errorMessage && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center">
+                        <svg className="w-5 h-5 text-red-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-red-700 text-sm">{errorMessage}</span>
+                    </div>
+                )}
+
                 <div className="space-y-3 sm:space-y-4">
                     {isUnknown ? (
                         <>
@@ -224,8 +454,11 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                                 </label>
                                 <input
                                     type="url"
+                                    value={formData.rightmoveLink}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, rightmoveLink: e.target.value }))}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 placeholder-gray-500"
                                     placeholder="https://rightmove.co.uk/properties/..."
+                                    required
                                 />
                             </div>
                             <div>
@@ -234,6 +467,8 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                                 </label>
                                 <input
                                     type="text"
+                                    value={formData.agentName}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, agentName: e.target.value }))}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 placeholder-gray-500"
                                     placeholder="Agent name (if known)"
                                 />
@@ -244,6 +479,8 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                                 </label>
                                 <input
                                     type="email"
+                                    value={formData.agentEmail}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, agentEmail: e.target.value }))}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 placeholder-gray-500"
                                     placeholder="agent@agency.com"
                                 />
@@ -253,28 +490,103 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                         <div>
                             <h4 className="text-sm sm:text-base font-medium text-gray-900 mb-3">Update Stage Progress</h4>
                             <div className="space-y-2 sm:space-y-3">
-                                {['Offer Accepted', 'Mortgage Approved', 'Searches Complete', 'Surveys Complete', 'Contracts Exchanged', 'Completion Achieved'].map((stage, index) => (
-                                    <div key={index} className="flex items-center justify-between">
-                                        <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">{stage}</span>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Offer Accepted</span>
+                                    <div className="flex items-center space-x-2">
                                         <input
                                             type="range"
                                             min="0"
                                             max="100"
+                                            value={formData.stages.offerAccepted}
+                                            onChange={(e) => handleStageChange('offerAccepted', parseInt(e.target.value))}
                                             className="w-16 sm:w-24"
-                                            defaultValue={index < 2 ? "100" : index < 4 ? "50" : "0"}
                                         />
+                                        <span className="text-xs text-gray-600 w-8">{formData.stages.offerAccepted}%</span>
                                     </div>
-                                ))}
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Mortgage Approved</span>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={formData.stages.mortgageApproved}
+                                            onChange={(e) => handleStageChange('mortgageApproved', parseInt(e.target.value))}
+                                            className="w-16 sm:w-24"
+                                        />
+                                        <span className="text-xs text-gray-600 w-8">{formData.stages.mortgageApproved}%</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Searches Complete</span>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={formData.stages.searchesComplete}
+                                            onChange={(e) => handleStageChange('searchesComplete', parseInt(e.target.value))}
+                                            className="w-16 sm:w-24"
+                                        />
+                                        <span className="text-xs text-gray-600 w-8">{formData.stages.searchesComplete}%</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Surveys Complete</span>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={formData.stages.surveysComplete}
+                                            onChange={(e) => handleStageChange('surveysComplete', parseInt(e.target.value))}
+                                            className="w-16 sm:w-24"
+                                        />
+                                        <span className="text-xs text-gray-600 w-8">{formData.stages.surveysComplete}%</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Contracts Exchanged</span>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={formData.stages.contractsExchanged}
+                                            onChange={(e) => handleStageChange('contractsExchanged', parseInt(e.target.value))}
+                                            className="w-16 sm:w-24"
+                                        />
+                                        <span className="text-xs text-gray-600 w-8">{formData.stages.contractsExchanged}%</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Completion Achieved</span>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={formData.stages.completionAchieved}
+                                            onChange={(e) => handleStageChange('completionAchieved', parseInt(e.target.value))}
+                                            className="w-16 sm:w-24"
+                                        />
+                                        <span className="text-xs text-gray-600 w-8">{formData.stages.completionAchieved}%</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     ) : (
                         <div>
                             <h4 className="text-sm sm:text-base font-medium text-gray-900 mb-3">Send Message</h4>
                             <textarea
+                                value={formData.message}
+                                onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                 rows={4}
                                 placeholder="Request an update on the property progress..."
-                            ></textarea>
+                                required
+                            />
                         </div>
                     )}
                 </div>
@@ -282,15 +594,29 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                 <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-6">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                        disabled={isLoading}
+                        className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Cancel
                     </button>
                     <button
-                        onClick={onClose}
-                        className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+                        onClick={handleSubmit}
+                        disabled={isLoading || (isUnknown && !formData.rightmoveLink) || (!isUnknown && !isEditable && !formData.message)}
+                        className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
-                        {isUnknown ? 'Build Link' : isEditable ? 'Update' : 'Send Message'}
+                        {isLoading ? (
+                            <>
+                                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {isUnknown ? 'Building...' : isEditable ? 'Updating...' : 'Sending...'}
+                            </>
+                        ) : (
+                            <>
+                                {isUnknown ? 'Build Link' : isEditable ? 'Update Progress' : 'Send Message'}
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
@@ -305,7 +631,9 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
     isUserOwned,
     isEditable,
     type,
-    isUnknown = false
+    isUnknown = false,
+    onRefresh,
+    chainData
 }) => {
     const [showModal, setShowModal] = useState(false);
 
@@ -322,6 +650,53 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
             setShowModal(true);
         }
     };
+
+    // Calculate real link health for mobile version
+    const calculateMobileLinkHealth = () => {
+        if (isUnknown) return 0;
+        
+        const chainStatus = chainData?.chain_status || {};
+        const typeSpecificStatus = chainStatus[type] || {};
+        
+        const stages = [
+            'offer_accepted',
+            'mortgage_approval', 
+            'searches_surveys',
+            'surveys_complete',
+            'contracts_exchanged',
+            'completion'
+        ];
+        
+        const totalProgress = stages.reduce((sum, stage) => {
+            // First check type-specific status
+            const stageData = typeSpecificStatus[stage];
+            if (stageData) {
+                return sum + (stageData.progress !== undefined ? stageData.progress : (stageData.completed ? 100 : 0));
+            }
+            
+            // Fallback: check legacy data in root level
+            const legacyStageData = chainStatus[stage];
+            if (legacyStageData) {
+                return sum + (legacyStageData.progress !== undefined ? legacyStageData.progress : (legacyStageData.completed ? 100 : 0));
+            }
+            
+            // Use same fallbacks as desktop version
+            const fallbacks: { [key: string]: number } = {
+                'offer_accepted': type === 'buying' ? 100 : type === 'selling' ? 100 : 0,
+                'mortgage_approval': type === 'buying' ? 100 : type === 'selling' ? 75 : 0,
+                'searches_surveys': type === 'buying' ? 50 : type === 'selling' ? 50 : 0,
+                'surveys_complete': type === 'buying' ? 50 : type === 'selling' ? 50 : 0,
+                'contracts_exchanged': 0,
+                'completion': 0,
+            };
+            return sum + (fallbacks[stage] || 0);
+        }, 0);
+        
+        const averageProgress = totalProgress / stages.length;
+        return Math.round(averageProgress);
+    };
+
+    const actualMobileLinkHealth = calculateMobileLinkHealth();
 
     const houseColor = type === 'buying' ? '#10B981' :
                       type === 'selling' ? '#F59E0B' :
@@ -372,7 +747,7 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
                 <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium text-gray-900 truncate">{title}</h4>
                     <p className="text-xs text-gray-600 mt-1">
-                        Health: {isUnknown ? 'Unknown' : `${linkHealth}%`}
+                        Health: {isUnknown ? 'Unknown' : `${actualMobileLinkHealth}%`}
                     </p>
                     {isUserOwned && (
                         <button
@@ -390,13 +765,13 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
                         <div 
                             className="h-full transition-all duration-700 ease-out rounded-full"
                             style={{ 
-                                width: `${isUnknown ? 0 : linkHealth}%`,
+                                width: `${isUnknown ? 0 : actualMobileLinkHealth}%`,
                                 backgroundColor: houseColor
                             }}
                         />
                     </div>
                     <p className="text-xs text-gray-600 mt-1 text-center">
-                        {isUnknown ? '?' : `${linkHealth}%`}
+                        {isUnknown ? '?' : `${actualMobileLinkHealth}%`}
                     </p>
                 </div>
             </div>
@@ -410,6 +785,14 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
                     type={type}
                     isUnknown={isUnknown}
                     isEditable={isEditable}
+                    chainData={chainData}
+                    onUpdate={(data) => {
+                        // Handle update callback - refresh parent component  
+                        console.log('Property updated:', data);
+                        if (onRefresh) {
+                            onRefresh();
+                        }
+                    }}
                 />
             )}
         </motion.div>
@@ -590,6 +973,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isUserOwned={true}
                                     isEditable={true}
                                     type="buying"
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                                 {/* Chain Connector */}
                                 <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
@@ -601,6 +986,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isEditable={false}
                                     type="unknown"
                                     isUnknown={true}
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                             </>
                         )}
@@ -615,6 +1002,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isEditable={false}
                                     type="unknown"
                                     isUnknown={true}
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                                 {/* Chain Connector */}
                                 <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
@@ -625,6 +1014,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isUserOwned={true}
                                     isEditable={true}
                                     type="selling"
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                             </>
                         )}
@@ -639,6 +1030,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isEditable={false}
                                     type="unknown"
                                     isUnknown={true}
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                                 {/* Chain Connector */}
                                 <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
@@ -649,6 +1042,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isUserOwned={true}
                                     isEditable={true}
                                     type="selling"
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                                 {/* Chain Connector */}
                                 <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
@@ -659,6 +1054,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isUserOwned={true}
                                     isEditable={true}
                                     type="buying"
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                                 {/* Chain Connector */}
                                 <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
@@ -670,6 +1067,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isEditable={false}
                                     type="unknown"
                                     isUnknown={true}
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                             </>
                         )}
@@ -686,6 +1085,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isUserOwned={true}
                                     isEditable={true}
                                     type="buying"
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                                 <div className="flex justify-center">
                                     <div className="w-1 h-8 bg-gray-300 rounded"></div>
@@ -697,6 +1098,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isEditable={false}
                                     type="unknown"
                                     isUnknown={true}
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                             </>
                         )}
@@ -710,6 +1113,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isEditable={false}
                                     type="unknown"
                                     isUnknown={true}
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                                 <div className="flex justify-center">
                                     <div className="w-1 h-8 bg-gray-300 rounded"></div>
@@ -720,6 +1125,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isUserOwned={true}
                                     isEditable={true}
                                     type="selling"
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                             </>
                         )}
@@ -733,6 +1140,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isEditable={false}
                                     type="unknown"
                                     isUnknown={true}
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                                 <div className="flex justify-center">
                                     <div className="w-1 h-8 bg-gray-300 rounded"></div>
@@ -743,6 +1152,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isUserOwned={true}
                                     isEditable={true}
                                     type="selling"
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                                 <div className="flex justify-center">
                                     <div className="w-1 h-8 bg-gray-300 rounded"></div>
@@ -753,6 +1164,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isUserOwned={true}
                                     isEditable={true}
                                     type="buying"
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                                 <div className="flex justify-center">
                                     <div className="w-1 h-8 bg-gray-300 rounded"></div>
@@ -764,6 +1177,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     isEditable={false}
                                     type="unknown"
                                     isUnknown={true}
+                                    onRefresh={onRefresh}
+                                    chainData={chainData}
                                 />
                             </>
                         )}

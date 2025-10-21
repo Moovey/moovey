@@ -397,32 +397,51 @@ class ChainCheckerController extends Controller
      */
     private function getDefaultChainStatus(): array
     {
-        return [
+        $defaultStages = [
             'offer_accepted' => [
                 'completed' => false,
+                'progress' => 0,
                 'notes' => null,
                 'updated_at' => null,
             ],
             'searches_surveys' => [
                 'completed' => false,
+                'progress' => 0,
+                'notes' => null,
+                'updated_at' => null,
+            ],
+            'surveys_complete' => [
+                'completed' => false,
+                'progress' => 0,
                 'notes' => null,
                 'updated_at' => null,
             ],
             'mortgage_approval' => [
                 'completed' => false,
+                'progress' => 0,
                 'notes' => null,
                 'updated_at' => null,
             ],
             'contracts_exchanged' => [
                 'completed' => false,
+                'progress' => 0,
                 'notes' => null,
                 'updated_at' => null,
             ],
             'completion' => [
                 'completed' => false,
+                'progress' => 0,
                 'notes' => null,
                 'updated_at' => null,
             ],
+        ];
+
+        // Return structure with separate buying and selling sections
+        return [
+            'buying' => $defaultStages,
+            'selling' => $defaultStages,
+            // Keep legacy structure for backward compatibility
+            ...$defaultStages
         ];
     }
 
@@ -459,5 +478,221 @@ class ChainCheckerController extends Controller
         $sellingAgent = $request->selling_agent_details['email'] ?? null;
         
         return $buyingAgent ?: $sellingAgent;
+    }
+
+    /**
+     * Build a new chain link for unknown properties
+     */
+    public function buildLink(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'type' => 'required|in:buying,selling,unknown',
+            'rightmove_link' => 'required|url',
+            'agent_name' => 'nullable|string|max:255',
+            'agent_email' => 'nullable|email|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = Auth::user();
+        $chainChecker = $user->chainChecker;
+
+        if (!$chainChecker) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active chain checker found'
+            ], 404);
+        }
+
+        // Create a chain update log for the new link
+        ChainUpdate::createUpdate(
+            $chainChecker->id,
+            'link_built',
+            'Chain Link Built',
+            "New chain link created for {$request->type} property: {$request->rightmove_link}",
+            $user->id,
+            [
+                'type' => $request->type,
+                'rightmove_link' => $request->rightmove_link,
+                'agent_name' => $request->agent_name,
+                'agent_email' => $request->agent_email,
+            ]
+        );
+
+        // Update the chain checker's last activity
+        $chainChecker->touch('last_activity_at');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'chain_checker' => $chainChecker->fresh(),
+                'health_score' => $chainChecker->calculateHealthScore(),
+            ],
+            'message' => 'Chain link built successfully'
+        ]);
+    }
+
+    /**
+     * Update progress for user-owned properties
+     */
+    public function updateProgress(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'type' => 'required|in:buying,selling',
+            'stages' => 'required|array',
+            'stages.offerAccepted' => 'required|integer|min:0|max:100',
+            'stages.mortgageApproved' => 'required|integer|min:0|max:100',
+            'stages.searchesComplete' => 'required|integer|min:0|max:100',
+            'stages.surveysComplete' => 'required|integer|min:0|max:100',
+            'stages.contractsExchanged' => 'required|integer|min:0|max:100',
+            'stages.completionAchieved' => 'required|integer|min:0|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = Auth::user();
+        $chainChecker = $user->chainChecker;
+
+        if (!$chainChecker) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active chain checker found'
+            ], 404);
+        }
+
+        $stages = $request->stages;
+        $type = $request->type;
+
+        // Update the chain status with new percentage-based progress
+        // Use separate objects for buying and selling progress
+        $chainStatus = $chainChecker->chain_status ?? [];
+        
+        // Initialize structure if it doesn't exist
+        if (!isset($chainStatus['buying'])) {
+            $chainStatus['buying'] = [];
+        }
+        if (!isset($chainStatus['selling'])) {
+            $chainStatus['selling'] = [];
+        }
+        
+        // Map the frontend stage names to backend ones
+        $stageMap = [
+            'offerAccepted' => 'offer_accepted',
+            'mortgageApproved' => 'mortgage_approval',
+            'searchesComplete' => 'searches_surveys',
+            'surveysComplete' => 'surveys_complete',
+            'contractsExchanged' => 'contracts_exchanged',
+            'completionAchieved' => 'completion',
+        ];
+
+        $updatedStages = [];
+        foreach ($stages as $frontendStage => $percentage) {
+            $backendStage = $stageMap[$frontendStage] ?? $frontendStage;
+            
+            // Store progress under the specific property type (buying or selling)
+            $chainStatus[$type][$backendStage] = [
+                'completed' => $percentage >= 100,
+                'progress' => $percentage,
+                'updated_at' => now()->toISOString(),
+                'notes' => null,
+            ];
+            $updatedStages[] = "{$frontendStage}: {$percentage}%";
+        }
+
+        $chainChecker->update([
+            'chain_status' => $chainStatus,
+            'progress_score' => $chainChecker->calculateHealthScore(),
+            'last_activity_at' => now(),
+        ]);
+
+        // Create update log
+        ChainUpdate::createUpdate(
+            $chainChecker->id,
+            'progress_updated',
+            'Progress Updated',
+            "Updated progress for {$type} property: " . implode(', ', $updatedStages),
+            $user->id,
+            [
+                'type' => $type,
+                'stages' => $stages,
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'chain_checker' => $chainChecker->fresh(),
+                'health_score' => $chainChecker->calculateHealthScore(),
+            ],
+            'message' => 'Progress updated successfully'
+        ]);
+    }
+
+    /**
+     * Send a message to chain participants
+     */
+    public function sendMessage(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'type' => 'required|in:buying,selling,unknown',
+            'message' => 'required|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = Auth::user();
+        $chainChecker = $user->chainChecker;
+
+        if (!$chainChecker) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active chain checker found'
+            ], 404);
+        }
+
+        // Create update log for the message
+        ChainUpdate::createUpdate(
+            $chainChecker->id,
+            'message_sent',
+            'Message Sent',
+            "Message sent regarding {$request->type} property: " . substr($request->message, 0, 100) . (strlen($request->message) > 100 ? '...' : ''),
+            $user->id,
+            [
+                'type' => $request->type,
+                'message' => $request->message,
+            ]
+        );
+
+        // Update the chain checker's last activity
+        $chainChecker->touch('last_activity_at');
+
+        // TODO: In the future, this could actually send emails to relevant parties
+        // For now, we just log the intent
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'chain_checker' => $chainChecker->fresh(),
+            ],
+            'message' => 'Message sent successfully'
+        ]);
     }
 }

@@ -172,6 +172,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/api/chain-checker/{chainChecker}/complete', [\App\Http\Controllers\ChainCheckerController::class, 'complete'])->name('api.chain-checker.complete');
     Route::get('/api/chain-checker/{chainChecker}/updates', [\App\Http\Controllers\ChainCheckerController::class, 'getUpdates'])->name('api.chain-checker.updates');
     
+    // Chain Link Management Routes
+    Route::post('/api/chain/build-link', [\App\Http\Controllers\ChainCheckerController::class, 'buildLink'])->name('api.chain.build-link');
+    Route::post('/api/chain/update-progress', [\App\Http\Controllers\ChainCheckerController::class, 'updateProgress'])->name('api.chain.update-progress');
+    Route::post('/api/chain/send-message', [\App\Http\Controllers\ChainCheckerController::class, 'sendMessage'])->name('api.chain.send-message');
+    
     // Property Basket API Routes
     Route::get('/api/properties/basket', [\App\Http\Controllers\PropertyController::class, 'getBasket'])->name('api.properties.basket');
     Route::post('/api/properties/add-to-basket', [\App\Http\Controllers\PropertyController::class, 'addToBasket'])->name('api.properties.add-to-basket');
