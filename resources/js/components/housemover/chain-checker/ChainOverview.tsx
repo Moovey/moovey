@@ -73,7 +73,7 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
 
     return (
         <motion.div
-            className={`relative bg-white rounded-xl shadow-lg border-2 p-4 sm:p-6 min-w-[240px] sm:min-w-[280px] hover:shadow-xl transition-all duration-300 ${
+            className={`relative bg-white rounded-xl shadow-lg border-2 p-4 sm:p-6 w-[240px] sm:w-[280px] flex-shrink-0 hover:shadow-xl transition-all duration-300 ${
                 isUnknown ? 'border-gray-300 bg-gray-50' : 'border-gray-200'
             }`}
             style={{
@@ -224,7 +224,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                                 </label>
                                 <input
                                     type="url"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 placeholder-gray-500"
                                     placeholder="https://rightmove.co.uk/properties/..."
                                 />
                             </div>
@@ -234,7 +234,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                                 </label>
                                 <input
                                     type="text"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 placeholder-gray-500"
                                     placeholder="Agent name (if known)"
                                 />
                             </div>
@@ -244,7 +244,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                                 </label>
                                 <input
                                     type="email"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 placeholder-gray-500"
                                     placeholder="agent@agency.com"
                                 />
                             </div>
@@ -555,19 +555,32 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900">Property Chain</h3>
-                    <button
-                        onClick={onRefresh}
-                        className="text-xs sm:text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
-                    >
-                        Refresh Status
-                    </button>
+                    <div className="flex items-center space-x-2">
+                        <div className="hidden sm:block text-xs text-gray-500">
+                            {chainData.chain_length > 3 && "← Scroll to see all properties →"}
+                        </div>
+                        <button
+                            onClick={onRefresh}
+                            className="text-xs sm:text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
+                        >
+                            Refresh Status
+                        </button>
+                    </div>
                 </div>
                 
                 {/* Chain Houses Container - Responsive Layout */}
                 <div className="relative">
                     {/* Desktop/Tablet View - Horizontal Chain */}
-                    <div className="hidden sm:flex items-center justify-center space-x-4 lg:space-x-8 overflow-x-auto pb-4">
-                        {/* Generate chain based on user role */}
+                    <div className="hidden sm:block">
+                        <div 
+                            className="flex items-center space-x-4 lg:space-x-6 overflow-x-auto pb-4 px-2"
+                            style={{ 
+                                scrollbarWidth: 'thin',
+                                scrollbarColor: '#cbd5e1 #f1f5f9',
+                                WebkitOverflowScrolling: 'touch'
+                            }}
+                        >
+                            {/* Generate chain based on user role */}
                         {chainData.chain_role === 'first_time_buyer' && (
                             <>
                                 {/* User's Buying Property */}
@@ -660,6 +673,7 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                 />
                             </>
                         )}
+                        </div>
                     </div>
 
                     {/* Mobile View - Vertical Chain */}
