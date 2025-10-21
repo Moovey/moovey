@@ -485,7 +485,7 @@ export default function VolumeCalculator() {
                 </div>
             </div>
 
-            {/* Room Management - Simplified */}
+            {/* Room Management - With Item Display */}
             <div className="mb-6">
                 <div className="flex justify-between items-center mb-4">
                     <h4 className="text-lg font-semibold text-gray-900">🏠 Rooms</h4>
@@ -497,31 +497,82 @@ export default function VolumeCalculator() {
                     </button>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                    {rooms.map(room => (
-                        <div key={room.id} className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg">
-                            <input
-                                type="text"
-                                value={room.name}
-                                onChange={(e) => updateRoomName(room.id, e.target.value)}
-                                className="bg-transparent border-none outline-none text-gray-900 font-medium text-sm w-24"
-                            />
-                            <span className="text-xs text-gray-600">
-                                ({Object.entries(room.items).reduce((total, [itemId, quantity]) => {
-                                    const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
-                                    return total + (item ? item.volume * quantity : 0);
-                                }, 0).toFixed(1)}m³)
-                            </span>
-                            {rooms.length > 1 && (
-                                <button
-                                    onClick={() => removeRoom(room.id)}
-                                    className="text-red-600 hover:text-red-800 text-xs ml-1"
-                                >
-                                    ×
-                                </button>
-                            )}
-                        </div>
-                    ))}
+                <div className="space-y-4">
+                    {rooms.map(room => {
+                        const roomItems = Object.entries(room.items);
+                        const roomVolume = roomItems.reduce((total, [itemId, quantity]) => {
+                            const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
+                            return total + (item ? item.volume * quantity : 0);
+                        }, 0);
+
+                        return (
+                            <div key={room.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                {/* Room Header */}
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={room.name}
+                                            onChange={(e) => updateRoomName(room.id, e.target.value)}
+                                            className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 font-medium text-sm w-32 focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none"
+                                        />
+                                        <span className="text-sm text-gray-600 font-medium">
+                                            {roomVolume.toFixed(1)}m³ total
+                                        </span>
+                                    </div>
+                                    {rooms.length > 1 && (
+                                        <button
+                                            onClick={() => removeRoom(room.id)}
+                                            className="text-red-600 hover:text-red-800 text-sm font-medium hover:bg-red-100 px-2 py-1 rounded transition-colors"
+                                        >
+                                            Remove Room
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Room Items */}
+                                {roomItems.length > 0 ? (
+                                    <div className="space-y-2">
+                                        <p className="text-xs font-medium text-gray-700 mb-2">Items in this room:</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                            {roomItems.map(([itemId, quantity]) => {
+                                                const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
+                                                if (!item) return null;
+                                                
+                                                return (
+                                                    <div key={itemId} className="flex items-center justify-between bg-white px-3 py-2 rounded border border-gray-200">
+                                                        <span className="text-sm text-gray-700 flex items-center gap-1">
+                                                            <span className="text-base">{item.icon}</span>
+                                                            <span>{item.name}</span>
+                                                            <span className="text-gray-500">×{quantity}</span>
+                                                        </span>
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="text-xs text-gray-500 font-medium">
+                                                                {(item.volume * quantity).toFixed(1)}m³
+                                                            </span>
+                                                            <button
+                                                                onClick={() => removeItemFromRoom(room.id, itemId)}
+                                                                className="text-red-600 hover:text-red-800 text-sm hover:bg-red-100 w-6 h-6 rounded flex items-center justify-center transition-colors"
+                                                                title="Remove one item"
+                                                            >
+                                                                −
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6 text-gray-500">
+                                        <div className="text-2xl mb-2">📦</div>
+                                        <p className="text-sm">No items added to this room yet</p>
+                                        <p className="text-xs">Click on furniture items above to add them here</p>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -635,95 +686,51 @@ export default function VolumeCalculator() {
                 </div>
             </div>
 
-            {/* Items List */}
-            {(Object.keys(rooms.reduce((acc, room) => ({ ...acc, ...room.items }), {})).length > 0 || unassignedItems.length > 0) && (
+            {/* Unassigned Items */}
+            {unassignedItems.length > 0 && (
                 <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">📋 Your Items</h4>
-                    
-                    {/* Room Items */}
-                    {rooms.map(room => {
-                        const roomItems = Object.entries(room.items);
-                        if (roomItems.length === 0) return null;
-                        
-                        return (
-                            <div key={room.id} className="mb-4">
-                                <h5 className="font-medium text-gray-800 mb-2 flex items-center">
-                                    🏠 {room.name}
-                                    <span className="ml-2 text-sm text-gray-600">
-                                        ({roomItems.reduce((total, [itemId, quantity]) => {
-                                            const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
-                                            return total + (item ? item.volume * quantity : 0);
-                                        }, 0).toFixed(1)}m³)
-                                    </span>
-                                </h5>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                    {roomItems.map(([itemId, quantity]) => {
-                                        const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
-                                        if (!item) return null;
-                                        
-                                        return (
-                                            <div key={itemId} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg">
-                                                <span className="text-sm text-gray-700">
-                                                    {item.icon} {item.name} x{quantity}
-                                                </span>
-                                                <div className="flex items-center space-x-2">
-                                                    <span className="text-xs text-gray-500">
-                                                        {(item.volume * quantity).toFixed(1)}m³
-                                                    </span>
-                                                    <button
-                                                        onClick={() => removeItemFromRoom(room.id, itemId)}
-                                                        className="text-red-600 hover:text-red-800 text-sm"
-                                                    >
-                                                        −
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        );
-                    })}
-                    
-                    {/* Unassigned Items */}
-                    {unassignedItems.length > 0 && (
-                        <div className="mb-4">
-                            <h5 className="font-medium text-gray-800 mb-2 flex items-center">
-                                📦 Unassigned Items
-                                <span className="ml-2 text-sm text-gray-600">
-                                    ({unassignedItems.reduce((total, unassignedItem) => {
-                                        const item = [...furnitureDatabase, ...customItems].find(f => f.id === unassignedItem.itemId);
-                                        return total + (item ? item.volume * unassignedItem.quantity : 0);
-                                    }, 0).toFixed(1)}m³)
-                                </span>
-                            </h5>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                {unassignedItems.map(unassignedItem => {
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">� Unassigned Items</h4>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm font-medium text-gray-700">
+                                Items not assigned to any room
+                            </p>
+                            <span className="text-sm text-gray-600 font-medium">
+                                {unassignedItems.reduce((total, unassignedItem) => {
                                     const item = [...furnitureDatabase, ...customItems].find(f => f.id === unassignedItem.itemId);
-                                    if (!item) return null;
-                                    
-                                    return (
-                                        <div key={unassignedItem.itemId} className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded-lg">
-                                            <span className="text-sm text-gray-700">
-                                                {item.icon} {item.name} x{unassignedItem.quantity}
-                                            </span>
-                                            <div className="flex items-center space-x-2">
-                                                <span className="text-xs text-gray-500">
-                                                    {(item.volume * unassignedItem.quantity).toFixed(1)}m³
-                                                </span>
-                                                <button
-                                                    onClick={() => removeUnassignedItem(unassignedItem.itemId)}
-                                                    className="text-red-600 hover:text-red-800 text-sm"
-                                                >
-                                                    −
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                    return total + (item ? item.volume * unassignedItem.quantity : 0);
+                                }, 0).toFixed(1)}m³ total
+                            </span>
                         </div>
-                    )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {unassignedItems.map(unassignedItem => {
+                                const item = [...furnitureDatabase, ...customItems].find(f => f.id === unassignedItem.itemId);
+                                if (!item) return null;
+                                
+                                return (
+                                    <div key={unassignedItem.itemId} className="flex items-center justify-between bg-white px-3 py-2 rounded border border-blue-200">
+                                        <span className="text-sm text-gray-700 flex items-center gap-1">
+                                            <span className="text-base">{item.icon}</span>
+                                            <span>{item.name}</span>
+                                            <span className="text-gray-500">×{unassignedItem.quantity}</span>
+                                        </span>
+                                        <div className="flex items-center space-x-2">
+                                            <span className="text-xs text-gray-500 font-medium">
+                                                {(item.volume * unassignedItem.quantity).toFixed(1)}m³
+                                            </span>
+                                            <button
+                                                onClick={() => removeUnassignedItem(unassignedItem.itemId)}
+                                                className="text-red-600 hover:text-red-800 text-sm hover:bg-red-100 w-6 h-6 rounded flex items-center justify-center transition-colors"
+                                                title="Remove one item"
+                                            >
+                                                −
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
             )}
 
