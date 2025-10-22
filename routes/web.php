@@ -196,6 +196,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/properties/add-to-basket', [\App\Http\Controllers\PropertyController::class, 'addToBasket'])->name('api.properties.add-to-basket');
     Route::delete('/api/properties/{property}/remove-from-basket', [\App\Http\Controllers\PropertyController::class, 'removeFromBasket'])->name('api.properties.remove-from-basket');
     Route::patch('/api/properties/{property}/claim', [\App\Http\Controllers\PropertyController::class, 'claimProperty'])->name('api.properties.claim');
+    Route::patch('/api/properties/{property}/favorite', [\App\Http\Controllers\PropertyController::class, 'toggleFavorite'])->name('api.properties.favorite');
     Route::patch('/api/properties/{property}/update', [\App\Http\Controllers\PropertyController::class, 'updateProperty'])->name('api.properties.update');
     Route::delete('/api/properties/{property}/delete', [\App\Http\Controllers\PropertyController::class, 'deleteProperty'])->name('api.properties.delete');
     Route::get('/api/properties/{property}', [\App\Http\Controllers\PropertyController::class, 'show'])->name('api.properties.show');

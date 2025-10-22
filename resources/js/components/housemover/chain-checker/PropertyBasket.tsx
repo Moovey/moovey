@@ -79,6 +79,7 @@ const PropertyBasket: React.FC = () => {
     });
     const [propertyClaimInfo, setPropertyClaimInfo] = useState<Record<number, any>>({});
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
     const [existingConnections, setExistingConnections] = useState<number[]>([]);
 
     useEffect(() => {
@@ -573,6 +574,41 @@ const PropertyBasket: React.FC = () => {
         }
     };
 
+    const toggleFavorite = async (propertyId: number, currentFavoriteStatus: boolean) => {
+        try {
+            const response = await fetch(`/api/properties/${propertyId}/favorite`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // Update the local state to reflect the change
+                    setBasketProperties(prevProperties => 
+                        prevProperties.map(property => 
+                            property.id === propertyId 
+                                ? { ...property, is_favorite: data.data.is_favorite }
+                                : property
+                        )
+                    );
+                    toast.success(data.message);
+                } else {
+                    toast.error(data.message || 'Failed to update favorite status');
+                }
+            } else {
+                toast.error('Failed to update favorite status');
+            }
+        } catch (error) {
+            console.error('Failed to toggle favorite:', error);
+            toast.error('Network error occurred');
+        }
+    };
+
     const searchProperties = async () => {
         if (!searchQuery.trim()) return;
 
@@ -890,9 +926,22 @@ const PropertyBasket: React.FC = () => {
 
             {/* Basket Properties */}
             <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900">
-                    Your Property Basket ({Array.isArray(basketProperties) ? basketProperties.length : 0})
-                </h4>
+                <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-gray-900">
+                        Your Property Basket ({Array.isArray(basketProperties) ? basketProperties.length : 0})
+                    </h4>
+                    <div className="flex items-center space-x-3">
+                        <label className="flex items-center space-x-2 text-sm text-gray-600">
+                            <input
+                                type="checkbox"
+                                checked={showFavoritesOnly}
+                                onChange={(e) => setShowFavoritesOnly(e.target.checked)}
+                                className="rounded border-gray-300 text-red-500 focus:ring-red-500"
+                            />
+                            <span>Show favorites only</span>
+                        </label>
+                    </div>
+                </div>
 
                 {!Array.isArray(basketProperties) || basketProperties.length === 0 ? (
                     <div className="text-center py-8">
@@ -903,8 +952,21 @@ const PropertyBasket: React.FC = () => {
                         </p>
                     </div>
                 ) : (
-                    <div className="grid gap-4">
-                        {Array.isArray(basketProperties) && basketProperties.map((item) => (
+                    <>
+                        {/* Show filtered results message */}
+                        {showFavoritesOnly && basketProperties.filter(item => item.is_favorite).length === 0 ? (
+                            <div className="text-center py-8">
+                                <div className="text-4xl mb-4">💔</div>
+                                <p className="text-gray-600">No favorite properties found.</p>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Click the heart icon on any property to add it to your favorites.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-4">
+                                {Array.isArray(basketProperties) && basketProperties
+                                    .filter(item => !showFavoritesOnly || item.is_favorite)
+                                    .map((item) => (
                             <motion.div
                                 key={item.id}
                                 className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
@@ -1022,6 +1084,14 @@ const PropertyBasket: React.FC = () => {
                                         {/* Interest Stats */}
                                         <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
                                             <span>👥 {item.basket_count} interested</span>
+                                            {item.is_favorite && (
+                                                <span className="flex items-center space-x-1 text-red-500">
+                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                                    </svg>
+                                                    <span>Favorite</span>
+                                                </span>
+                                            )}
                                             {item.is_claimed && (
                                                 <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
                                                     You claimed as {item.claim_type}
@@ -1133,6 +1203,19 @@ const PropertyBasket: React.FC = () => {
                                                     {/* Actions */}
                                                     <div className="flex items-center space-x-2 ml-4">
                                                         <button
+                                                            onClick={() => toggleFavorite(item.id, item.is_favorite)}
+                                                            className={`p-2 transition-colors ${
+                                                                item.is_favorite 
+                                                                    ? 'text-red-500 hover:text-red-600' 
+                                                                    : 'text-gray-400 hover:text-red-500'
+                                                            }`}
+                                                            title={item.is_favorite ? "Remove from favorites" : "Add to favorites"}
+                                                        >
+                                                            <svg className="w-5 h-5" fill={item.is_favorite ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                                            </svg>
+                                                        </button>
+                                                        <button
                                                             onClick={() => startEditProperty(item)}
                                                             className="p-2 text-blue-600 hover:text-blue-700 transition-colors"
                                                             title="Edit Property"
@@ -1216,7 +1299,9 @@ const PropertyBasket: React.FC = () => {
                                 </div>
                             </motion.div>
                         ))}
-                    </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 

@@ -421,6 +421,48 @@ class PropertyController extends Controller
     }
 
     /**
+     * Toggle favorite status for a property in user's basket
+     */
+    public function toggleFavorite(Property $property): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            
+            // Find the user's basket entry for this property
+            $basket = \App\Models\PropertyBasket::where('user_id', $user->id)
+                ->where('property_id', $property->id)
+                ->first();
+            
+            if (!$basket) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Property not found in your basket'
+                ], 404);
+            }
+
+            // Toggle favorite status
+            $basket->update([
+                'is_favorite' => !$basket->is_favorite
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'property_id' => $property->id,
+                    'is_favorite' => $basket->is_favorite,
+                ],
+                'message' => $basket->is_favorite ? 'Property added to favorites' : 'Property removed from favorites'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling favorite status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating favorite status'
+            ], 500);
+        }
+    }
+
+    /**
      * Delete property completely
      */
     public function deleteProperty(Property $property): JsonResponse
