@@ -967,9 +967,124 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
         selling: []
     });
     const [loadingProperties, setLoadingProperties] = useState(false);
+    const [showHealthDetails, setShowHealthDetails] = useState(false);
+    const [healthTrend, setHealthTrend] = useState<'up' | 'down' | 'stable'>('stable');
+    const [lastHealthScore, setLastHealthScore] = useState<number>(chainData.progress_score || 0);
+    const [healthHistory, setHealthHistory] = useState<{score: number, timestamp: Date}[]>([]);
 
-    // Handle refresh with toast notification
-    const handleRefresh = () => {
+    // Track health history
+    useEffect(() => {
+        const currentScore = chainData.progress_score || 0;
+        const now = new Date();
+        
+        setHealthHistory(prev => {
+            const newHistory = [...prev, { score: currentScore, timestamp: now }];
+            // Keep only last 10 entries
+            return newHistory.slice(-10);
+        });
+    }, [chainData.progress_score]);
+
+    // Calculate detailed health metrics
+    const calculateDetailedHealth = () => {
+        const chainStatus = chainData?.chain_status || {};
+        const stages = [
+            { key: 'offer_accepted', label: 'Offer Accepted', weight: 15 },
+            { key: 'mortgage_approval', label: 'Mortgage Approved', weight: 20 },
+            { key: 'searches_surveys', label: 'Searches & Surveys', weight: 20 },
+            { key: 'surveys_complete', label: 'Surveys Complete', weight: 15 },
+            { key: 'contracts_exchanged', label: 'Contracts Exchanged', weight: 20 },
+            { key: 'completion', label: 'Completion', weight: 10 }
+        ];
+
+        let totalScore = 0;
+        let completedStages = 0;
+        const stageDetails: any[] = [];
+
+        stages.forEach(stage => {
+            const stageData = chainStatus[stage.key];
+            let stageScore = 0;
+            
+            if (stageData?.completed) {
+                stageScore = 100;
+                completedStages++;
+            } else if (stageData?.in_progress) {
+                stageScore = 50;
+            } else if (stageData?.started) {
+                stageScore = 25;
+            }
+
+            totalScore += (stageScore * stage.weight) / 100;
+            stageDetails.push({
+                ...stage,
+                score: stageScore,
+                status: stageData?.completed ? 'completed' : 
+                       stageData?.in_progress ? 'in_progress' : 
+                       stageData?.started ? 'started' : 'pending',
+                lastUpdated: stageData?.updated_at
+            });
+        });
+
+        return {
+            overallScore: Math.round(totalScore),
+            completedStages,
+            totalStages: stages.length,
+            stageDetails,
+            completionRate: (completedStages / stages.length) * 100
+        };
+    };
+
+    // Track health trend
+    useEffect(() => {
+        const currentScore = chainData.progress_score || 0;
+        if (currentScore > lastHealthScore + 5) {
+            setHealthTrend('up');
+        } else if (currentScore < lastHealthScore - 5) {
+            setHealthTrend('down');
+        } else {
+            setHealthTrend('stable');
+        }
+        setLastHealthScore(currentScore);
+    }, [chainData.progress_score]);
+
+    // Calculate chain strength based on connections and properties
+    const calculateChainStrength = () => {
+        const participantCount = chainData.chain_participants?.length || 0;
+        const propertyCount = (chainData.buying_properties?.length || 0) + (chainData.selling_properties?.length || 0);
+        const baseStrength = Math.min(100, (participantCount * 30) + (propertyCount * 20) + 10);
+        
+        return {
+            score: baseStrength,
+            status: baseStrength >= 80 ? 'Strong' : 
+                   baseStrength >= 60 ? 'Good' : 
+                   baseStrength >= 40 ? 'Moderate' : 'Weak',
+            color: baseStrength >= 80 ? 'text-green-500' : 
+                  baseStrength >= 60 ? 'text-blue-500' : 
+                  baseStrength >= 40 ? 'text-yellow-500' : 'text-red-500'
+        };
+    };
+
+    // Get health improvement suggestions
+    const getHealthSuggestions = () => {
+        const health = calculateDetailedHealth();
+        const suggestions = [];
+
+        if (health.overallScore < 80) {
+            if (health.stageDetails.find(s => s.key === 'mortgage_approval' && s.status === 'pending')) {
+                suggestions.push({ action: 'Submit mortgage application', priority: 'high', icon: '🏦' });
+            }
+            if (health.stageDetails.find(s => s.key === 'searches_surveys' && s.status === 'pending')) {
+                suggestions.push({ action: 'Request property searches', priority: 'medium', icon: '🔍' });
+            }
+            if (!chainData.chain_participants?.length) {
+                suggestions.push({ action: 'Connect with chain partners', priority: 'high', icon: '🔗' });
+            }
+        }
+
+        return suggestions;
+    };
+
+    // Handle refresh with toast notification and health recalculation
+    const handleRefresh = async () => {
         toast.info('🔄 Refreshing chain status...', {
             position: "top-right",
             autoClose: 2000,
@@ -977,12 +1092,59 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
             closeOnClick: true,
             pauseOnHover: true,
         });
-        onRefresh();
+        
+        // Store previous health score for comparison
+        const previousScore = chainData.progress_score || 0;
+        
+        // Trigger the refresh
+        await onRefresh();
+        
+        // Show health change notification after refresh
+        setTimeout(() => {
+            const newScore = chainData.progress_score || 0;
+            if (newScore > previousScore) {
+                toast.success(`📈 Chain health improved by ${newScore - previousScore}%!`, {
+                    position: "top-right",
+                    autoClose: 3000,
+                });
+            } else if (newScore < previousScore) {
+                toast.warning(`📉 Chain health decreased by ${previousScore - newScore}%`, {
+                    position: "top-right",
+                    autoClose: 3000,
+                });
+            }
+        }, 1000);
     };
+
+    // Auto-refresh chain health every 5 minutes
+    useEffect(() => {
+        const interval = setInterval(() => {
+            handleRefresh();
+        }, 5 * 60 * 1000); // 5 minutes
+
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         if (chainData.buying_properties?.length > 0 || chainData.selling_properties?.length > 0) {
             loadLinkedProperties();
+        }
+        
+        // Monitor critical health changes
+        const currentHealth = chainData.progress_score || 0;
+        if (lastHealthScore !== 0) { // Avoid initial false alerts
+            if (currentHealth < 30 && lastHealthScore >= 30) {
+                toast.error('🚨 Chain health has dropped to critical levels!', {
+                    position: "top-center",
+                    autoClose: false,
+                    closeOnClick: true,
+                });
+            } else if (currentHealth >= 80 && lastHealthScore < 80) {
+                toast.success('🎉 Congratulations! Your chain health is now excellent!', {
+                    position: "top-center",
+                    autoClose: 5000,
+                });
+            }
         }
     }, [chainData]);
 
@@ -1049,14 +1211,39 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
         <div className="space-y-4 sm:space-y-6 lg:space-y-8">
             {/* Chain Health Overview */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-                <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+                {/* Health Score Card */}
+                <motion.div 
+                    className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100 cursor-pointer hover:shadow-md transition-all"
+                    onClick={() => setShowHealthDetails(!showHealthDetails)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                >
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs sm:text-sm font-medium text-gray-600">Chain Health</p>
+                            <p className="text-xs sm:text-sm font-medium text-gray-600 flex items-center">
+                                Chain Health
+                                {healthTrend === 'up' && <span className="ml-1 text-green-500">↗️</span>}
+                                {healthTrend === 'down' && <span className="ml-1 text-red-500">↘️</span>}
+                                {healthTrend === 'stable' && <span className="ml-1 text-gray-400">→</span>}
+                            </p>
                             <p className={`text-2xl sm:text-3xl font-bold ${getHealthColor(chainData.progress_score)}`}>
-                                {chainData.progress_score}%
+                                {chainData.progress_score || 0}%
                             </p>
                             <p className="text-xs sm:text-sm text-gray-500">{getHealthStatus(chainData.progress_score)}</p>
+                            
+                            {/* Progress Bar */}
+                            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                                <motion.div 
+                                    className={`h-2 rounded-full ${
+                                        chainData.progress_score >= 80 ? 'bg-green-500' : 
+                                        chainData.progress_score >= 60 ? 'bg-yellow-500' : 
+                                        chainData.progress_score >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                                    }`}
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${chainData.progress_score || 0}%` }}
+                                    transition={{ duration: 1, ease: "easeOut" }}
+                                />
+                            </div>
                         </div>
                         <div className="text-2xl sm:text-4xl">
                             {chainData.progress_score >= 80 ? '🟢' : 
@@ -1064,20 +1251,44 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                              chainData.progress_score >= 40 ? '🟠' : '🔴'}
                         </div>
                     </div>
-                </div>
+                    
+                    {/* Click hint */}
+                    <div className="mt-2 text-xs text-gray-400 flex items-center">
+                        <span>Click for details</span>
+                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </motion.div>
                 
-                <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+                {/* Chain Strength Card */}
+                <motion.div 
+                    className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-md transition-all"
+                    whileHover={{ scale: 1.02 }}
+                >
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs sm:text-sm font-medium text-gray-600">Chain Length</p>
-                            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{chainData.chain_length}</p>
-                            <p className="text-xs sm:text-sm text-gray-500">Properties</p>
+                            <p className="text-xs sm:text-sm font-medium text-gray-600">Chain Strength</p>
+                            <p className={`text-2xl sm:text-3xl font-bold ${calculateChainStrength().color}`}>
+                                {calculateChainStrength().score}%
+                            </p>
+                            <p className="text-xs sm:text-sm text-gray-500">{calculateChainStrength().status}</p>
+                            
+                            {/* Participants indicator */}
+                            <div className="mt-2 flex items-center space-x-2 text-xs text-gray-500">
+                                <span>👥 {chainData.chain_participants?.length || 0} connected</span>
+                                <span>🏠 {(chainData.buying_properties?.length || 0) + (chainData.selling_properties?.length || 0)} properties</span>
+                            </div>
                         </div>
                         <div className="text-2xl sm:text-4xl">⛓️</div>
                     </div>
-                </div>
+                </motion.div>
                 
-                <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100 sm:col-span-2 lg:col-span-1">
+                {/* Your Role Card - Enhanced */}
+                <motion.div 
+                    className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100 sm:col-span-2 lg:col-span-1 hover:shadow-md transition-all"
+                    whileHover={{ scale: 1.02 }}
+                >
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs sm:text-sm font-medium text-gray-600">Your Role</p>
@@ -1092,6 +1303,28 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                 {chainData.selling_properties?.length > 0 && `${chainData.selling_properties.length} selling`}
                                 {(!chainData.buying_properties?.length && !chainData.selling_properties?.length) && 'No linked properties'}
                             </p>
+                            
+                            {/* Quick actions */}
+                            <div className="mt-2 flex items-center space-x-2">
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowPropertyBasket(true);
+                                    }}
+                                    className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                                >
+                                    Add Property
+                                </button>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRefresh();
+                                    }}
+                                    className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200 transition-colors"
+                                >
+                                    Update
+                                </button>
+                            </div>
                         </div>
                         <div className="text-2xl sm:text-4xl">
                             {chainData.chain_role ? getRoleDisplay(chainData.chain_role).icon :
@@ -1099,8 +1332,118 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                               chainData.move_type === 'buying' ? '🏠' : '💰')}
                         </div>
                     </div>
-                </div>
+                </motion.div>
             </div>
+
+            {/* Detailed Health Breakdown Modal */}
+            {showHealthDetails && (
+                <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-4"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">Chain Health Breakdown</h3>
+                        <button
+                            onClick={() => setShowHealthDetails(false)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {(() => {
+                        const healthDetails = calculateDetailedHealth();
+                        return (
+                            <div className="space-y-4">
+                                {/* Overall Progress */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="font-medium text-gray-900">Overall Progress</span>
+                                        <span className="text-sm font-semibold text-gray-700">
+                                            {healthDetails.completedStages}/{healthDetails.totalStages} stages complete
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-3">
+                                        <div 
+                                            className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-1000"
+                                            style={{ width: `${healthDetails.completionRate}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Stage Details */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {healthDetails.stageDetails.map((stage, index) => (
+                                        <div key={stage.key} className={`p-3 rounded-lg border-2 ${
+                                            stage.status === 'completed' ? 'border-green-200 bg-green-50' :
+                                            stage.status === 'in_progress' ? 'border-yellow-200 bg-yellow-50' :
+                                            stage.status === 'started' ? 'border-blue-200 bg-blue-50' :
+                                            'border-gray-200 bg-gray-50'
+                                        }`}>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-lg">
+                                                        {stage.status === 'completed' ? '✅' :
+                                                         stage.status === 'in_progress' ? '🔄' :
+                                                         stage.status === 'started' ? '🚀' : '⏳'}
+                                                    </span>
+                                                    <span className="font-medium text-sm">{stage.label}</span>
+                                                </div>
+                                                <span className={`text-xs font-semibold ${
+                                                    stage.status === 'completed' ? 'text-green-600' :
+                                                    stage.status === 'in_progress' ? 'text-yellow-600' :
+                                                    stage.status === 'started' ? 'text-blue-600' :
+                                                    'text-gray-400'
+                                                }`}>
+                                                    {stage.score}%
+                                                </span>
+                                            </div>
+                                            {stage.lastUpdated && (
+                                                <div className="text-xs text-gray-500 mt-1">
+                                                    Updated: {new Date(stage.lastUpdated).toLocaleDateString()}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Health Improvement Suggestions */}
+                                {(() => {
+                                    const suggestions = getHealthSuggestions();
+                                    return suggestions.length > 0 && (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                            <h4 className="font-medium text-blue-900 mb-3">💡 Suggestions to Improve Chain Health</h4>
+                                            <div className="space-y-2">
+                                                {suggestions.map((suggestion, index) => (
+                                                    <div key={index} className={`flex items-center space-x-3 p-2 rounded ${
+                                                        suggestion.priority === 'high' ? 'bg-red-100 border border-red-200' :
+                                                        suggestion.priority === 'medium' ? 'bg-yellow-100 border border-yellow-200' :
+                                                        'bg-gray-100 border border-gray-200'
+                                                    }`}>
+                                                        <span className="text-lg">{suggestion.icon}</span>
+                                                        <span className="text-sm font-medium text-gray-800">{suggestion.action}</span>
+                                                        <span className={`text-xs px-2 py-1 rounded-full ${
+                                                            suggestion.priority === 'high' ? 'bg-red-200 text-red-800' :
+                                                            suggestion.priority === 'medium' ? 'bg-yellow-200 text-yellow-800' :
+                                                            'bg-gray-200 text-gray-800'
+                                                        }`}>
+                                                            {suggestion.priority}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        );
+                    })()}
+                </motion.div>
+            )}
 
             {/* Connection Request Notifications */}
             <ConnectionRequestNotifications 
