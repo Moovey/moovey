@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { toast } from 'react-toastify';
 import PropertyBasket from './PropertyBasket';
+import ConnectionRequestNotifications from './ConnectionRequestNotifications';
 
 interface PropertyHouseBlockProps {
     title: string;
     linkHealth: number;
     isUserOwned: boolean;
     isEditable: boolean;
-    type: 'buying' | 'selling' | 'unknown';
+    type: 'buying' | 'selling' | 'unknown' | 'linked';
     isUnknown?: boolean;
     onRefresh?: () => void;
     chainData?: any;
@@ -31,9 +33,46 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
         
         const chainStatus = chainData?.chain_status || {};
         
+        // For linked properties, determine the correct property type from linked user data
+        let propertyType = type;
+        if (type === 'linked') {
+            const linkedUser = chainData?.linked_user;
+            if (linkedUser) {
+                // Get chain role from multiple possible sources
+                const linkedUserChainRole = linkedUser.chain_role || 
+                                          linkedUser.chain_data?.chain_role || 
+                                          chainData?.chain_data?.chain_role;
+                
+                console.log('Linked user chain role:', linkedUserChainRole, 'for user:', linkedUser.user_name);
+                
+                // Determine property type based on chain role
+                if (linkedUserChainRole === 'seller_only') {
+                    propertyType = 'selling';
+                } else if (linkedUserChainRole === 'first_time_buyer') {
+                    propertyType = 'buying';
+                } else if (linkedUserChainRole === 'buyer_seller') {
+                    // For buyer_seller, we need to be smarter about which property type
+                    // Default to selling, but this could be enhanced with property-specific data
+                    propertyType = 'selling';
+                } else {
+                    // Fallback: try to determine from move_type
+                    const moveType = linkedUser.chain_data?.move_type || chainData?.move_type;
+                    if (moveType === 'buying') {
+                        propertyType = 'buying';
+                    } else if (moveType === 'selling') {
+                        propertyType = 'selling';
+                    }
+                }
+                
+                console.log('Determined property type:', propertyType, 'for stage:', stage);
+            }
+        }
+        
         // Look for progress data in the type-specific section (buying/selling)
-        const typeSpecificStatus = chainStatus[type] || {};
+        const typeSpecificStatus = chainStatus[propertyType] || {};
         const stageData = typeSpecificStatus[stage];
+        
+        console.log('Stage data for', stage, 'in', propertyType, ':', stageData);
         
         if (stageData) {
             // If we have a progress value, use it; otherwise use completed status
@@ -48,10 +87,10 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
         
         // Final fallback to mock data for stages that don't exist yet
         const fallbacks: { [key: string]: number } = {
-            'offer_accepted': type === 'buying' ? 100 : type === 'selling' ? 100 : 0,
-            'mortgage_approval': type === 'buying' ? 100 : type === 'selling' ? 75 : 0,
-            'searches_surveys': type === 'buying' ? 50 : type === 'selling' ? 50 : 0,
-            'surveys_complete': type === 'buying' ? 50 : type === 'selling' ? 50 : 0,
+            'offer_accepted': propertyType === 'buying' ? 100 : propertyType === 'selling' ? 100 : 0,
+            'mortgage_approval': propertyType === 'buying' ? 100 : propertyType === 'selling' ? 75 : 0,
+            'searches_surveys': propertyType === 'buying' ? 50 : propertyType === 'selling' ? 50 : 0,
+            'surveys_complete': propertyType === 'buying' ? 50 : propertyType === 'selling' ? 50 : 0,
             'contracts_exchanged': 0,
             'completion': 0,
         };
@@ -91,12 +130,21 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
 
     const getButtonText = () => {
         if (isUnknown) return 'Build this Link';
+        if (type === 'linked') return 'View Chain Partner';
         if (isEditable && isUserOwned) return 'Update my Link';
         return 'Contact Link Owner';
     };
 
     const getButtonAction = () => {
-        if (isUnknown || (isEditable && isUserOwned)) {
+        if (type === 'linked') {
+            // Navigate to the chain partner's profile or show their details
+            const linkedUser = chainData?.linked_user;
+            if (linkedUser?.user_id) {
+                window.location.href = `/messages?user=${linkedUser.user_id}`;
+            } else {
+                toast.info('Chain partner details not available');
+            }
+        } else if (isUnknown || (isEditable && isUserOwned)) {
             setShowModal(true);
         } else {
             // Contact link owner logic
@@ -131,20 +179,64 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
 
     return (
         <motion.div
-            className={`relative bg-white rounded-xl shadow-lg border-2 p-4 sm:p-6 w-[240px] sm:w-[280px] flex-shrink-0 hover:shadow-xl transition-all duration-300 ${
-                isUnknown ? 'border-gray-300 bg-gray-50' : 'border-gray-200'
-            }`}
-            style={{
-                clipPath: 'polygon(0 20%, 20% 0, 80% 0, 100% 20%, 100% 100%, 0 100%)'
-            }}
+            className={`relative w-[240px] sm:w-[280px] flex-shrink-0 transition-all duration-300`}
             whileHover={{ y: -2 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
+            {/* House Shape Container */}
+            <div className="relative">
+                {/* Triangular Roof */}
+                <div 
+                    className={`w-full h-8 relative ${
+                        isUnknown ? 'bg-gray-400' : 
+                        type === 'linked' ? 'bg-purple-400' :
+                        type === 'buying' ? 'bg-blue-500' :
+                        type === 'selling' ? 'bg-green-500' :
+                        'bg-gray-400'
+                    }`}
+                    style={{
+                        clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)'
+                    }}
+                >
+                    {/* Chimney */}
+                    {!isUnknown && (
+                        <div 
+                            className={`absolute top-1 right-6 w-2 h-3 ${
+                                type === 'linked' ? 'bg-purple-600' :
+                                type === 'buying' ? 'bg-blue-700' :
+                                type === 'selling' ? 'bg-green-700' :
+                                'bg-gray-600'
+                            }`}
+                        ></div>
+                    )}
+                </div>
+                
+                {/* Rectangular Body */}
+                <div className={`bg-white border-2 p-4 sm:p-6 hover:shadow-xl transition-all duration-300 shadow-lg relative ${
+                    isUnknown ? 'border-gray-300 bg-gray-50' : 
+                    type === 'linked' ? 'border-purple-300 bg-purple-50' :
+                    'border-gray-200'
+                } rounded-b-xl`}
+                >
+                    {/* Windows and Door decorations */}
+                    {!isUnknown && (
+                        <>
+                            {/* Windows */}
+                            <div className="absolute top-2 left-4 w-3 h-3 bg-blue-100 border border-blue-200 rounded-sm opacity-60"></div>
+                            <div className="absolute top-2 right-4 w-3 h-3 bg-blue-100 border border-blue-200 rounded-sm opacity-60"></div>
+                            {/* Door */}
+                            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-6 bg-amber-700 rounded-t-sm opacity-70"></div>
+                            <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 ml-1 w-1 h-1 bg-yellow-400 rounded-full"></div>
+                        </>
+                    )}
             {/* House Title */}
             <div className="text-center mb-3 sm:mb-4">
-                <h4 className="font-semibold text-gray-900 text-xs sm:text-sm">{title}</h4>
+                <h4 className="font-semibold text-gray-900 text-xs sm:text-sm">
+                    {type === 'linked' && <span className="text-purple-500 mr-1">🔗</span>}
+                    {title}
+                </h4>
             </div>
 
             {/* Link Health Circle */}
@@ -214,6 +306,8 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
                 className={`w-full py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                     isUnknown
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : type === 'linked'
+                        ? 'bg-purple-600 text-white hover:bg-purple-700'
                         : isEditable && isUserOwned
                         ? 'bg-green-600 text-white hover:bg-green-700'
                         : 'bg-gray-600 text-white hover:bg-gray-700'
@@ -221,6 +315,8 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
             >
                 {getButtonText()}
             </button>
+                </div>
+            </div>
 
             {/* Modal for editing/building links */}
             {showModal && (
@@ -249,7 +345,7 @@ interface PropertyModalProps {
     isOpen: boolean;
     onClose: () => void;
     title: string;
-    type: 'buying' | 'selling' | 'unknown';
+    type: 'buying' | 'selling' | 'unknown' | 'linked';
     isUnknown: boolean;
     isEditable: boolean;
     onUpdate?: (data: any) => void;
@@ -310,6 +406,9 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
     });
 
     const handleStageChange = (stage: string, value: number) => {
+        const currentStages = formData.stages as any;
+        const wasCompleted = currentStages[stage] >= 100;
+        
         setFormData(prev => ({
             ...prev,
             stages: {
@@ -317,6 +416,26 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                 [stage]: value
             }
         }));
+        
+        // Show celebration toast for newly completed stages
+        if (value === 100 && !wasCompleted) {
+            const stageNames: { [key: string]: string } = {
+                offerAccepted: 'Offer Accepted',
+                mortgageApproved: 'Mortgage Approved',
+                searchesComplete: 'Searches Complete',
+                surveysComplete: 'Surveys Complete',
+                contractsExchanged: 'Contracts Exchanged',
+                completionAchieved: 'Completion Achieved'
+            };
+            
+            toast.success(`🎉 Congratulations! ${stageNames[stage]} completed!`, {
+                position: "top-right",
+                autoClose: 4000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+            });
+        }
     };
 
     const handleSubmit = async () => {
@@ -343,13 +462,13 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
 
                 const result = await response.json();
                 if (result.success) {
-                    setSuccessMessage('Chain link built successfully!');
+                    toast.success('🔗 Chain link built successfully!');
                     setTimeout(() => {
                         onUpdate?.(result.data);
                         onClose();
-                    }, 1500);
+                    }, 1000);
                 } else {
-                    setErrorMessage('Failed to build link: ' + (result.message || 'Unknown error'));
+                    toast.error('❌ Failed to build link: ' + (result.message || 'Unknown error'));
                 }
             } else if (isEditable) {
                 // Handle progress update
@@ -367,13 +486,20 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
 
                 const result = await response.json();
                 if (result.success) {
-                    setSuccessMessage('Progress updated successfully!');
+                    toast.success('✅ Progress updated and synced to your chain partners!', {
+                        position: "top-right",
+                        autoClose: 3000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,
+                        draggable: true,
+                    });
                     setTimeout(() => {
                         onUpdate?.(result.data);
                         onClose();
-                    }, 1500);
+                    }, 1000);
                 } else {
-                    setErrorMessage('Failed to update progress: ' + (result.message || 'Unknown error'));
+                    toast.error('❌ Failed to update progress: ' + (result.message || 'Unknown error'));
                 }
             } else {
                 // Handle contact message
@@ -391,17 +517,17 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
 
                 const result = await response.json();
                 if (result.success) {
-                    setSuccessMessage('Message sent successfully!');
+                    toast.success('💬 Message sent successfully!');
                     setTimeout(() => {
                         onClose();
-                    }, 1500);
+                    }, 1000);
                 } else {
-                    setErrorMessage('Failed to send message: ' + (result.message || 'Unknown error'));
+                    toast.error('❌ Failed to send message: ' + (result.message || 'Unknown error'));
                 }
             }
         } catch (error) {
             console.error('Error:', error);
-            setErrorMessage('An error occurred. Please try again.');
+            toast.error('❌ An error occurred. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -639,12 +765,21 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
 
     const getButtonText = () => {
         if (isUnknown) return 'Build this Link';
+        if (type === 'linked') return 'View Chain Partner';
         if (isEditable && isUserOwned) return 'Update my Link';
         return 'Contact Link Owner';
     };
 
     const getButtonAction = () => {
-        if (isUnknown || (isEditable && isUserOwned)) {
+        if (type === 'linked') {
+            // Navigate to the chain partner's profile or show their details
+            const linkedUser = chainData?.linked_user;
+            if (linkedUser?.user_id) {
+                window.location.href = `/messages?user=${linkedUser.user_id}`;
+            } else {
+                toast.info('Chain partner details not available');
+            }
+        } else if (isUnknown || (isEditable && isUserOwned)) {
             setShowModal(true);
         } else {
             setShowModal(true);
@@ -700,6 +835,7 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
 
     const houseColor = type === 'buying' ? '#10B981' :
                       type === 'selling' ? '#F59E0B' :
+                      type === 'linked' ? '#8B5CF6' :
                       '#6B7280';
 
     return (
@@ -707,72 +843,92 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.3 }}
-            className={`bg-white rounded-xl p-4 border-2 ${
-                isUnknown ? 'border-gray-300 bg-gray-50' : 'border-gray-200'
-            }`}
+            className="w-full"
         >
-            <div className="flex items-center space-x-4">
-                {/* House Icon */}
-                <div className="flex-shrink-0">
-                    <div className={`w-12 h-12 relative ${isUserOwned ? 'cursor-pointer' : ''}`}
-                         onClick={isUserOwned ? getButtonAction : undefined}>
+            {/* House Shape Container */}
+            <div className="relative">
+                {/* Triangular Roof */}
+                <div 
+                    className={`w-full h-6 relative ${
+                        isUnknown ? 'bg-gray-400' : 
+                        type === 'linked' ? 'bg-purple-400' :
+                        type === 'buying' ? 'bg-blue-500' :
+                        type === 'selling' ? 'bg-green-500' :
+                        'bg-gray-400'
+                    }`}
+                    style={{
+                        clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)'
+                    }}
+                >
+                    {/* Small Chimney for mobile */}
+                    {!isUnknown && (
                         <div 
-                            className="w-full h-full transition-all duration-200 hover:scale-105"
-                            style={{
-                                background: isUnknown ? '#9CA3AF' : houseColor,
-                                clipPath: 'polygon(50% 0%, 0% 70%, 15% 70%, 15% 100%, 85% 100%, 85% 70%, 100% 70%)',
-                                opacity: isUnknown ? 0.6 : 1
-                            }}
-                        />
-                        
-                        {/* Door and Windows */}
-                        {!isUnknown && (
-                            <>
-                                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-2 bg-white/30 rounded-sm"></div>
-                                <div className="absolute top-5 left-2 w-1 h-1 bg-white/40 rounded-sm"></div>
-                                <div className="absolute top-5 right-2 w-1 h-1 bg-white/40 rounded-sm"></div>
-                            </>
-                        )}
-
-                        {/* Question mark for unknown properties */}
-                        {isUnknown && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-white text-sm font-bold">?</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Property Info */}
-                <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-gray-900 truncate">{title}</h4>
-                    <p className="text-xs text-gray-600 mt-1">
-                        Health: {isUnknown ? 'Unknown' : `${actualMobileLinkHealth}%`}
-                    </p>
-                    {isUserOwned && (
-                        <button
-                            onClick={getButtonAction}
-                            className="mt-1 text-xs text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
-                        >
-                            Edit Progress
-                        </button>
+                            className={`absolute top-0.5 right-4 w-1.5 h-2 ${
+                                type === 'linked' ? 'bg-purple-600' :
+                                type === 'buying' ? 'bg-blue-700' :
+                                type === 'selling' ? 'bg-green-700' :
+                                'bg-gray-600'
+                            }`}
+                        ></div>
                     )}
                 </div>
+                
+                {/* Rectangular Body */}
+                <div className={`bg-white p-4 border-2 rounded-b-xl ${
+                    isUnknown ? 'border-gray-300 bg-gray-50' : 
+                    type === 'linked' ? 'border-purple-300 bg-purple-50' :
+                    'border-gray-200'
+                }`}>
+                    <div className="flex items-center space-x-4">
+                        {/* House Icon - Small visual indicator */}
+                        <div className="flex-shrink-0">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                isUnknown ? 'bg-gray-200' : 
+                                type === 'linked' ? 'bg-purple-100' :
+                                type === 'buying' ? 'bg-blue-100' :
+                                type === 'selling' ? 'bg-green-100' :
+                                'bg-gray-100'
+                            }`}>
+                                {isUnknown ? (
+                                    <span className="text-gray-500 text-sm font-bold">?</span>
+                                ) : (
+                                    <span className="text-sm">🏠</span>
+                                )}
+                            </div>
+                        </div>
 
-                {/* Progress Bar */}
-                <div className="flex-shrink-0">
-                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full transition-all duration-700 ease-out rounded-full"
-                            style={{ 
-                                width: `${isUnknown ? 0 : actualMobileLinkHealth}%`,
-                                backgroundColor: houseColor
-                            }}
-                        />
+                        {/* Property Info */}
+                        <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-gray-900 truncate">{title}</h4>
+                            <p className="text-xs text-gray-600 mt-1">
+                                Health: {isUnknown ? 'Unknown' : `${actualMobileLinkHealth}%`}
+                            </p>
+                            {isUserOwned && (
+                                <button
+                                    onClick={getButtonAction}
+                                    className="mt-1 text-xs text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
+                                >
+                                    Edit Progress
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="flex-shrink-0">
+                            <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full transition-all duration-700 ease-out rounded-full"
+                                    style={{ 
+                                        width: `${isUnknown ? 0 : actualMobileLinkHealth}%`,
+                                        backgroundColor: houseColor
+                                    }}
+                                />
+                            </div>
+                            <p className="text-xs text-gray-600 mt-1 text-center">
+                                {isUnknown ? '?' : `${actualMobileLinkHealth}%`}
+                            </p>
+                        </div>
                     </div>
-                    <p className="text-xs text-gray-600 mt-1 text-center">
-                        {isUnknown ? '?' : `${actualMobileLinkHealth}%`}
-                    </p>
                 </div>
             </div>
 
@@ -811,6 +967,18 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
         selling: []
     });
     const [loadingProperties, setLoadingProperties] = useState(false);
+
+    // Handle refresh with toast notification
+    const handleRefresh = () => {
+        toast.info('🔄 Refreshing chain status...', {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+        });
+        onRefresh();
+    };
 
     useEffect(() => {
         if (chainData.buying_properties?.length > 0 || chainData.selling_properties?.length > 0) {
@@ -934,6 +1102,12 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                 </div>
             </div>
 
+            {/* Connection Request Notifications */}
+            <ConnectionRequestNotifications 
+                onRequestAccepted={onRefresh}
+                onRequestDeclined={() => {}}
+            />
+
             {/* Property Chain Visualization */}
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
@@ -943,7 +1117,7 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                             {chainData.chain_length > 3 && "← Scroll to see all properties →"}
                         </div>
                         <button
-                            onClick={onRefresh}
+                            onClick={handleRefresh}
                             className="text-xs sm:text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
                         >
                             Refresh Status
@@ -963,7 +1137,7 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                 WebkitOverflowScrolling: 'touch'
                             }}
                         >
-                            {/* Generate chain based on user role */}
+                            {/* Generate chain based on user role and connected participants */}
                         {chainData.chain_role === 'first_time_buyer' && (
                             <>
                                 {/* User's Buying Property */}
@@ -977,36 +1151,94 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     chainData={chainData}
                                 />
                                 {/* Chain Connector */}
-                                <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
-                                {/* Unknown/Seller's Property */}
-                                <PropertyHouseBlock
-                                    title="Seller's onward property"
-                                    linkHealth={0}
-                                    isUserOwned={false}
-                                    isEditable={false}
-                                    type="unknown"
-                                    isUnknown={true}
-                                    onRefresh={onRefresh}
-                                    chainData={chainData}
-                                />
+                                <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
+                                
+                                {/* Connected Participants' Properties */}
+                                {chainData.chain_participants && chainData.chain_participants.map((participant: any, index: number) => (
+                                    participant.properties && participant.properties.map((property: any, propIndex: number) => (
+                                        <React.Fragment key={`${participant.user_id}-${propIndex}`}>
+                                            <PropertyHouseBlock
+                                                title={`${participant.user_name || 'Chain Partner'}'s Property`}
+                                                linkHealth={property.progress_score || 0}
+                                                isUserOwned={false}
+                                                isEditable={false}
+                                                type="linked"
+                                                isUnknown={false}
+                                                onRefresh={onRefresh}
+                                                chainData={{
+                                                    ...participant.chain_data,
+                                                    linked_property: property,
+                                                    linked_user: participant,
+                                                    chain_status: participant.chain_status || property.chain_status || {}
+                                                }}
+                                            />
+                                            {/* Chain Connector */}
+                                            <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
+                                        </React.Fragment>
+                                    ))
+                                ))}
+                                
+                                {/* Unknown/Seller's Property (only if no connected participants) */}
+                                {(!chainData.chain_participants || chainData.chain_participants.length === 0) && (
+                                    <PropertyHouseBlock
+                                        title="Seller's onward property"
+                                        linkHealth={0}
+                                        isUserOwned={false}
+                                        isEditable={false}
+                                        type="unknown"
+                                        isUnknown={true}
+                                        onRefresh={onRefresh}
+                                        chainData={chainData}
+                                    />
+                                )}
                             </>
                         )}
 
                         {chainData.chain_role === 'seller_only' && (
                             <>
-                                {/* Unknown/Buyer's Property */}
-                                <PropertyHouseBlock
-                                    title="Buyer's onward property"
-                                    linkHealth={0}
-                                    isUserOwned={false}
-                                    isEditable={false}
-                                    type="unknown"
-                                    isUnknown={true}
-                                    onRefresh={onRefresh}
-                                    chainData={chainData}
-                                />
-                                {/* Chain Connector */}
-                                <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
+                                {/* Connected Participants' Properties (Buyers) */}
+                                {chainData.chain_participants && chainData.chain_participants.map((participant: any, index: number) => (
+                                    participant.properties && participant.properties.map((property: any, propIndex: number) => (
+                                        <React.Fragment key={`${participant.user_id}-${propIndex}`}>
+                                            <PropertyHouseBlock
+                                                title={`${participant.user_name || 'Chain Partner'}'s Property`}
+                                                linkHealth={property.progress_score || 0}
+                                                isUserOwned={false}
+                                                isEditable={false}
+                                                type="linked"
+                                                isUnknown={false}
+                                                onRefresh={onRefresh}
+                                                chainData={{
+                                                    ...participant.chain_data,
+                                                    linked_property: property,
+                                                    linked_user: participant,
+                                                    chain_status: participant.chain_status || property.chain_status || {}
+                                                }}
+                                            />
+                                            {/* Chain Connector */}
+                                            <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
+                                        </React.Fragment>
+                                    ))
+                                ))}
+                                
+                                {/* Unknown/Buyer's Property (only if no connected participants) */}
+                                {(!chainData.chain_participants || chainData.chain_participants.length === 0) && (
+                                    <>
+                                        <PropertyHouseBlock
+                                            title="Buyer's onward property"
+                                            linkHealth={0}
+                                            isUserOwned={false}
+                                            isEditable={false}
+                                            type="unknown"
+                                            isUnknown={true}
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                        {/* Chain Connector */}
+                                        <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
+                                    </>
+                                )}
+                                
                                 {/* User's Selling Property */}
                                 <PropertyHouseBlock
                                     title="The house I'm selling"
@@ -1022,19 +1254,49 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
 
                         {chainData.chain_role === 'buyer_seller' && (
                             <>
-                                {/* Unknown Down Chain */}
-                                <PropertyHouseBlock
-                                    title="Down chain property"
-                                    linkHealth={0}
-                                    isUserOwned={false}
-                                    isEditable={false}
-                                    type="unknown"
-                                    isUnknown={true}
-                                    onRefresh={onRefresh}
-                                    chainData={chainData}
-                                />
-                                {/* Chain Connector */}
-                                <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
+                                {/* Down Chain Connected Participants */}
+                                {chainData.chain_participants && chainData.chain_participants.filter((p: any) => p.role === 'down_chain').length > 0 ? (
+                                    chainData.chain_participants.filter((p: any) => p.role === 'down_chain').map((participant: any, index: number) => (
+                                        participant.properties && participant.properties.map((property: any, propIndex: number) => (
+                                            <React.Fragment key={`down-${participant.user_id}-${propIndex}`}>
+                                                <PropertyHouseBlock
+                                                    title={`${participant.user_name || 'Down Chain'}'s Property`}
+                                                    linkHealth={property.progress_score || 0}
+                                                    isUserOwned={false}
+                                                    isEditable={false}
+                                                    type="linked"
+                                                    isUnknown={false}
+                                                    onRefresh={onRefresh}
+                                                    chainData={{
+                                                        ...participant.chain_data,
+                                                        linked_property: property,
+                                                        linked_user: participant,
+                                                        chain_status: participant.chain_status || property.chain_status || {}
+                                                    }}
+                                                />
+                                                {/* Chain Connector */}
+                                                <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
+                                            </React.Fragment>
+                                        ))
+                                    ))
+                                ) : (
+                                    <>
+                                        {/* Unknown Down Chain */}
+                                        <PropertyHouseBlock
+                                            title="Down chain property"
+                                            linkHealth={0}
+                                            isUserOwned={false}
+                                            isEditable={false}
+                                            type="unknown"
+                                            isUnknown={true}
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                        {/* Chain Connector */}
+                                        <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
+                                    </>
+                                )}
+                                
                                 {/* User's Selling Property */}
                                 <PropertyHouseBlock
                                     title="The house I'm selling"
@@ -1046,7 +1308,8 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     chainData={chainData}
                                 />
                                 {/* Chain Connector */}
-                                <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
+                                <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
+                                
                                 {/* User's Buying Property */}
                                 <PropertyHouseBlock
                                     title="The house I'm buying"
@@ -1058,18 +1321,46 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     chainData={chainData}
                                 />
                                 {/* Chain Connector */}
-                                <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
-                                {/* Unknown Up Chain */}
-                                <PropertyHouseBlock
-                                    title="Up chain property"
-                                    linkHealth={0}
-                                    isUserOwned={false}
-                                    isEditable={false}
-                                    type="unknown"
-                                    isUnknown={true}
-                                    onRefresh={onRefresh}
-                                    chainData={chainData}
-                                />
+                                <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
+                                
+                                {/* Up Chain Connected Participants */}
+                                {chainData.chain_participants && chainData.chain_participants.filter((p: any) => p.role === 'up_chain').length > 0 ? (
+                                    chainData.chain_participants.filter((p: any) => p.role === 'up_chain').map((participant: any, index: number) => (
+                                        participant.properties && participant.properties.map((property: any, propIndex: number) => (
+                                            <React.Fragment key={`up-${participant.user_id}-${propIndex}`}>
+                                                <PropertyHouseBlock
+                                                    title={`${participant.user_name || 'Up Chain'}'s Property`}
+                                                    linkHealth={property.progress_score || 0}
+                                                    isUserOwned={false}
+                                                    isEditable={false}
+                                                    type="linked"
+                                                    isUnknown={false}
+                                                    onRefresh={onRefresh}
+                                                    chainData={{
+                                                        ...participant.chain_data,
+                                                        linked_property: property,
+                                                        linked_user: participant,
+                                                        chain_status: participant.chain_status || property.chain_status || {}
+                                                    }}
+                                                />
+                                            </React.Fragment>
+                                        ))
+                                    ))
+                                ) : (
+                                    <>
+                                        {/* Unknown Up Chain */}
+                                        <PropertyHouseBlock
+                                            title="Up chain property"
+                                            linkHealth={0}
+                                            isUserOwned={false}
+                                            isEditable={false}
+                                            type="unknown"
+                                            isUnknown={true}
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                    </>
+                                )}
                             </>
                         )}
                         </div>
@@ -1089,18 +1380,48 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                     chainData={chainData}
                                 />
                                 <div className="flex justify-center">
-                                    <div className="w-1 h-8 bg-gray-300 rounded"></div>
+                                    <div className="w-1 h-8 bg-green-400 rounded"></div>
                                 </div>
-                                <PropertyHouseBlockMobile
-                                    title="Seller's onward property"
-                                    linkHealth={0}
-                                    isUserOwned={false}
-                                    isEditable={false}
-                                    type="unknown"
-                                    isUnknown={true}
-                                    onRefresh={onRefresh}
-                                    chainData={chainData}
-                                />
+                                
+                                {/* Connected Participants' Properties */}
+                                {chainData.chain_participants && chainData.chain_participants.map((participant: any, index: number) => (
+                                    participant.properties && participant.properties.map((property: any, propIndex: number) => (
+                                        <React.Fragment key={`mobile-${participant.user_id}-${propIndex}`}>
+                                            <PropertyHouseBlockMobile
+                                                title={`${participant.user_name || 'Chain Partner'}'s Property`}
+                                                linkHealth={property.progress_score || 0}
+                                                isUserOwned={false}
+                                                isEditable={false}
+                                                type="linked"
+                                                isUnknown={false}
+                                                onRefresh={onRefresh}
+                                                chainData={{
+                                                    ...participant.chain_data,
+                                                    linked_property: property,
+                                                    linked_user: participant,
+                                                    chain_status: participant.chain_status || property.chain_status || {}
+                                                }}
+                                            />
+                                            <div className="flex justify-center">
+                                                <div className="w-1 h-8 bg-green-400 rounded"></div>
+                                            </div>
+                                        </React.Fragment>
+                                    ))
+                                ))}
+                                
+                                {/* Unknown/Seller's Property (only if no connected participants) */}
+                                {(!chainData.chain_participants || chainData.chain_participants.length === 0) && (
+                                    <PropertyHouseBlockMobile
+                                        title="Seller's onward property"
+                                        linkHealth={0}
+                                        isUserOwned={false}
+                                        isEditable={false}
+                                        type="unknown"
+                                        isUnknown={true}
+                                        onRefresh={onRefresh}
+                                        chainData={chainData}
+                                    />
+                                )}
                             </>
                         )}
 
@@ -1251,6 +1572,140 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                             )}
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Chain Participants Section */}
+            {chainData.chain_participants && Array.isArray(chainData.chain_participants) && chainData.chain_participants.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                        <span className="text-xl mr-2">🔗</span>
+                        Connected Chain Partners ({chainData.chain_participants.length})
+                    </h3>
+                    
+                    <div className="space-y-4">
+                        {chainData.chain_participants.map((participant: any, index: number) => (
+                            <motion.div
+                                key={participant.user_id || index}
+                                className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-start space-x-4">
+                                        {/* User Avatar */}
+                                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                                            <span className="text-white font-semibold text-lg">
+                                                {participant.user_name ? participant.user_name.charAt(0).toUpperCase() : '?'}
+                                            </span>
+                                        </div>
+                                        
+                                        {/* User Details */}
+                                        <div className="flex-1">
+                                            <h4 className="font-semibold text-gray-900">{participant.user_name || 'Unknown User'}</h4>
+                                            <p className="text-sm text-gray-600">{participant.user_email || 'No email provided'}</p>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Connected on {participant.linked_at ? new Date(participant.linked_at).toLocaleDateString() : 'Unknown date'}
+                                            </p>
+                                            
+                                            {/* Shared Properties */}
+                                            {participant.properties && participant.properties.length > 0 && (
+                                                <div className="mt-3">
+                                                    <h5 className="text-sm font-medium text-gray-700 mb-2">Shared Properties:</h5>
+                                                    <div className="space-y-2">
+                                                        {participant.properties.map((property: any, propIndex: number) => (
+                                                            <div key={propIndex} className="bg-white bg-opacity-60 rounded-lg p-3 border border-blue-100">
+                                                                <div className="flex items-center justify-between">
+                                                                    <div>
+                                                                        <p className="font-medium text-gray-900 text-sm">
+                                                                            {property.property_title || 'Unknown Property'}
+                                                                        </p>
+                                                                        <p className="text-xs text-gray-600">
+                                                                            Linked on {property.linked_at ? new Date(property.linked_at).toLocaleDateString() : 'Unknown date'}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                                                                            🏠 Linked
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Chain Status */}
+                                    <div className="text-right">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                            <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                                            Active Chain
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                {/* Action Buttons */}
+                                <div className="mt-4 flex items-center space-x-3">
+                                    <button
+                                        onClick={() => {
+                                            if (participant.user_id) {
+                                                window.location.href = `/messages?user=${participant.user_id}`;
+                                            } else {
+                                                toast.error('User information not available');
+                                            }
+                                        }}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                                    >
+                                        💬 Message
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            // Share progress or updates
+                                            toast.info('Progress sharing feature coming soon!');
+                                        }}
+                                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                                    >
+                                        📊 Share Progress
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (participant.user_id) {
+                                                window.location.href = `/housemover/connections?user=${participant.user_id}`;
+                                            } else {
+                                                toast.error('User information not available');
+                                            }
+                                        }}
+                                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                                    >
+                                        👤 View Profile
+                                    </button>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                    
+                    {/* Chain Summary */}
+                    <div className="mt-6 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="font-semibold text-gray-900">Chain Status</h4>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    You are connected with {chainData.chain_participants.length} chain partner{chainData.chain_participants.length !== 1 ? 's' : ''}.
+                                    This creates a collaborative moving network that can help streamline your transactions.
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+                                    Chain Active
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 

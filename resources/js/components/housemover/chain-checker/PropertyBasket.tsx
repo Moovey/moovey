@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
+import ChainLinkNotifications from './ChainLinkNotifications';
+import ConnectionRequestNotifications from './ConnectionRequestNotifications';
 
 interface Property {
     id: number;
@@ -38,6 +40,17 @@ interface BasketProperty {
     created_at: string;
     basket_id: number;
     claimed_by_user_id?: number;
+    multiple_claims?: {
+        buyers: Array<{user_id: number; user_name: string; claimed_at: string}>;
+        sellers: Array<{user_id: number; user_name: string; claimed_at: string}>;
+    };
+    potential_links?: Array<{
+        user_id: number;
+        user_name: string;
+        user_role: string;
+        link_type: string;
+        confidence_score: number;
+    }>;
 }
 
 const PropertyBasket: React.FC = () => {
@@ -64,10 +77,14 @@ const PropertyBasket: React.FC = () => {
         property_address: '',
         notes: ''
     });
+    const [propertyClaimInfo, setPropertyClaimInfo] = useState<Record<number, any>>({});
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const [existingConnections, setExistingConnections] = useState<number[]>([]);
 
     useEffect(() => {
         loadBasketProperties();
         loadUserChainRole();
+        loadUserInfo();
     }, []);
 
     // Cleanup preview URLs when component unmounts
@@ -109,6 +126,113 @@ const PropertyBasket: React.FC = () => {
         }
     };
 
+    const loadUserInfo = async () => {
+        try {
+            const response = await fetch('/api/chain-checker', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.data) {
+                    // Set current user ID
+                    if (data.data.user) {
+                        setCurrentUserId(data.data.user.id);
+                    }
+                    
+                    // Extract existing connections from chain participants
+                    if (data.data.chain_checker?.chain_participants) {
+                        const connectedUserIds = data.data.chain_checker.chain_participants.map((participant: any) => participant.user_id);
+                        setExistingConnections(connectedUserIds);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load user info:', error);
+        }
+    };
+
+    const loadPropertyClaimInfo = async (propertyId: number) => {
+        try {
+            const response = await fetch(`/api/chain-links/property/${propertyId}/claims`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    setPropertyClaimInfo(prev => ({
+                        ...prev,
+                        [propertyId]: data.data
+                    }));
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load property claim info:', error);
+        }
+    };
+
+    const canContactUser = (targetUserId: number): { canContact: boolean; reason?: string } => {
+        // Check if user is trying to contact themselves
+        if (currentUserId && targetUserId === currentUserId) {
+            return { canContact: false, reason: "You cannot connect to yourself" };
+        }
+        
+        // Check if user is already connected
+        if (existingConnections.includes(targetUserId)) {
+            return { canContact: false, reason: "You are already connected to this user" };
+        }
+        
+        return { canContact: true };
+    };
+
+    const initiateContact = async (propertyId: number, targetUserId: number, message: string) => {
+        // Check if contact is allowed
+        const contactCheck = canContactUser(targetUserId);
+        if (!contactCheck.canContact) {
+            toast.warning(contactCheck.reason || 'Cannot contact this user');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/chain-links/initiate-contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    property_id: propertyId,
+                    target_user_id: targetUserId,
+                    message: message
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                toast.success('Contact request sent successfully!');
+                // Refresh user info and basket properties to update connections
+                loadUserInfo();
+                loadBasketProperties();
+            } else {
+                toast.error(data.message || 'Failed to send contact request');
+            }
+        } catch (error) {
+            console.error('Failed to initiate contact:', error);
+            toast.error('Failed to send contact request');
+        }
+    };
+
     const loadBasketProperties = async () => {
         try {
             const response = await fetch('/api/properties/basket', {
@@ -126,6 +250,12 @@ const PropertyBasket: React.FC = () => {
                     // Ensure data.data is always an array
                     const properties = Array.isArray(data.data) ? data.data : [];
                     setBasketProperties(properties);
+                    
+                    // Load claim information for claimed properties
+                    const claimedProperties = properties.filter((p: BasketProperty) => p.is_claimed);
+                    claimedProperties.forEach((property: BasketProperty) => {
+                        loadPropertyClaimInfo(property.id);
+                    });
                 } else {
                     console.error('API returned error:', data.message);
                     setBasketProperties([]);
@@ -689,6 +819,18 @@ const PropertyBasket: React.FC = () => {
                 </AnimatePresence>
             </div>
 
+            {/* Chain Link Notifications */}
+            <ChainLinkNotifications 
+                onOpportunityAccepted={loadBasketProperties}
+                onOpportunityDeclined={loadBasketProperties}
+            />
+
+            {/* Connection Request Notifications */}
+            <ConnectionRequestNotifications 
+                onRequestAccepted={loadBasketProperties}
+                onRequestDeclined={loadBasketProperties}
+            />
+
             {/* Search Existing Properties */}
             <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <h4 className="font-semibold text-gray-900 mb-4">Search Existing Properties</h4>
@@ -877,17 +1019,110 @@ const PropertyBasket: React.FC = () => {
                                                             </div>
                                                         )}
                                                         
-                                                        {/* Interest Stats */}
-                                                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                                                            <span>👥 {item.basket_count} interested</span>
-                                                            {item.is_claimed && (
-                                                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
-                                                                    You claimed as {item.claim_type}
-                                                                </span>
-                                                            )}
-                                                        </div>
+                                        {/* Interest Stats */}
+                                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                                            <span>👥 {item.basket_count} interested</span>
+                                            {item.is_claimed && (
+                                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
+                                                    You claimed as {item.claim_type}
+                                                </span>
+                                            )}
+                                        </div>
 
-                                                        {/* Notes */}
+                                        {/* Chain Link Information */}
+                                        {item.is_claimed && propertyClaimInfo[item.id] && (
+                                            <div className="mt-3 space-y-2">
+                                                {/* Multiple Claims Alert */}
+                                                {propertyClaimInfo[item.id].total_claims > 1 && (
+                                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                                        <div className="flex items-start space-x-2">
+                                                            <span className="text-yellow-600 text-sm">⚠️</span>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-medium text-yellow-800">
+                                                                    Multiple Claims Detected
+                                                                </p>
+                                                                <p className="text-xs text-yellow-700 mt-1">
+                                                                    {propertyClaimInfo[item.id].total_claims} users have claimed this property
+                                                                </p>
+                                                                
+                                                                {/* Show claim breakdown */}
+                                                                <div className="mt-2 space-y-1">
+                                                                    {Object.entries(propertyClaimInfo[item.id].claims_by_type).map(([claimType, claims]: [string, any]) => (
+                                                                        claims.length > 0 && (
+                                                                            <div key={claimType} className="text-xs">
+                                                                                <span className="font-medium capitalize">{claimType}s:</span> {claims.map((claim: any) => claim.user_name).join(', ')}
+                                                                            </div>
+                                                                        )
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Potential Chain Links */}
+                                                {propertyClaimInfo[item.id].potential_links?.length > 0 && (
+                                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                                        <div className="flex items-start space-x-2">
+                                                            <span className="text-blue-600 text-sm">🔗</span>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-medium text-blue-800">
+                                                                    Chain Link Opportunities
+                                                                </p>
+                                                                <p className="text-xs text-blue-700 mt-1">
+                                                                    {propertyClaimInfo[item.id].potential_links.length} potential chain connection{propertyClaimInfo[item.id].potential_links.length !== 1 ? 's' : ''}
+                                                                </p>
+                                                                
+                                                                <div className="mt-2 space-y-2">
+                                                                    {propertyClaimInfo[item.id].potential_links.slice(0, 2).map((link: any) => {
+                                                                        const contactCheck = canContactUser(link.user_id);
+                                                                        return (
+                                                                            <div key={link.user_id} className="flex items-center justify-between bg-white bg-opacity-60 rounded p-2">
+                                                                                <div>
+                                                                                    <p className="text-xs font-medium text-blue-900">{link.user_name}</p>
+                                                                                    <p className="text-xs text-blue-700 capitalize">{link.user_role.replace('_', ' ')}</p>
+                                                                                </div>
+                                                                                <div className="flex items-center space-x-2">
+                                                                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                                                        {link.confidence_score}% match
+                                                                                    </span>
+                                                                                    {contactCheck.canContact ? (
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                const message = `Hi! I noticed we both have interest in ${item.property_title}. Would you like to explore forming a chain link?`;
+                                                                                                initiateContact(item.id, link.user_id, message);
+                                                                                            }}
+                                                                                            className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition-colors"
+                                                                                        >
+                                                                                            Connect
+                                                                                        </button>
+                                                                                    ) : (
+                                                                                        <div className="flex items-center space-x-1">
+                                                                                            <span 
+                                                                                                className="text-xs bg-gray-300 text-gray-600 px-2 py-1 rounded cursor-not-allowed"
+                                                                                                title={contactCheck.reason}
+                                                                                            >
+                                                                                                {currentUserId === link.user_id ? 'You' : 'Connected'}
+                                                                                            </span>
+                                                                                            {currentUserId === link.user_id && (
+                                                                                                <span className="text-xs text-gray-500" title="This is your own account">👤</span>
+                                                                                            )}
+                                                                                            {existingConnections.includes(link.user_id) && currentUserId !== link.user_id && (
+                                                                                                <span className="text-xs text-green-600" title="Already connected">✓</span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}                                                        {/* Notes */}
                                                         {item.notes && (
                                                             <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-gray-700">
                                                                 <span className="font-medium">Notes:</span> {item.notes}

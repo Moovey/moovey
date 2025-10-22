@@ -168,6 +168,19 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/chain-checker', [\App\Http\Controllers\ChainCheckerController::class, 'store'])->name('api.chain-checker.create');
     Route::patch('/api/chain-checker/{chainChecker}', [\App\Http\Controllers\ChainCheckerController::class, 'update'])->name('api.chain-checker.update');
     Route::patch('/api/chain-checker/{chainChecker}/status', [\App\Http\Controllers\ChainCheckerController::class, 'updateStatus'])->name('api.chain-checker.status');
+
+    // Chain Linking API Routes
+    Route::get('/api/chain-links/opportunities', [\App\Http\Controllers\Api\ChainLinkController::class, 'getChainOpportunities'])->name('api.chain-links.opportunities');
+    Route::post('/api/chain-links/accept', [\App\Http\Controllers\Api\ChainLinkController::class, 'acceptChainLink'])->name('api.chain-links.accept');
+    Route::post('/api/chain-links/decline', [\App\Http\Controllers\Api\ChainLinkController::class, 'declineChainLink'])->name('api.chain-links.decline');
+    Route::get('/api/chain-links/property/{property}/claims', [\App\Http\Controllers\Api\ChainLinkController::class, 'getPropertyClaimInfo'])->name('api.chain-links.property.claims');
+    Route::post('/api/chain-links/initiate-contact', [\App\Http\Controllers\Api\ChainLinkController::class, 'initiateContact'])->name('api.chain-links.initiate-contact');
+    Route::get('/api/chain-links/stats', [\App\Http\Controllers\Api\ChainLinkController::class, 'getChainStats'])->name('api.chain-links.stats');
+
+    // Connection Request API Routes
+    Route::get('/api/connections/requests', [\App\Http\Controllers\Api\ChainLinkController::class, 'getConnectionRequests'])->name('api.connections.requests');
+    Route::post('/api/connections/accept', [\App\Http\Controllers\Api\ChainLinkController::class, 'acceptConnectionRequest'])->name('api.connections.accept');
+    Route::post('/api/connections/decline', [\App\Http\Controllers\Api\ChainLinkController::class, 'declineConnectionRequest'])->name('api.connections.decline');
     Route::post('/api/chain-checker/{chainChecker}/request-update', [\App\Http\Controllers\ChainCheckerController::class, 'requestAgentUpdate'])->name('api.chain-checker.request-update');
     Route::patch('/api/chain-checker/{chainChecker}/complete', [\App\Http\Controllers\ChainCheckerController::class, 'complete'])->name('api.chain-checker.complete');
     Route::get('/api/chain-checker/{chainChecker}/updates', [\App\Http\Controllers\ChainCheckerController::class, 'getUpdates'])->name('api.chain-checker.updates');
@@ -176,6 +189,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/chain/build-link', [\App\Http\Controllers\ChainCheckerController::class, 'buildLink'])->name('api.chain.build-link');
     Route::post('/api/chain/update-progress', [\App\Http\Controllers\ChainCheckerController::class, 'updateProgress'])->name('api.chain.update-progress');
     Route::post('/api/chain/send-message', [\App\Http\Controllers\ChainCheckerController::class, 'sendMessage'])->name('api.chain.send-message');
+    Route::post('/api/chain/refresh', [\App\Http\Controllers\ChainCheckerController::class, 'refreshChainData'])->name('api.chain.refresh');
     
     // Property Basket API Routes
     Route::get('/api/properties/basket', [\App\Http\Controllers\PropertyController::class, 'getBasket'])->name('api.properties.basket');

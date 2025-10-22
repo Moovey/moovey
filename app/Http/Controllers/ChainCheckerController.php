@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\AgentChainNotification;
 use App\Models\ChainChecker;
 use App\Models\ChainUpdate;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,18 +25,35 @@ class ChainCheckerController extends Controller
         $chainChecker = $user->chainChecker;
         
         if ($chainChecker) {
+            // Ensure the chain checker is active before refreshing
+            if ($chainChecker->is_active) {
+                // Refresh chain participants progress before loading
+                app(\App\Services\ChainLinkingService::class)->refreshChainParticipantsProgress($chainChecker);
+            }
+            
             $chainChecker->load(['updates' => function($query) {
                 $query->orderBy('created_at', 'desc')->limit(10);
             }]);
         }
 
         if (!$chainChecker) {
+            Log::info('Chain checker not found for user: ' . $user->id);
             return response()->json([
                 'success' => true,
                 'data' => null,
                 'message' => 'No chain checker found'
             ]);
         }
+        
+        // Log chain checker status for debugging
+        Log::info('Chain checker loaded for user: ' . $user->id, [
+            'is_active' => $chainChecker->is_active,
+            'has_participants' => count($chainChecker->chain_participants ?? []) > 0,
+            'chain_role' => $chainChecker->chain_role
+        ]);
+        
+        // If chain checker exists but is inactive, don't return null - return the data
+        // This allows the frontend to show the chain even if it's temporarily inactive
 
         return response()->json([
             'success' => true,
@@ -617,6 +635,12 @@ class ChainCheckerController extends Controller
             'last_activity_at' => now(),
         ]);
 
+        // Refresh all connected chain participants with the updated progress
+        app(\App\Services\ChainLinkingService::class)->refreshChainParticipantsProgress($chainChecker);
+        
+        // Also update this user's data in other chain participants' chains
+        $this->syncProgressToConnectedChains($user, $chainChecker);
+
         // Create update log
         ChainUpdate::createUpdate(
             $chainChecker->id,
@@ -694,5 +718,94 @@ class ChainCheckerController extends Controller
             ],
             'message' => 'Message sent successfully'
         ]);
+    }
+
+    /**
+     * Sync this user's progress to all connected chain participants
+     */
+    private function syncProgressToConnectedChains(User $user, ChainChecker $updatedChainChecker): void
+    {
+        try {
+            // Find all other chain checkers that have this user as a participant
+            $connectedChainCheckers = ChainChecker::where('is_active', true)
+                ->where('id', '!=', $updatedChainChecker->id)
+                ->whereJsonContains('chain_participants', [['user_id' => $user->id]])
+                ->get();
+
+            foreach ($connectedChainCheckers as $chainChecker) {
+                $participants = $chainChecker->chain_participants ?? [];
+                $updated = false;
+
+                foreach ($participants as &$participant) {
+                    if ($participant['user_id'] === $user->id) {
+                        // Update this participant's chain data with fresh progress
+                        $participant['chain_data'] = [
+                            'progress_score' => $updatedChainChecker->progress_score ?? 0,
+                            'chain_length' => $updatedChainChecker->chain_length ?? 1,
+                            'move_type' => $updatedChainChecker->move_type ?? 'unknown',
+                            'chain_role' => $updatedChainChecker->chain_role ?? 'unknown'
+                        ];
+                        $participant['chain_status'] = $updatedChainChecker->chain_status ?? [];
+                        $participant['chain_role'] = $updatedChainChecker->chain_role ?? 'unknown';
+                        
+                        // Update progress for each property
+                        if (isset($participant['properties']) && is_array($participant['properties'])) {
+                            foreach ($participant['properties'] as &$property) {
+                                $property['progress_score'] = $updatedChainChecker->progress_score ?? 0;
+                            }
+                        }
+
+                        $updated = true;
+                        break;
+                    }
+                }
+
+                if ($updated) {
+                    $chainChecker->chain_participants = $participants;
+                    $chainChecker->save();
+
+                    Log::info('Synced progress to connected chain', [
+                        'updated_user_id' => $user->id,
+                        'connected_chain_id' => $chainChecker->id,
+                        'connected_user_id' => $chainChecker->user_id,
+                        'new_progress_score' => $updatedChainChecker->progress_score
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to sync progress to connected chains', [
+                'user_id' => $user->id,
+                'chain_checker_id' => $updatedChainChecker->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Refresh chain data to ensure all participants have chain_role
+     */
+    public function refreshChainData()
+    {
+        try {
+            $user = Auth::user();
+            $chainChecker = $user->chainChecker;
+            
+            if (!$chainChecker) {
+                return response()->json(['error' => 'No chain data found'], 404);
+            }
+            
+            // Refresh the chain participants data to include chain_role
+            app(\App\Services\ChainLinkingService::class)->refreshChainParticipantsProgress($chainChecker);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Chain data refreshed successfully',
+                'chain_data' => $chainChecker->fresh()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error refreshing chain data: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to refresh chain data'], 500);
+        }
     }
 }

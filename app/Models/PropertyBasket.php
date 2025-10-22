@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
 
 class PropertyBasket extends Model
 {
@@ -67,7 +68,34 @@ class PropertyBasket extends Model
             'claimed_at' => now(),
         ]);
 
+        // Trigger chain link detection
+        $this->detectChainLinkOpportunities($claimType);
+
         return true;
+    }
+
+    /**
+     * Detect potential chain link opportunities when property is claimed
+     */
+    private function detectChainLinkOpportunities(string $claimType): void
+    {
+        try {
+            $chainLinkingService = app(\App\Services\ChainLinkingService::class);
+            $potentialLinks = $chainLinkingService->detectPotentialChainLinks(
+                $this->property,
+                $this->user,
+                $claimType
+            );
+
+            if ($potentialLinks->isNotEmpty()) {
+                $chainLinkingService->sendChainLinkNotifications($potentialLinks);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to detect chain link opportunities', [
+                'property_basket_id' => $this->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     /**

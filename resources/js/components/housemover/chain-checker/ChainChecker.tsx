@@ -91,12 +91,27 @@ interface ChainCheckerProps {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    setChainData(data.data?.chain_checker || null);
-                    // Don't auto-show setup wizard - let user click activate button
+                    const chainChecker = data.data?.chain_checker;
+                    console.log('Chain data loaded:', { 
+                        hasChainChecker: !!chainChecker, 
+                        isActive: chainChecker?.is_active,
+                        hasParticipants: chainChecker?.chain_participants?.length > 0,
+                        chainChecker 
+                    });
+                    
+                    // If we have a chain checker (even if inactive), show it
+                    // Don't send users back to setup if they already have a chain configured
+                    if (chainChecker) {
+                        setChainData(chainChecker);
+                    } else {
+                        setChainData(null);
+                    }
+                } else {
+                    console.log('Chain data request failed:', data.message);
                 }
             }
         } catch (error) {
-            // Error loading chain data
+            console.error('Error loading chain data:', error);
         } finally {
             setLoading(false);
         }

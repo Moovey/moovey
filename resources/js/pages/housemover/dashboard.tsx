@@ -1037,7 +1037,7 @@ export default function Dashboard({
                         </div>
                         
                         <p className="text-gray-600 mb-4">
-                            Add properties from Rightmove to track interest and claim your listings.
+                            Add properties from Rightmove to track interest and claim your listings. When others claim the same properties, you'll be notified of potential chain connections.
                         </p>
                         
                         {showPropertyBasket && (
