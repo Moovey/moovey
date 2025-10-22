@@ -123,7 +123,7 @@ const PropertyBasket: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error('Failed to load user chain role:', error);
+            // Handle error silently
         }
     };
 
@@ -153,7 +153,7 @@ const PropertyBasket: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error('Failed to load user info:', error);
+            // Handle error silently
         }
     };
 
@@ -177,7 +177,7 @@ const PropertyBasket: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error('Failed to load property claim info:', error);
+            // Handle error silently
         }
     };
 
@@ -229,7 +229,7 @@ const PropertyBasket: React.FC = () => {
                 toast.error(data.message || 'Failed to send contact request');
             }
         } catch (error) {
-            console.error('Failed to initiate contact:', error);
+            // Handle error silently
             toast.error('Failed to send contact request');
         }
     };
@@ -258,21 +258,21 @@ const PropertyBasket: React.FC = () => {
                         loadPropertyClaimInfo(property.id);
                     });
                 } else {
-                    console.error('API returned error:', data.message);
+                    // Handle API error silently
                     setBasketProperties([]);
                 }
             } else {
                 // Check if response is HTML (redirect to login)
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('text/html')) {
-                    console.error('Received HTML response - likely redirected to login');
+                    // Handle HTML response (likely redirect) silently
                 } else {
-                    console.error('HTTP error:', response.status, response.statusText);
+                    // Handle HTTP error silently
                 }
                 setBasketProperties([]);
             }
         } catch (error) {
-            console.error('Failed to load basket properties:', error);
+            // Handle error silently
             setBasketProperties([]);
         } finally {
             setLoading(false);
@@ -379,7 +379,7 @@ const PropertyBasket: React.FC = () => {
                         try {
                             claimSuccessful = await claimProperty(propertyId, autoClaimType, true);
                         } catch (error) {
-                            console.warn('Auto-claim failed:', error);
+                            // Handle auto-claim error silently
                             // The error details are already handled in claimProperty function
                         }
                     }
@@ -416,7 +416,7 @@ const PropertyBasket: React.FC = () => {
                 toast.error(errorData.message || 'Failed to add property');
             }
         } catch (error) {
-            console.error('Failed to add property:', error);
+            // Handle error silently
             toast.error('Network error occurred');
         } finally {
             setAddingProperty(false);
@@ -449,7 +449,7 @@ const PropertyBasket: React.FC = () => {
                 toast.error('Failed to remove property');
             }
         } catch (error) {
-            console.error('Failed to remove property:', error);
+            // Handle error silently
             toast.error('Network error occurred');
         }
     };
@@ -497,7 +497,7 @@ const PropertyBasket: React.FC = () => {
                 toast.error('Failed to update property');
             }
         } catch (error) {
-            console.error('Failed to update property:', error);
+            // Handle error silently
             toast.error('Network error occurred');
         }
     };
@@ -528,7 +528,7 @@ const PropertyBasket: React.FC = () => {
                 toast.error('Failed to delete property');
             }
         } catch (error) {
-            console.error('Failed to delete property:', error);
+            // Handle error silently
             toast.error('Network error occurred');
         }
     };
@@ -566,7 +566,7 @@ const PropertyBasket: React.FC = () => {
             }
             return false;
         } catch (error) {
-            console.error('Failed to claim property:', error);
+            // Handle error silently
             if (!skipConfirmation) {
                 toast.error('Failed to claim property');
             }
@@ -604,7 +604,7 @@ const PropertyBasket: React.FC = () => {
                 toast.error('Failed to update favorite status');
             }
         } catch (error) {
-            console.error('Failed to toggle favorite:', error);
+            // Handle error silently
             toast.error('Network error occurred');
         }
     };
@@ -627,7 +627,7 @@ const PropertyBasket: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error('Failed to search properties:', error);
+            // Handle error silently
         } finally {
             setSearchingProperties(false);
         }
@@ -659,7 +659,7 @@ const PropertyBasket: React.FC = () => {
                         try {
                             claimSuccessful = await claimProperty(property.id, autoClaimType, true);
                         } catch (error) {
-                            console.warn('Auto-claim failed:', error);
+                            // Handle auto-claim error silently
                         }
                     }
                     
@@ -678,7 +678,7 @@ const PropertyBasket: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error('Failed to add property:', error);
+            // Handle error silently
         }
     };
 

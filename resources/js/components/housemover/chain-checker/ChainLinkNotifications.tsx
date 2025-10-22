@@ -68,7 +68,7 @@ const ChainLinkNotifications: React.FC<ChainLinkNotificationsProps> = ({
                 }
             }
         } catch (error) {
-            console.error('Failed to load chain opportunities:', error);
+            // Handle error silently
         } finally {
             setLoading(false);
         }
@@ -103,7 +103,7 @@ const ChainLinkNotifications: React.FC<ChainLinkNotificationsProps> = ({
                 toast.error(data.message || 'Failed to accept chain link');
             }
         } catch (error) {
-            console.error('Failed to accept opportunity:', error);
+            // Handle error silently
             toast.error('Failed to accept chain link. Please try again.');
         } finally {
             setProcessingId(null);
@@ -137,7 +137,7 @@ const ChainLinkNotifications: React.FC<ChainLinkNotificationsProps> = ({
                 toast.error(data.message || 'Failed to decline chain link');
             }
         } catch (error) {
-            console.error('Failed to decline opportunity:', error);
+            // Handle error silently
             toast.error('Failed to decline chain link. Please try again.');
         } finally {
             setProcessingId(null);

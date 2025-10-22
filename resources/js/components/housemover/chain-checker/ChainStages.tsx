@@ -105,7 +105,7 @@ const ChainStages: React.FC<ChainStagesProps> = ({ chainData, onUpdate }) => {
                 }
             }
         } catch (error) {
-            console.error('Failed to update stage:', error);
+            // Silent error handling - stage update failed
         } finally {
             setUpdatingStage(null);
         }

@@ -101,7 +101,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                 }
             }
         } catch (error) {
-            console.error('Failed to load properties:', error);
+            // Silent error handling - failed to load properties
         } finally {
             setLoadingProperties(false);
         }
@@ -315,7 +315,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                 }
             };
 
-            console.log('Submitting data:', transformedData); // Debug log
+            // Submitting data to API
 
             const response = await fetch('/api/chain-checker', {
                 method: 'POST',
@@ -336,7 +336,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                 }
             } else {
                 const errorData = await response.json();
-                console.error('API Error:', errorData);
+                // Silent error handling - API error occurred
                 if (errorData.errors) {
                     setErrors(errorData.errors);
                 } else {
@@ -344,7 +344,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                 }
             }
         } catch (error) {
-            console.error('Network error:', error);
+            // Silent error handling - network error occurred
             setErrors({ submit: 'Network error occurred' });
         } finally {
             setLoading(false);

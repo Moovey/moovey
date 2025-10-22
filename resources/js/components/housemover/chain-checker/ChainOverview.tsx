@@ -43,8 +43,6 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
                                           linkedUser.chain_data?.chain_role || 
                                           chainData?.chain_data?.chain_role;
                 
-                console.log('Linked user chain role:', linkedUserChainRole, 'for user:', linkedUser.user_name);
-                
                 // Determine property type based on chain role
                 if (linkedUserChainRole === 'seller_only') {
                     propertyType = 'selling';
@@ -64,15 +62,12 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
                     }
                 }
                 
-                console.log('Determined property type:', propertyType, 'for stage:', stage);
             }
         }
         
         // Look for progress data in the type-specific section (buying/selling)
         const typeSpecificStatus = chainStatus[propertyType] || {};
         const stageData = typeSpecificStatus[stage];
-        
-        console.log('Stage data for', stage, 'in', propertyType, ':', stageData);
         
         if (stageData) {
             // If we have a progress value, use it; otherwise use completed status
@@ -330,7 +325,6 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
                     chainData={chainData}
                     onUpdate={(data) => {
                         // Handle update callback - refresh parent component
-                        console.log('Property updated:', data);
                         if (onRefresh) {
                             onRefresh();
                         }
@@ -526,7 +520,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                 }
             }
         } catch (error) {
-            console.error('Error:', error);
+            // Handle error silently
             toast.error('❌ An error occurred. Please try again.');
         } finally {
             setIsLoading(false);
@@ -944,7 +938,6 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
                     chainData={chainData}
                     onUpdate={(data) => {
                         // Handle update callback - refresh parent component  
-                        console.log('Property updated:', data);
                         if (onRefresh) {
                             onRefresh();
                         }
@@ -1170,7 +1163,7 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                 }
             }
         } catch (error) {
-            console.error('Failed to load linked properties:', error);
+            // Handle error silently
         } finally {
             setLoadingProperties(false);
         }

@@ -43,7 +43,7 @@ const ChainUpdates: React.FC<ChainUpdatesProps> = ({ chainData, onRefresh }) => 
                 }
             }
         } catch (error) {
-            console.error('Failed to load updates:', error);
+            // Handle error silently
         } finally {
             setLoading(false);
         }
@@ -74,7 +74,7 @@ const ChainUpdates: React.FC<ChainUpdatesProps> = ({ chainData, onRefresh }) => 
                 }
             }
         } catch (error) {
-            console.error('Failed to request update:', error);
+            // Handle error silently
             alert('Failed to send update request');
         } finally {
             setRequestingUpdate(false);

@@ -65,7 +65,7 @@ const ConnectionRequestNotifications: React.FC<ConnectionRequestNotificationsPro
                 }
             }
         } catch (error) {
-            console.error('Failed to load connection requests:', error);
+            // Handle error silently
         } finally {
             setLoading(false);
         }
@@ -100,7 +100,7 @@ const ConnectionRequestNotifications: React.FC<ConnectionRequestNotificationsPro
                 toast.error(data.message || 'Failed to accept connection request');
             }
         } catch (error) {
-            console.error('Failed to accept connection request:', error);
+            // Handle error silently
             toast.error('Failed to accept connection request. Please try again.');
         } finally {
             setProcessingId(null);
@@ -134,7 +134,7 @@ const ConnectionRequestNotifications: React.FC<ConnectionRequestNotificationsPro
                 toast.error(data.message || 'Failed to decline connection request');
             }
         } catch (error) {
-            console.error('Failed to decline connection request:', error);
+            // Handle error silently
             toast.error('Failed to decline connection request. Please try again.');
         } finally {
             setProcessingId(null);
