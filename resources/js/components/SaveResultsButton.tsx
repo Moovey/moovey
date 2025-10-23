@@ -37,6 +37,15 @@ export default function SaveResultsButton({
                 calculated_at: new Date().toISOString()
             };
 
+            // Debug logging for school-catchment saves
+            if (toolType === 'school-catchment') {
+                console.log('=== SAVING SCHOOL CATCHMENT DATA ===');
+                console.log('Save Data:', saveData);
+                console.log('Favorite Schools:', results?.favoriteSchools || []);
+                console.log('Total Schools:', results?.favoriteSchools?.length || 0);
+                console.log('===================================');
+            }
+
             router.post('/saved-results', saveData, {
                 preserveScroll: true,
                 onSuccess: () => {
