@@ -126,9 +126,8 @@ export default function SchoolCatchmentMap({
     const mapRef = useRef<L.Map | null>(null);
     const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
     
-    // localStorage keys for persistence (favorite schools now use database)
+    // localStorage keys for persistence (catchment zones now saved to database with favorite schools)
     const STORAGE_KEYS = {
-        circles: 'schoolCatchment_circles',
         placedPins: 'schoolCatchment_placedPins',
         formData: 'schoolCatchment_formData'
     };
@@ -141,24 +140,51 @@ export default function SchoolCatchmentMap({
                 setIsLoadingFavorites(true);
                 const favoriteSchoolsFromDB = await favoriteSchoolsService.getFavoriteSchools();
                 
-                // Load other data from localStorage
-                const savedCircles = localStorage.getItem(STORAGE_KEYS.circles);
+                // Load other data from localStorage (but not circles - they come from database)
                 const savedPlacedPins = localStorage.getItem(STORAGE_KEYS.placedPins);
                 const savedFormData = localStorage.getItem(STORAGE_KEYS.formData);
                 
                 let restoredItems = [];
                 
-                // Restore favorite schools from database
+                // Restore favorite schools from database and create circles from their catchment zones
                 if (favoriteSchoolsFromDB.length > 0) {
                     setFavoriteSchools(favoriteSchoolsFromDB);
                     restoredItems.push(`${favoriteSchoolsFromDB.length} favorite school${favoriteSchoolsFromDB.length > 1 ? 's' : ''}`);
-                }
-                
-                if (savedCircles) {
-                    const savedCirclesData = JSON.parse(savedCircles);
-                    if (Array.isArray(savedCirclesData) && savedCirclesData.length > 0) {
-                        setCircles(savedCirclesData);
-                        restoredItems.push(`${savedCirclesData.length} catchment zone${savedCirclesData.length > 1 ? 's' : ''}`);
+                    
+                    // Create circles from catchment zones stored in database
+                    const catchmentCircles: any[] = [];
+                    favoriteSchoolsFromDB.forEach(school => {
+                        if (school.catchmentZones && Array.isArray(school.catchmentZones)) {
+                            school.catchmentZones.forEach(zone => {
+                                // Debug: Check what data we're getting from the database
+                                console.log('Zone from DB:', zone);
+                                
+                                // Validate that all required properties exist
+                                if (zone.id && zone.radius && zone.unit && zone.year && zone.color) {
+                                    const circle = {
+                                        id: zone.id,
+                                        center: school.coordinates,
+                                        radius: typeof zone.radius === 'string' ? parseFloat(zone.radius) : zone.radius,
+                                        unit: zone.unit,
+                                        schoolName: school.name,
+                                        year: zone.year,
+                                        color: zone.color,
+                                        isVisible: zone.isVisible !== false, // Default to true if not specified
+                                        schoolId: school.id
+                                        // leafletCircle will be created later when map is initialized
+                                    };
+                                    console.log('Circle created:', circle);
+                                    catchmentCircles.push(circle);
+                                } else {
+                                    console.log('Zone missing required properties:', zone);
+                                }
+                            });
+                        }
+                    });
+                    
+                    if (catchmentCircles.length > 0) {
+                        setCircles(catchmentCircles);
+                        restoredItems.push(`${catchmentCircles.length} catchment zone${catchmentCircles.length > 1 ? 's' : ''}`);
                     }
                 }
                 
@@ -187,10 +213,15 @@ export default function SchoolCatchmentMap({
                     // Auto-clear message after 5 seconds
                     setTimeout(() => setSaveMessage(null), 5000);
                 }
+                
+                // Clean up old localStorage key for circles (now saved to database)
+                localStorage.removeItem('schoolCatchment_circles');
             } catch (error) {
                 console.warn('Error loading data:', error);
                 // Clear corrupted localStorage data
                 Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+                // Also clear old circles key
+                localStorage.removeItem('schoolCatchment_circles');
                 
                 setSaveMessage({
                     type: 'error',
@@ -208,27 +239,8 @@ export default function SchoolCatchmentMap({
     // Note: Favorite schools are now saved to database automatically when added/removed
     // No need for a separate useEffect to save them to localStorage
 
-    // Save circles to localStorage whenever they change
-    useEffect(() => {
-        if (circles.length > 0) {
-            // Filter out Leaflet objects before saving to prevent circular reference errors
-            const circlesToSave = circles.map(circle => ({
-                id: circle.id,
-                center: circle.center,
-                radius: circle.radius,
-                unit: circle.unit,
-                schoolName: circle.schoolName,
-                year: circle.year,
-                color: circle.color,
-                isVisible: circle.isVisible,
-                schoolId: circle.schoolId || null
-                // Exclude leafletCircle and leafletTooltip which have circular references
-            }));
-            localStorage.setItem(STORAGE_KEYS.circles, JSON.stringify(circlesToSave));
-        } else {
-            localStorage.removeItem(STORAGE_KEYS.circles);
-        }
-    }, [circles]);
+    // Note: Circles (catchment zones) are now saved to database with favorite schools
+    // No need for a separate useEffect to save them to localStorage
 
     // Save placed pins to localStorage whenever they change
     useEffect(() => {
@@ -401,6 +413,8 @@ export default function SchoolCatchmentMap({
             return prevCircles.map(circle => {
                 // If circle doesn't have a leafletCircle (restored from localStorage), create it
                 if (!circle.leafletCircle) {
+                    console.log('Creating leaflet circle for:', circle);
+                    
                     const leafletCircle = L.circle(circle.center, {
                         color: circle.color,
                         fillColor: circle.color,
@@ -408,6 +422,8 @@ export default function SchoolCatchmentMap({
                         opacity: circle.isVisible ? 1 : 0,
                         radius: convertToMeters(circle.radius, circle.unit)
                     });
+
+                    console.log('Leaflet circle radius in meters:', convertToMeters(circle.radius, circle.unit));
 
                     if (circle.isVisible) {
                         leafletCircle.addTo(mapRef.current!);
@@ -694,7 +710,7 @@ export default function SchoolCatchmentMap({
     };
 
     // Add catchment zone for a school
-    const addCatchmentZone = () => {
+    const addCatchmentZone = async () => {
         if (!mapRef.current || !mapInitialized) {
             setError('Please search for an address first');
             return;
@@ -730,26 +746,37 @@ export default function SchoolCatchmentMap({
         };
 
         // Update the school's catchment zones
-        setFavoriteSchools(prev => prev.map(school => {
-            if (school.id === selectedSchool.id) {
-                const updatedZones = [...school.catchmentZones.filter(z => z.year !== formData.selectedYear), newZone];
-                const updatedSchool = { ...school, catchmentZones: updatedZones };
-                
-                // Recalculate average if we have data
-                if (updatedZones.length > 0) {
-                    const averageRadius = calculateAverageCatchment(updatedSchool);
-                    updatedSchool.averageCatchment = {
-                        radius: parseFloat(averageRadius.toFixed(1)),
-                        unit: 'km',
-                        color: '#6B7280',
-                        isVisible: showAverageZones
-                    };
-                }
-                
-                return updatedSchool;
+        const updatedZones = [...selectedSchool.catchmentZones.filter(z => z.year !== formData.selectedYear), newZone];
+        const updatedSchool = { ...selectedSchool, catchmentZones: updatedZones };
+        
+        // Recalculate average if we have data
+        if (updatedZones.length > 0) {
+            const averageRadius = calculateAverageCatchment(updatedSchool);
+            updatedSchool.averageCatchment = {
+                radius: parseFloat(averageRadius.toFixed(1)),
+                unit: 'km',
+                color: '#6B7280',
+                isVisible: showAverageZones
+            };
+        }
+
+        // Save updated school to database
+        try {
+            const saveResult = await favoriteSchoolsService.updateFavoriteSchool(updatedSchool);
+            if (!saveResult.success) {
+                setError(saveResult.message || 'Failed to save catchment zone to database');
+                return;
             }
-            return school;
-        }));
+        } catch (error) {
+            console.error('Error saving catchment zone:', error);
+            setError('Failed to save catchment zone to database');
+            return;
+        }
+
+        // Update local state only after successful database save
+        setFavoriteSchools(prev => prev.map(school => 
+            school.id === selectedSchool.id ? updatedSchool : school
+        ));
 
         // Create Leaflet circle and add to map
         const leafletCircle = L.circle(centerCoords, {
@@ -777,6 +804,13 @@ export default function SchoolCatchmentMap({
 
         setCircles(prev => [...prev.filter(c => c.id !== newZone.id), newCircle]);
         setError('');
+        
+        // Show success message
+        setSaveMessage({
+            type: 'success',
+            text: 'Catchment zone saved to database!'
+        });
+        setTimeout(() => setSaveMessage(null), 3000);
     };
 
     // Toggle circle visibility
@@ -814,9 +848,67 @@ export default function SchoolCatchmentMap({
         }));
     };
 
-    const removeCircle = (id: string) => {
+    const removeCircle = async (id: string) => {
         const circleToRemove = circles.find(circle => circle.id === id);
-        if (circleToRemove && circleToRemove.leafletCircle && mapRef.current) {
+        if (!circleToRemove) return;
+
+        // Find the school that owns this catchment zone
+        const school = favoriteSchools.find(s => s.id === circleToRemove.schoolId);
+        if (school) {
+            // Remove the catchment zone from the school's data
+            const updatedZones = school.catchmentZones.filter(z => z.id !== id);
+            const updatedSchool = { ...school, catchmentZones: updatedZones };
+            
+            // Recalculate average if we still have data
+            if (updatedZones.length > 0) {
+                const averageRadius = calculateAverageCatchment(updatedSchool);
+                updatedSchool.averageCatchment = {
+                    radius: parseFloat(averageRadius.toFixed(1)),
+                    unit: 'km',
+                    color: '#6B7280',
+                    isVisible: showAverageZones
+                };
+            } else {
+                // No more catchment zones, remove average
+                updatedSchool.averageCatchment = undefined;
+            }
+
+            // Save updated school to database
+            try {
+                const saveResult = await favoriteSchoolsService.updateFavoriteSchool(updatedSchool);
+                if (saveResult.success) {
+                    // Update local state only after successful database save
+                    setFavoriteSchools(prev => prev.map(s => 
+                        s.id === school.id ? updatedSchool : s
+                    ));
+                    
+                    setSaveMessage({
+                        type: 'success',
+                        text: 'Catchment zone removed from database!'
+                    });
+                    setTimeout(() => setSaveMessage(null), 3000);
+                } else {
+                    console.error('Failed to remove catchment zone from database:', saveResult.message);
+                    setSaveMessage({
+                        type: 'error',
+                        text: 'Failed to remove catchment zone from database'
+                    });
+                    setTimeout(() => setSaveMessage(null), 3000);
+                    return; // Don't remove from map if database save failed
+                }
+            } catch (error) {
+                console.error('Error removing catchment zone from database:', error);
+                setSaveMessage({
+                    type: 'error',
+                    text: 'Failed to remove catchment zone from database'
+                });
+                setTimeout(() => setSaveMessage(null), 3000);
+                return; // Don't remove from map if database save failed
+            }
+        }
+
+        // Remove from map and local circles state
+        if (circleToRemove.leafletCircle && mapRef.current) {
             mapRef.current.removeLayer(circleToRemove.leafletCircle);
         }
         setCircles(prev => prev.filter(circle => circle.id !== id));
@@ -2162,323 +2254,6 @@ Check console for full details.`);
                                     🔄 Show All Schools Equally
                                 </button>
                             </div>
-                        </div>
-                    )}
-
-                    {/* Pin Placement Controls */}
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        📍 Precise Pin Placement
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                        Place custom pins for exact school locations. Every meter matters for catchment calculations!
-                    </p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Pin Placement Mode */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Pin Placement Mode
-                            </label>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => togglePinPlacementMode('school')}
-                                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                                        formData.pinPlacementMode === 'school'
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    🏫 School
-                                </button>
-                                <button
-                                    onClick={() => togglePinPlacementMode('location')}
-                                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                                        formData.pinPlacementMode === 'location'
-                                            ? 'bg-red-600 text-white'
-                                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    📍 Location
-                                </button>
-                                <button
-                                    onClick={() => togglePinPlacementMode('off')}
-                                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                                        formData.pinPlacementMode === 'off'
-                                            ? 'bg-gray-600 text-white'
-                                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    ❌ Off
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Measurement Mode */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Distance Measurement
-                            </label>
-                            <button
-                                onClick={() => setMeasurementMode(!measurementMode)}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                                    measurementMode
-                                        ? 'bg-orange-600 text-white'
-                                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                }`}
-                            >
-                                📐 {measurementMode ? 'Stop Measuring' : 'Measure Distance'}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Coordinate Input */}
-                    {formData.pinPlacementMode !== 'off' && (
-                        <div className="mt-4 p-3 bg-white rounded-md border border-gray-200">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">
-                                Manual Coordinate Entry
-                            </h4>
-                            <div className="grid grid-cols-2 gap-2">
-                                <input
-                                    type="number"
-                                    step="0.000001"
-                                    placeholder="Latitude"
-                                    value={formData.coordinateInput.lat}
-                                    onChange={(e) => setFormData(prev => ({ 
-                                        ...prev, 
-                                        coordinateInput: { ...prev.coordinateInput, lat: e.target.value }
-                                    }))}
-                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                />
-                                <input
-                                    type="number"
-                                    step="0.000001"
-                                    placeholder="Longitude"
-                                    value={formData.coordinateInput.lng}
-                                    onChange={(e) => setFormData(prev => ({ 
-                                        ...prev, 
-                                        coordinateInput: { ...prev.coordinateInput, lng: e.target.value }
-                                    }))}
-                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                />
-                            </div>
-                            <button
-                                onClick={() => {
-                                    const lat = parseFloat(formData.coordinateInput.lat);
-                                    const lng = parseFloat(formData.coordinateInput.lng);
-                                    if (!isNaN(lat) && !isNaN(lng)) {
-                                        const type = formData.pinPlacementMode as 'school' | 'location';
-                                        const title = type === 'school' ? formData.schoolName || 'Manual School' : 'Manual Location';
-                                        placePinAtCoordinates([lat, lng], type, title);
-                                        setFormData(prev => ({ 
-                                            ...prev, 
-                                            coordinateInput: { lat: '', lng: '' }
-                                        }));
-                                    }
-                                }}
-                                className="mt-2 w-full px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
-                            >
-                                Place Pin at Coordinates
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Active Pins List */}
-                    {placedPins.length > 0 && (
-                        <div className="mt-4 p-3 bg-white rounded-md border border-gray-200">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">
-                                Active Pins ({placedPins.length})
-                            </h4>
-                            <div className="space-y-1 max-h-32 overflow-y-auto">
-                                {placedPins.map((pin, index) => (
-                                    <div key={index} className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded">
-                                        <span>
-                                            {pin.type === 'school' ? '🏫' : pin.type === 'location' ? '📍' : '📐'} 
-                                            {pin.title} ({pin.coordinates[0].toFixed(4)}, {pin.coordinates[1].toFixed(4)})
-                                        </span>
-                                        <button
-                                            onClick={() => {
-                                                if (mapRef.current && pin.marker) {
-                                                    mapRef.current.removeLayer(pin.marker);
-                                                }
-                                                setPlacedPins(prev => prev.filter((_, i) => i !== index));
-                                            }}
-                                            className="text-red-600 hover:text-red-800"
-                                        >
-                                            ❌
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                            <button
-                                onClick={() => {
-                                    placedPins.forEach(pin => {
-                                        if (mapRef.current && pin.marker) {
-                                            mapRef.current.removeLayer(pin.marker);
-                                        }
-                                    });
-                                    setPlacedPins([]);
-                                    if (measurementLineRef.current && mapRef.current) {
-                                        mapRef.current.removeLayer(measurementLineRef.current);
-                                        measurementLineRef.current = null;
-                                    }
-                                }}
-                                className="mt-2 w-full px-3 py-1 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 transition-colors"
-                            >
-                                Clear All Pins
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Color Customization */}
-                    {favoriteSchools.length > 0 && (
-                        <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">🎨 Color Customization</h3>
-                            
-                            {/* Color Palette Selection */}
-                            <div className="mb-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-3">Color Palette Themes</h4>
-                                
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-2">
-                                            Apply Colors By:
-                                        </label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button
-                                                onClick={() => applyPaletteToAll('schools', selectedColorPalette.name)}
-                                                className={`text-xs px-3 py-2 rounded transition-colors ${
-                                                    selectedColorPalette.type === 'schools'
-                                                        ? 'bg-orange-600 text-white'
-                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                }`}
-                                            >
-                                                🏫 By School
-                                            </button>
-                                            <button
-                                                onClick={() => applyPaletteToAll('years', selectedColorPalette.name)}
-                                                className={`text-xs px-3 py-2 rounded transition-colors ${
-                                                    selectedColorPalette.type === 'years'
-                                                        ? 'bg-orange-600 text-white'
-                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                }`}
-                                            >
-                                                📅 By Year
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-2">
-                                            Color Theme:
-                                        </label>
-                                        <select
-                                            value={selectedColorPalette.name}
-                                            onChange={(e) => {
-                                                const newPalette = e.target.value;
-                                                applyPaletteToAll(selectedColorPalette.type, newPalette);
-                                            }}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-colors text-sm text-gray-900 bg-white"
-                                        >
-                                            <optgroup label="School Themes">
-                                                <option value="vibrant">🌈 Vibrant Colors</option>
-                                                <option value="professional">💼 Professional</option>
-                                                <option value="pastels">🌸 Pastel Colors</option>
-                                                <option value="earth">🌍 Earth Tones</option>
-                                            </optgroup>
-                                            <optgroup label="Year Themes">
-                                                <option value="gradient">🌅 Gradient</option>
-                                                <option value="cool">❄️ Cool Colors</option>
-                                                <option value="warm">🔥 Warm Colors</option>
-                                                <option value="monochrome">⚫ Monochrome</option>
-                                            </optgroup>
-                                        </select>
-                                    </div>
-
-                                    {/* Color Palette Preview */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-2">
-                                            Current Palette Preview:
-                                        </label>
-                                        <div className="flex space-x-1">
-                                            {getCurrentPaletteColors().map((color: string, index: number) => (
-                                                <div
-                                                    key={index}
-                                                    className="w-6 h-6 rounded border-2 border-white shadow-sm"
-                                                    style={{ backgroundColor: color }}
-                                                    title={color}
-                                                ></div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex space-x-2">
-                                        <button
-                                            onClick={resetAllColors}
-                                            className="flex-1 text-xs bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition-colors"
-                                        >
-                                            🔄 Reset Colors
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Individual School Color Schemes */}
-                            {favoriteSchools.length > 1 && (
-                                <div className="mb-4">
-                                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Individual School Colors</h4>
-                                    <div className="space-y-3">
-                                        {favoriteSchools.map(school => (
-                                            <div key={school.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-sm font-medium text-gray-900">{school.name}</span>
-                                                    <select
-                                                        onChange={(e) => {
-                                                            const paletteName = e.target.value;
-                                                            if (paletteName) {
-                                                                const colors = colorPalettes.schools[paletteName as keyof typeof colorPalettes.schools];
-                                                                applyColorSchemeToSchool(school.id, colors);
-                                                            }
-                                                        }}
-                                                        className="text-xs border border-gray-300 rounded px-2 py-1"
-                                                    >
-                                                        <option value="">Apply Theme...</option>
-                                                        <option value="vibrant">Vibrant</option>
-                                                        <option value="professional">Professional</option>
-                                                        <option value="pastels">Pastels</option>
-                                                        <option value="earth">Earth Tones</option>
-                                                    </select>
-                                                </div>
-                                                
-                                                {/* Show current colors for this school */}
-                                                {school.catchmentZones.length > 0 && (
-                                                    <div className="flex space-x-1">
-                                                        {school.catchmentZones.map(zone => {
-                                                            const circle = circles.find(c => c.id === zone.id);
-                                                            return circle ? (
-                                                                <div
-                                                                    key={zone.id}
-                                                                    className="w-4 h-4 rounded border border-white shadow-sm cursor-pointer"
-                                                                    style={{ backgroundColor: circle.color }}
-                                                                    title={`${zone.year}: ${circle.color}`}
-                                                                    onClick={() => {
-                                                                        // Simple color picker using prompt for now
-                                                                        const newColor = prompt(`Enter new color for ${school.name} (${zone.year}):`, circle.color);
-                                                                        if (newColor && /^#[0-9A-F]{6}$/i.test(newColor)) {
-                                                                            setCustomColor(circle.id, newColor);
-                                                                        }
-                                                                    }}
-                                                                ></div>
-                                                            ) : null;
-                                                        })}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     )}
 
