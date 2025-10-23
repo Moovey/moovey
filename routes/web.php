@@ -209,6 +209,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/saved-results/{savedToolResult}', [\App\Http\Controllers\SavedToolResultController::class, 'destroy'])->name('saved-results.destroy');
     Route::get('/api/saved-results', [\App\Http\Controllers\SavedToolResultController::class, 'api'])->name('api.saved-results');
     
+    // Favorite Schools Routes
+    Route::get('/api/favorite-schools', [\App\Http\Controllers\FavoriteSchoolController::class, 'index'])->name('api.favorite-schools.index');
+    Route::post('/api/favorite-schools', [\App\Http\Controllers\FavoriteSchoolController::class, 'store'])->name('api.favorite-schools.store');
+    Route::put('/api/favorite-schools/{schoolId}', [\App\Http\Controllers\FavoriteSchoolController::class, 'update'])->name('api.favorite-schools.update');
+    Route::delete('/api/favorite-schools/{schoolId}', [\App\Http\Controllers\FavoriteSchoolController::class, 'destroy'])->name('api.favorite-schools.destroy');
+    Route::post('/api/favorite-schools/bulk-update', [\App\Http\Controllers\FavoriteSchoolController::class, 'bulkUpdate'])->name('api.favorite-schools.bulk-update');
+    
     // Test route to add a sample CTA task
     Route::get('/test-add-task', function() {
         if (!Auth::check()) {

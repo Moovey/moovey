@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import SaveResultsButton from '@/components/SaveResultsButton';
+import { favoriteSchoolsService } from '@/services/favoriteSchoolsService';
 
 // Enhanced data models with historical catchment support
 interface School {
@@ -123,90 +124,111 @@ export default function SchoolCatchmentMap({
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const [mapInitialized, setMapInitialized] = useState(false);
     const mapRef = useRef<L.Map | null>(null);
+    const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
     
-    // localStorage keys for persistence
+    // localStorage keys for persistence (favorite schools now use database)
     const STORAGE_KEYS = {
-        favoriteSchools: 'schoolCatchment_favoriteSchools',
         circles: 'schoolCatchment_circles',
         placedPins: 'schoolCatchment_placedPins',
         formData: 'schoolCatchment_formData'
     };
 
-    // Load data from localStorage on component mount
+    // Load data from localStorage and database on component mount
     useEffect(() => {
-        try {
-            const savedFavoriteSchools = localStorage.getItem(STORAGE_KEYS.favoriteSchools);
-            const savedCircles = localStorage.getItem(STORAGE_KEYS.circles);
-            const savedPlacedPins = localStorage.getItem(STORAGE_KEYS.placedPins);
-            const savedFormData = localStorage.getItem(STORAGE_KEYS.formData);
-            
-            let restoredItems = [];
-            
-            if (savedFavoriteSchools) {
-                const schools = JSON.parse(savedFavoriteSchools);
-                if (Array.isArray(schools) && schools.length > 0) {
-                    setFavoriteSchools(schools);
-                    restoredItems.push(`${schools.length} favorite school${schools.length > 1 ? 's' : ''}`);
-                    console.log('Restored favorite schools from localStorage:', schools.length, 'schools');
-                }
-            }
-            
-            if (savedCircles) {
-                const savedCirclesData = JSON.parse(savedCircles);
-                if (Array.isArray(savedCirclesData) && savedCirclesData.length > 0) {
-                    setCircles(savedCirclesData);
-                    restoredItems.push(`${savedCirclesData.length} catchment zone${savedCirclesData.length > 1 ? 's' : ''}`);
-                    console.log('Restored circles from localStorage:', savedCirclesData.length, 'circles');
-                }
-            }
-            
-            if (savedPlacedPins) {
-                const pins = JSON.parse(savedPlacedPins);
-                if (Array.isArray(pins) && pins.length > 0) {
-                    setPlacedPins(pins);
-                    restoredItems.push(`${pins.length} pin${pins.length > 1 ? 's' : ''}`);
-                    console.log('Restored placed pins from localStorage:', pins.length, 'pins');
-                }
-            }
-            
-            if (savedFormData) {
-                const formDataFromStorage = JSON.parse(savedFormData);
-                if (formDataFromStorage && typeof formDataFromStorage === 'object') {
-                    setFormData(prev => ({ ...prev, ...formDataFromStorage }));
-                    console.log('Restored form data from localStorage');
-                }
-            }
-            
-            // Show restoration message if any data was restored
-            if (restoredItems.length > 0) {
-                setSaveMessage({
-                    type: 'success',
-                    text: `✨ Restored your previous session: ${restoredItems.join(', ')}`
-                });
+        const loadData = async () => {
+            try {
+                // Load favorite schools from database
+                setIsLoadingFavorites(true);
+                const favoriteSchoolsFromDB = await favoriteSchoolsService.getFavoriteSchools();
                 
-                // Auto-clear message after 5 seconds
+                // Load other data from localStorage
+                const savedCircles = localStorage.getItem(STORAGE_KEYS.circles);
+                const savedPlacedPins = localStorage.getItem(STORAGE_KEYS.placedPins);
+                const savedFormData = localStorage.getItem(STORAGE_KEYS.formData);
+                
+                let restoredItems = [];
+                
+                // Restore favorite schools from database
+                if (favoriteSchoolsFromDB.length > 0) {
+                    setFavoriteSchools(favoriteSchoolsFromDB);
+                    restoredItems.push(`${favoriteSchoolsFromDB.length} favorite school${favoriteSchoolsFromDB.length > 1 ? 's' : ''}`);
+                    console.log('Restored favorite schools from database:', favoriteSchoolsFromDB.length, 'schools');
+                }
+                
+                if (savedCircles) {
+                    const savedCirclesData = JSON.parse(savedCircles);
+                    if (Array.isArray(savedCirclesData) && savedCirclesData.length > 0) {
+                        setCircles(savedCirclesData);
+                        restoredItems.push(`${savedCirclesData.length} catchment zone${savedCirclesData.length > 1 ? 's' : ''}`);
+                        console.log('Restored circles from localStorage:', savedCirclesData.length, 'circles');
+                    }
+                }
+                
+                if (savedPlacedPins) {
+                    const pins = JSON.parse(savedPlacedPins);
+                    if (Array.isArray(pins) && pins.length > 0) {
+                        setPlacedPins(pins);
+                        restoredItems.push(`${pins.length} pin${pins.length > 1 ? 's' : ''}`);
+                        console.log('Restored placed pins from localStorage:', pins.length, 'pins');
+                    }
+                }
+                
+                if (savedFormData) {
+                    const formDataFromStorage = JSON.parse(savedFormData);
+                    if (formDataFromStorage && typeof formDataFromStorage === 'object') {
+                        setFormData(prev => ({ ...prev, ...formDataFromStorage }));
+                        console.log('Restored form data from localStorage');
+                    }
+                }
+                
+                // Show restoration message if any data was restored
+                if (restoredItems.length > 0) {
+                    setSaveMessage({
+                        type: 'success',
+                        text: `✨ Restored your previous session: ${restoredItems.join(', ')}`
+                    });
+                    
+                    // Auto-clear message after 5 seconds
+                    setTimeout(() => setSaveMessage(null), 5000);
+                }
+            } catch (error) {
+                console.warn('Error loading data:', error);
+                // Clear corrupted localStorage data
+                Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+                
+                setSaveMessage({
+                    type: 'error',
+                    text: 'Failed to load some saved data. Please try refreshing the page.'
+                });
                 setTimeout(() => setSaveMessage(null), 5000);
+            } finally {
+                setIsLoadingFavorites(false);
             }
-        } catch (error) {
-            console.warn('Error loading data from localStorage:', error);
-            // Clear corrupted data
-            Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
-        }
+        };
+
+        loadData();
     }, []);
 
-    // Save favorite schools to localStorage whenever they change
-    useEffect(() => {
-        if (favoriteSchools.length > 0) {
-            localStorage.setItem(STORAGE_KEYS.favoriteSchools, JSON.stringify(favoriteSchools));
-        } else {
-            localStorage.removeItem(STORAGE_KEYS.favoriteSchools);
-        }
-    }, [favoriteSchools]);
+    // Note: Favorite schools are now saved to database automatically when added/removed
+    // No need for a separate useEffect to save them to localStorage
 
     // Save circles to localStorage whenever they change
     useEffect(() => {
         if (circles.length > 0) {
-            localStorage.setItem(STORAGE_KEYS.circles, JSON.stringify(circles));
+            // Filter out Leaflet objects before saving to prevent circular reference errors
+            const circlesToSave = circles.map(circle => ({
+                id: circle.id,
+                center: circle.center,
+                radius: circle.radius,
+                unit: circle.unit,
+                schoolName: circle.schoolName,
+                year: circle.year,
+                color: circle.color,
+                isVisible: circle.isVisible,
+                schoolId: circle.schoolId || null
+                // Exclude leafletCircle and leafletTooltip which have circular references
+            }));
+            localStorage.setItem(STORAGE_KEYS.circles, JSON.stringify(circlesToSave));
         } else {
             localStorage.removeItem(STORAGE_KEYS.circles);
         }
@@ -375,6 +397,40 @@ export default function SchoolCatchmentMap({
         };
     }, []);
 
+    // Recreate Leaflet circles for restored circles that don't have leafletCircle
+    useEffect(() => {
+        if (!mapRef.current || !mapInitialized) return;
+
+        setCircles(prevCircles => {
+            return prevCircles.map(circle => {
+                // If circle doesn't have a leafletCircle (restored from localStorage), create it
+                if (!circle.leafletCircle) {
+                    console.log('Recreating Leaflet circle for restored circle:', circle.schoolName, circle.year);
+                    
+                    const leafletCircle = L.circle(circle.center, {
+                        color: circle.color,
+                        fillColor: circle.color,
+                        fillOpacity: circle.isVisible ? 0.2 : 0,
+                        opacity: circle.isVisible ? 1 : 0,
+                        radius: convertToMeters(circle.radius, circle.unit)
+                    });
+
+                    if (circle.isVisible) {
+                        leafletCircle.addTo(mapRef.current!);
+                    }
+
+                    leafletCircle.bindPopup(`${circle.schoolName}<br/>${circle.radius} ${circle.unit} catchment zone (${circle.year})`);
+
+                    return {
+                        ...circle,
+                        leafletCircle: leafletCircle
+                    };
+                }
+                return circle;
+            });
+        });
+    }, [mapInitialized]); // Only run when map is initialized
+
     // Update map center when coordinates change
     useEffect(() => {
         if (mapRef.current && mapInitialized) {
@@ -520,7 +576,7 @@ export default function SchoolCatchmentMap({
     };
 
     // Add school to favorites list
-    const addSchool = () => {
+    const addSchool = async () => {
         if (!formData.schoolName.trim()) {
             setError('Please enter a school name');
             return;
@@ -541,10 +597,22 @@ export default function SchoolCatchmentMap({
             isFavorite: true
         };
 
-        setFavoriteSchools(prev => [...prev, newSchool]);
-        setSchools(prev => [...prev, newSchool]); // Also add to general schools list
-        setFormData(prev => ({ ...prev, schoolName: '', selectedSchoolId: newSchool.id }));
-        setError('');
+        // Save to database and update local state
+        const saveResult = await favoriteSchoolsService.addFavoriteSchool(newSchool);
+        if (saveResult.success) {
+            setFavoriteSchools(prev => [...prev, newSchool]);
+            setSchools(prev => [...prev, newSchool]); // Also add to general schools list
+            setFormData(prev => ({ ...prev, schoolName: '', selectedSchoolId: newSchool.id }));
+            setError('');
+            
+            setSaveMessage({
+                type: 'success',
+                text: saveResult.message || 'School added to favorites!'
+            });
+            setTimeout(() => setSaveMessage(null), 3000);
+        } else {
+            setError(saveResult.message || 'Failed to add school to favorites');
+        }
     };
 
     // Calculate average catchment for a school based on historical data
@@ -761,7 +829,7 @@ export default function SchoolCatchmentMap({
         setCircles(prev => prev.filter(circle => circle.id !== id));
     };
 
-    const removeSchool = (id: string) => {
+    const removeSchool = async (id: string) => {
         // Remove all circles for this school
         const schoolCircles = circles.filter(circle => {
             const school = favoriteSchools.find(s => s.id === id);
@@ -774,9 +842,25 @@ export default function SchoolCatchmentMap({
             }
         });
 
-        setCircles(prev => prev.filter(circle => !schoolCircles.includes(circle)));
-        setFavoriteSchools(prev => prev.filter(school => school.id !== id));
-        setSchools(prev => prev.filter(school => school.id !== id));
+        // Remove from database
+        const removeResult = await favoriteSchoolsService.removeFavoriteSchool(id);
+        if (removeResult.success) {
+            setCircles(prev => prev.filter(circle => !schoolCircles.includes(circle)));
+            setFavoriteSchools(prev => prev.filter(school => school.id !== id));
+            setSchools(prev => prev.filter(school => school.id !== id));
+            
+            setSaveMessage({
+                type: 'success',
+                text: removeResult.message || 'School removed from favorites!'
+            });
+            setTimeout(() => setSaveMessage(null), 3000);
+        } else {
+            setSaveMessage({
+                type: 'error',
+                text: removeResult.message || 'Failed to remove school from favorites'
+            });
+            setTimeout(() => setSaveMessage(null), 3000);
+        }
     };
 
     // Toggle average catchment zones visibility
@@ -1336,7 +1420,11 @@ export default function SchoolCatchmentMap({
         })));
     };
 
-    const clearAll = () => {
+    const clearAll = async () => {
+        if (!confirm('Are you sure you want to clear all data? This will remove all favorite schools from your account permanently.')) {
+            return;
+        }
+        
         // Remove all circles from map
         circles.forEach(circle => {
             if (circle.leafletCircle && mapRef.current) {
@@ -1354,6 +1442,18 @@ export default function SchoolCatchmentMap({
         
         // Clear localStorage data
         Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+        
+        // Clear favorite schools from database
+        const clearPromises = favoriteSchools.map(school => 
+            favoriteSchoolsService.removeFavoriteSchool(school.id)
+        );
+        
+        try {
+            await Promise.all(clearPromises);
+            console.log('All favorite schools cleared from database');
+        } catch (error) {
+            console.error('Error clearing favorite schools from database:', error);
+        }
         
         setCircles([]);
         setSchools([]);
@@ -1718,7 +1818,7 @@ Check console for full details.`);
                         <div className="text-sm text-blue-800">
                             <p className="font-medium">Your work is automatically saved!</p>
                             <p className="text-blue-700 mt-1">
-                                Your favorite schools, catchment zones, and pins are preserved when you refresh the page or return later.
+                                Your favorite schools are saved to your account, and catchment zones/pins are preserved locally when you refresh the page.
                             </p>
                         </div>
                     </div>
@@ -2421,7 +2521,15 @@ Check console for full details.`);
                     )}
 
                     {/* Favorite Schools List */}
-                    {favoriteSchools.length > 0 && (
+                    {isLoadingFavorites ? (
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">⭐ Loading Favorite Schools...</h3>
+                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                                <div className="text-2xl mb-2">📚</div>
+                                <p className="text-blue-700">Loading your saved schools from database...</p>
+                            </div>
+                        </div>
+                    ) : favoriteSchools.length > 0 ? (
                         <div className="mb-6">
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">⭐ Favorite Schools ({favoriteSchools.length}/6)</h3>
                             <div className="space-y-3">
@@ -2484,7 +2592,7 @@ Check console for full details.`);
                                 ))}
                             </div>
                         </div>
-                    )}
+                    ) : null}
                 </div>
 
                 {/* Map Display */}
