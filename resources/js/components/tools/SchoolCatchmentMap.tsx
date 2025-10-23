@@ -1785,18 +1785,6 @@ Check console for full details.`);
                     )}
                 </div>
                 
-                {/* Auto-save Info Banner */}
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                        <span className="text-blue-600 text-lg">💾</span>
-                        <div className="text-sm text-blue-800">
-                            <p className="font-medium">Your work is automatically saved!</p>
-                            <p className="text-blue-700 mt-1">
-                                Your favorite schools are saved to your account, and catchment zones/pins are preserved locally when you refresh the page.
-                            </p>
-                        </div>
-                    </div>
-                </div>
                 <div className="flex items-center gap-3">
                     {isFullscreen && (
                         <div className="text-sm text-gray-600 hidden sm:block">
@@ -2667,35 +2655,35 @@ Check console for full details.`);
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                                 <div>
                                     <h5 className="font-semibold text-gray-800 mb-2">Map Symbols:</h5>
-                                    <div className="space-y-1">
+                                    <div className="space-y-1 text-gray-700">
                                         <div className="flex items-center space-x-2">
                                             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                            <span>🏫 Favorite School Locations</span>
+                                            <span className="text-gray-700">🏫 Favorite School Locations</span>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                                            <span>📍 Your Custom Location Pins</span>
+                                            <span className="text-gray-700">📍 Your Custom Location Pins</span>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <div className="w-3 h-3 border-2 border-gray-400 rounded-full"></div>
-                                            <span>⭕ Historical Catchment Zones</span>
+                                            <span className="text-gray-700">⭕ Historical Catchment Zones</span>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <div className="w-3 h-3 border-2 border-gray-400 rounded-full border-dashed"></div>
-                                            <span>📊 5-Year Average Zones</span>
+                                            <span className="text-gray-700">📊 5-Year Average Zones</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div>
                                     <h5 className="font-semibold text-gray-800 mb-2">Color Coding:</h5>
-                                    <div className="space-y-1">
-                                        <div>• <strong>By School:</strong> Each school gets a unique color</div>
-                                        <div>• <strong>By Year:</strong> Each year gets a distinct color</div>
-                                        <div>• <strong>Custom:</strong> Click color squares to customize</div>
-                                        <div>• <strong>Themes:</strong> Professional, vibrant, pastel options</div>
+                                    <div className="space-y-1 text-gray-700">
+                                        <div>• <strong className="text-gray-800">By School:</strong> Each school gets a unique color</div>
+                                        <div>• <strong className="text-gray-800">By Year:</strong> Each year gets a distinct color</div>
+                                        <div>• <strong className="text-gray-800">Custom:</strong> Click color squares to customize</div>
+                                        <div>• <strong className="text-gray-800">Themes:</strong> Professional, vibrant, pastel options</div>
                                         <div className="mt-2">
-                                            <strong>Current Scheme:</strong> 
-                                            <span className="ml-1 px-2 py-1 bg-gray-200 rounded text-xs">
+                                            <strong className="text-gray-800">Current Scheme:</strong> 
+                                            <span className="ml-1 px-2 py-1 bg-gray-200 rounded text-xs text-gray-800">
                                                 {selectedColorPalette.type === 'schools' ? '🏫 By School' : '📅 By Year'} - 
                                                 {selectedColorPalette.name.charAt(0).toUpperCase() + selectedColorPalette.name.slice(1)}
                                             </span>
@@ -2843,22 +2831,6 @@ Check console for full details.`);
 
             {!isFullscreen && (
                 <>
-                    {/* Information Panel */}
-                    <div className="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-2">💡 Advanced Interactive Features</h4>
-                        <ul className="text-sm text-gray-700 space-y-1">
-                            <li>• <strong>Favorite Schools:</strong> Add up to 6 favorite schools and track their historical catchments</li>
-                            <li>• <strong>5-Year Historical Data:</strong> View catchment changes over the last 5 years (2020-2025)</li>
-                            <li>• <strong>🎨 Advanced Color Customization:</strong> Choose from professional themes or create custom color schemes</li>
-                            <li>• <strong>Interactive Comparison:</strong> Focus on specific schools and dim others for easy comparison</li>
-                            <li>• <strong>Street-Level Analysis:</strong> Click anywhere to see which school catchments cover that location</li>
-                            <li>• <strong>Color by School/Year:</strong> Apply consistent color coding by school or by year for clarity</li>
-                            <li>• <strong>Individual Zone Colors:</strong> Customize colors for specific catchment zones</li>
-                            <li>• <strong>Professional Themes:</strong> Vibrant, professional, pastel, and earth tone color palettes</li>
-                            <li>• <strong>Visual Legend:</strong> Clear color guide showing current schemes and active schools</li>
-                        </ul>
-                    </div>
-
                     {/* Sample Searches */}
                     <div className="mt-6 bg-gray-50 rounded-lg p-4">
                         <h4 className="text-sm font-semibold text-gray-900 mb-3">� Try These School Areas</h4>
