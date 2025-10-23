@@ -1643,24 +1643,6 @@ export default function SchoolCatchmentMap({
         }
     };
 
-    // Get calculation results for saving
-    // Debug function to check save data
-    const debugSaveData = () => {
-        const results = getCalculationResults();
-        const formData = getFormData();
-        
-        // Show alert with basic info
-        alert(`Save Data Debug:
-- Can Save: ${canSaveData()}
-- Favorite Schools: ${favoriteSchools.length}
-- School Names: ${favoriteSchools.map(s => s.name).join(', ')}
-- Catchment Circles: ${circles.length}
-- Placed Pins: ${placedPins.length}
-- Has Address: ${Boolean(formData.address?.trim())}
-
-Check console for full details.`);
-    };
-
     // Validate if we have sufficient data to save
     const canSaveData = () => {
         // Allow saving if we have either favorite schools OR catchment circles
@@ -2358,17 +2340,6 @@ Check console for full details.`);
                                         <div className="text-xs text-gray-500 px-3 py-1 bg-gray-100 rounded border" title="Add favorite schools or generate catchment zones to enable saving">
                                             💾 Save (Add schools or zones first)
                                         </div>
-                                    )}
-                                    
-                                    {/* Debug button - useful for troubleshooting */}
-                                    {process.env.NODE_ENV === 'development' && (
-                                        <button
-                                            onClick={debugSaveData}
-                                            className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded border border-yellow-300 hover:bg-yellow-200"
-                                            title="Debug save data (development only)"
-                                        >
-                                            🐛 Debug
-                                        </button>
                                     )}
                                     
                                     {(circles.length > 0 || favoriteSchools.length > 0) && (
