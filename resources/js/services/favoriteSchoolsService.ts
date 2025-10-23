@@ -40,7 +40,6 @@ class FavoriteSchoolsService {
             }
 
             const schools = await response.json();
-            console.log('Loaded favorite schools from database:', schools.length, 'schools');
             return schools;
         } catch (error) {
             console.error('Error loading favorite schools:', error);
@@ -75,7 +74,6 @@ class FavoriteSchoolsService {
                 };
             }
 
-            console.log('Added favorite school to database:', school.name);
             return result;
         } catch (error) {
             console.error('Error adding favorite school:', error);
@@ -113,7 +111,6 @@ class FavoriteSchoolsService {
                 };
             }
 
-            console.log('Updated favorite school in database:', school.name);
             return result;
         } catch (error) {
             console.error('Error updating favorite school:', error);
@@ -149,7 +146,6 @@ class FavoriteSchoolsService {
                 };
             }
 
-            console.log('Removed favorite school from database:', schoolId);
             return result;
         } catch (error) {
             console.error('Error removing favorite school:', error);
@@ -187,7 +183,6 @@ class FavoriteSchoolsService {
                 };
             }
 
-            console.log('Bulk updated favorite schools in database:', schools.length, 'schools');
             return result;
         } catch (error) {
             console.error('Error bulk updating favorite schools:', error);

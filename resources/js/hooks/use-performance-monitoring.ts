@@ -37,11 +37,6 @@ export function usePerformanceMonitoring({
             toolName: currentToolRef.current,
         };
 
-        // Log to console in development
-        if (import.meta.env.DEV) {
-            console.log(`[Performance] ${currentToolRef.current} loaded in ${duration.toFixed(2)}ms`);
-        }
-
         // Call optional callback
         onMetric?.(metric);
 
@@ -77,10 +72,6 @@ export function usePerformanceMonitoring({
                 const observer = new PerformanceObserver((list) => {
                     const entries = list.getEntries();
                     const lastEntry = entries[entries.length - 1];
-                    
-                    if (import.meta.env.DEV) {
-                        console.log(`[Performance] LCP: ${lastEntry.startTime.toFixed(2)}ms`);
-                    }
                 });
                 
                 observer.observe({ entryTypes: ['largest-contentful-paint'] });

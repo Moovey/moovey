@@ -152,7 +152,6 @@ export default function SchoolCatchmentMap({
                 if (favoriteSchoolsFromDB.length > 0) {
                     setFavoriteSchools(favoriteSchoolsFromDB);
                     restoredItems.push(`${favoriteSchoolsFromDB.length} favorite school${favoriteSchoolsFromDB.length > 1 ? 's' : ''}`);
-                    console.log('Restored favorite schools from database:', favoriteSchoolsFromDB.length, 'schools');
                 }
                 
                 if (savedCircles) {
@@ -160,7 +159,6 @@ export default function SchoolCatchmentMap({
                     if (Array.isArray(savedCirclesData) && savedCirclesData.length > 0) {
                         setCircles(savedCirclesData);
                         restoredItems.push(`${savedCirclesData.length} catchment zone${savedCirclesData.length > 1 ? 's' : ''}`);
-                        console.log('Restored circles from localStorage:', savedCirclesData.length, 'circles');
                     }
                 }
                 
@@ -169,7 +167,6 @@ export default function SchoolCatchmentMap({
                     if (Array.isArray(pins) && pins.length > 0) {
                         setPlacedPins(pins);
                         restoredItems.push(`${pins.length} pin${pins.length > 1 ? 's' : ''}`);
-                        console.log('Restored placed pins from localStorage:', pins.length, 'pins');
                     }
                 }
                 
@@ -177,7 +174,6 @@ export default function SchoolCatchmentMap({
                     const formDataFromStorage = JSON.parse(savedFormData);
                     if (formDataFromStorage && typeof formDataFromStorage === 'object') {
                         setFormData(prev => ({ ...prev, ...formDataFromStorage }));
-                        console.log('Restored form data from localStorage');
                     }
                 }
                 
@@ -405,8 +401,6 @@ export default function SchoolCatchmentMap({
             return prevCircles.map(circle => {
                 // If circle doesn't have a leafletCircle (restored from localStorage), create it
                 if (!circle.leafletCircle) {
-                    console.log('Recreating Leaflet circle for restored circle:', circle.schoolName, circle.year);
-                    
                     const leafletCircle = L.circle(circle.center, {
                         color: circle.color,
                         fillColor: circle.color,
@@ -565,7 +559,6 @@ export default function SchoolCatchmentMap({
             const result = data[0];
             const coordinates: [number, number] = [parseFloat(result.lat), parseFloat(result.lon)];
             
-            console.log('Found coordinates:', coordinates, 'for address:', formData.address);
             setMapCenter(coordinates);
         } catch (err) {
             console.error('Geocoding error:', err);
@@ -1450,7 +1443,6 @@ export default function SchoolCatchmentMap({
         
         try {
             await Promise.all(clearPromises);
-            console.log('All favorite schools cleared from database');
         } catch (error) {
             console.error('Error clearing favorite schools from database:', error);
         }
@@ -1554,11 +1546,6 @@ export default function SchoolCatchmentMap({
         
         // Log for debugging
         if (success) {
-            console.log('School catchment data saved successfully:', {
-                schools: favoriteSchools.length,
-                circles: circles.length,
-                pins: placedPins.length
-            });
         } else {
             console.error('Failed to save school catchment data:', message);
         }
@@ -1569,19 +1556,6 @@ export default function SchoolCatchmentMap({
     const debugSaveData = () => {
         const results = getCalculationResults();
         const formData = getFormData();
-        
-        console.log('=== SAVE DATA DEBUG ===');
-        console.log('Can Save:', canSaveData());
-        console.log('Results:', results);
-        console.log('Form Data:', formData);
-        console.log('Favorite Schools Detail:', results?.favoriteSchools?.map(school => ({
-            id: school.id,
-            name: school.name,
-            address: school.address,
-            coordinates: school.coordinates,
-            isFavorite: school.isFavorite
-        })));
-        console.log('======================');
         
         // Show alert with basic info
         alert(`Save Data Debug:
