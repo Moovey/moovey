@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import SaveResultsButton from '@/components/SaveResultsButton';
 import { favoriteSchoolsService } from '@/services/favoriteSchoolsService';
 
@@ -619,8 +621,17 @@ export default function SchoolCatchmentMap({
                 text: saveResult.message || 'School added to favorites!'
             });
             setTimeout(() => setSaveMessage(null), 3000);
+            // Show toast notification for success
+            try {
+                toast.success(saveResult.message || 'School added to favorites!', { position: 'top-right', autoClose: 3000 });
+            } catch (e) {
+                // If toast fails for any reason, silently ignore to avoid breaking UX
+            }
         } else {
             setError(saveResult.message || 'Failed to add school to favorites');
+            try {
+                toast.error(saveResult.message || 'Failed to add school to favorites', { position: 'top-right', autoClose: 4000 });
+            } catch (e) {}
         }
     };
 
@@ -1847,6 +1858,18 @@ export default function SchoolCatchmentMap({
         <div className={`bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 transition-all duration-300 ${
             isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'p-4 sm:p-6 md:p-8'
         }`}>
+            {/* Toast container for notifications */}
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
             {/* Header with Enhanced Fullscreen Toggle */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
