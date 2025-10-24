@@ -1,10 +1,11 @@
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
 import UserProfileHeader from '@/components/profile/UserProfileHeader';
 import FriendshipActions from '@/components/profile/FriendshipActions';
 import PostCard from '@/components/community/shared/PostCard';
+import PostCreationForm from '@/components/community/shared/PostCreationForm';
 import { User, UserProfile as UserProfileType, CommunityPost, FriendshipStatus } from '@/types/community';
 import { SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
@@ -26,6 +27,7 @@ export default function UserProfile({
 }: UserProfileProps) {
     const { auth } = usePage<SharedData>().props;
     const [userPosts, setUserPosts] = useState<CommunityPost[]>(posts);
+    const [userProfile, setUserProfile] = useState<UserProfileType>(profile);
 
     const handlePostChange = (updatedPost: CommunityPost) => {
         setUserPosts(posts => 
@@ -34,6 +36,17 @@ export default function UserProfile({
             )
         );
     };
+
+    const handlePostCreated = useCallback((newPost: CommunityPost) => {
+        // Add new post to the beginning of the posts array
+        setUserPosts(prevPosts => [newPost, ...prevPosts]);
+        
+        // Update the post count in the profile
+        setUserProfile(prevProfile => ({
+            ...prevProfile,
+            post_count: prevProfile.post_count + 1
+        }));
+    }, []);
 
     return (
         <>
@@ -50,7 +63,7 @@ export default function UserProfile({
                         {/* Profile Header */}
                         <UserProfileHeader
                             user={user}
-                            profile={profile}
+                            profile={userProfile}
                             isOwnProfile={isOwnProfile}
                             friendshipActionButton={
                                 <FriendshipActions
@@ -61,6 +74,18 @@ export default function UserProfile({
                                 />
                             }
                         />
+
+                        {/* Post Creation Form - Only show on own profile */}
+                        {isOwnProfile && (
+                            <div className="mb-8">
+                                <PostCreationForm
+                                    onPostCreated={handlePostCreated}
+                                    isAuthenticated={!!auth?.user}
+                                    placeholder="Share an update about your moving journey, ask for advice, or connect with the community..."
+                                    className="bg-white rounded-3xl p-6 shadow-lg"
+                                />
+                            </div>
+                        )}
 
                         {/* Posts Section */}
                         <div className="bg-white rounded-3xl p-8 shadow-lg">
