@@ -265,11 +265,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
         
-        // Admin Dashboard
+        // Admin Dashboard (redirects to overview)
         Route::get('dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        
+        // Admin Overview Page
+        Route::get('overview', [AdminController::class, 'overview'])->name('overview');
         
         // Admin Academy Dashboard
         Route::get('academy', [AdminController::class, 'academy'])->name('academy');
+        
+        // User Management
+        Route::get('users', [AdminController::class, 'users'])->name('users');
+        
+        // Business Management
+        Route::get('businesses', [AdminController::class, 'businesses'])->name('businesses');
+        
+        // System Settings
+        Route::get('system', [AdminController::class, 'system'])->name('system');
+        
+        // Account Settings
+        Route::get('settings', [AdminController::class, 'settings'])->name('settings');
         
         // Lesson Management
         Route::resource('lessons', LessonController::class)->except(['show']);
@@ -280,15 +295,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Test image access (temporary for debugging)
         Route::get('test-images', [AdminController::class, 'testImages'])->name('test-images');
-        
-        // User Management (future implementation)
-        Route::get('users', [AdminController::class, 'users'])->name('users');
-        
-        // Business Management (future implementation)
-        Route::get('businesses', [AdminController::class, 'businesses'])->name('businesses');
-        
-        // System Settings (future implementation)
-        Route::get('settings', [AdminController::class, 'settings'])->name('settings');
     });
 
     /*

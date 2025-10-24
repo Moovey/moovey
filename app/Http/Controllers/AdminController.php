@@ -12,20 +12,23 @@ use Inertia\Response;
 class AdminController extends Controller
 {
     /**
-     * Display the admin dashboard.
+     * Display the admin dashboard - redirect to overview.
      */
-    public function dashboard(): Response
+    public function dashboard()
+    {
+        return redirect()->route('admin.overview');
+    }
+
+    /**
+     * Display the admin overview page.
+     */
+    public function overview(): Response
     {
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Admin access required');
         }
         
-        $lessons = Lesson::latest()->get();
-        
-        return Inertia::render('admin/dashboard', [
-            'lessons' => $lessons,
-            'activeTab' => 'overview'
-        ]);
+        return Inertia::render('admin/overview');
     }
 
     /**
@@ -39,9 +42,8 @@ class AdminController extends Controller
         
         $lessons = Lesson::latest()->get();
         
-        return Inertia::render('admin/dashboard', [
-            'lessons' => $lessons,
-            'activeTab' => 'academy'
+        return Inertia::render('admin/academy', [
+            'lessons' => $lessons
         ]);
     }
 
@@ -71,6 +73,18 @@ class AdminController extends Controller
 
     /**
      * Display the system settings page.
+     */
+    public function system(): Response
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Admin access required');
+        }
+        
+        return Inertia::render('admin/system');
+    }
+
+    /**
+     * Display the account settings page.
      */
     public function settings(): Response
     {
