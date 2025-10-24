@@ -1,10 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import SaveResultsButton from '@/components/SaveResultsButton';
 import { favoriteSchoolsService } from '@/services/favoriteSchoolsService';
+
+// Lazy load CSS only when component mounts
+let cssLoaded = false;
+const loadCSS = () => {
+    if (!cssLoaded) {
+        cssLoaded = true;
+        import('leaflet/dist/leaflet.css');
+        import('react-toastify/dist/ReactToastify.css');
+    }
+};
 
 // Enhanced data models with historical catchment support
 interface School {
@@ -122,6 +130,7 @@ export default function SchoolCatchmentMap({
     const [showCoordinateInput, setShowCoordinateInput] = useState(false);
     const [measurementMode, setMeasurementMode] = useState(false);
     const [measurementPoints, setMeasurementPoints] = useState<[number, number][]>([]);
+    const [mobileControlsVisible, setMobileControlsVisible] = useState(false);
     
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const [mapInitialized, setMapInitialized] = useState(false);
@@ -136,6 +145,9 @@ export default function SchoolCatchmentMap({
 
     // Load data from localStorage and database on component mount
     useEffect(() => {
+        // Load CSS when component mounts
+        loadCSS();
+        
         const loadData = async () => {
             try {
                 // Load favorite schools from database
@@ -1855,8 +1867,10 @@ export default function SchoolCatchmentMap({
     const [schoolColorSchemes, setSchoolColorSchemes] = useState<{[schoolId: string]: string[]}>({});
 
     return (
-        <div className={`bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 transition-all duration-300 ${
-            isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'p-4 sm:p-6 md:p-8'
+        <div className={`bg-white transition-all duration-300 ${
+            isFullscreen 
+                ? 'fixed inset-0 z-50 flex flex-col h-screen w-screen' 
+                : 'rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 md:p-6 lg:p-8'
         }`}>
             {/* Toast container for notifications */}
             <ToastContainer
@@ -1905,25 +1919,44 @@ export default function SchoolCatchmentMap({
                 </div>
             </div>
 
-            <div className={`${isFullscreen ? 'h-[calc(100vh-120px)] flex' : 'space-y-6'}`}>
-                {/* Controls Panel */}
-                <div className={`${isFullscreen ? 'w-80 pr-6 overflow-y-auto' : 'w-full'}`}>
-                    {/* Address Search Section */}
-                    <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">🔍 Address Search</h3>
-                        <div className="flex flex-col sm:flex-row gap-3">
+            <div className={`${isFullscreen ? 'flex-1 flex flex-col lg:flex-row overflow-hidden' : 'space-y-4 sm:space-y-6'}`}>
+                {/* Controls Panel - Responsive Layout */}
+                <div className={`${
+                    isFullscreen 
+                        ? 'w-full lg:w-80 xl:w-96 2xl:w-[28rem] flex-shrink-0 overflow-y-auto px-3 sm:px-4 lg:pr-6' 
+                        : 'w-full'
+                }`}>
+                    {/* Mobile Controls Toggle for Fullscreen */}
+                    {isFullscreen && (
+                        <div className="lg:hidden mb-3">
+                            <button
+                                onClick={() => setMobileControlsVisible(!mobileControlsVisible)}
+                                className="w-full flex items-center justify-between px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm font-medium text-blue-700"
+                            >
+                                <span>🎛️ Controls & Tools</span>
+                                <span className={`transform transition-transform ${mobileControlsVisible ? 'rotate-180' : ''}`}>⌄</span>
+                            </button>
+                        </div>
+                    )}
+                    
+                    {/* Controls Content */}
+                    <div className={`${isFullscreen ? `lg:block ${mobileControlsVisible ? 'block' : 'hidden'}` : 'block'}`}>
+                    {/* Address Search Section - Responsive */}
+                    <div className={`${isFullscreen ? 'mb-4' : 'mb-4 sm:mb-6'}`}>
+                        <h3 className={`${isFullscreen ? 'text-base sm:text-lg' : 'text-lg'} font-semibold text-gray-900 ${isFullscreen ? 'mb-3' : 'mb-4'}`}>🔍 Address Search</h3>
+                        <div className="flex flex-col gap-2 sm:gap-3">
                             <input
                                 type="text"
                                 placeholder="Enter address or postcode (e.g., 'London', 'M1 1AA')"
                                 value={formData.address}
                                 onChange={(e) => handleInputChange('address', e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && searchAddress()}
-                                className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-colors text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white"
+                                className={`flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-colors text-gray-900 placeholder-gray-400 bg-white ${isFullscreen ? 'text-sm' : 'text-sm sm:text-base'}`}
                             />
                             <button
                                 onClick={searchAddress}
                                 disabled={isLoading}
-                                className="bg-[#17B7C7] text-white px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                                className={`bg-[#17B7C7] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isFullscreen ? 'text-sm' : 'text-sm sm:text-base'}`}
                             >
                                 {isLoading ? 'Searching...' : 'Search'}
                             </button>
@@ -1933,10 +1966,10 @@ export default function SchoolCatchmentMap({
                         )}
                     </div>
 
-                    {/* School Management */}
-                    <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">🏫 Favorite Schools Management</h3>
-                        <div className="space-y-4">
+                    {/* School Management - Responsive */}
+                    <div className={`${isFullscreen ? 'mb-4' : 'mb-4 sm:mb-6'}`}>
+                        <h3 className={`${isFullscreen ? 'text-base sm:text-lg' : 'text-lg'} font-semibold text-gray-900 ${isFullscreen ? 'mb-3' : 'mb-4'}`}>🏫 Favorite Schools Management</h3>
+                        <div className="space-y-3 sm:space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     School Name
@@ -1946,13 +1979,13 @@ export default function SchoolCatchmentMap({
                                     placeholder="Enter school name (e.g., 'St. Mary's Primary School')"
                                     value={formData.schoolName}
                                     onChange={(e) => handleInputChange('schoolName', e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-colors text-sm text-gray-900 placeholder-gray-400 bg-white"
+                                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-colors text-gray-900 placeholder-gray-400 bg-white ${isFullscreen ? 'text-sm' : 'text-sm'}`}
                                 />
                             </div>
                             <button
                                 onClick={addSchool}
                                 disabled={favoriteSchools.length >= 6}
-                                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className={`w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed ${isFullscreen ? 'text-sm' : 'text-sm'}`}
                             >
                                 Add to Favorites ({favoriteSchools.length}/6)
                             </button>
@@ -2335,42 +2368,59 @@ export default function SchoolCatchmentMap({
                             </div>
                         </div>
                     ) : null}
+                    </div>
                 </div>
 
-                {/* Map Display */}
-                <div className={`${isFullscreen ? 'flex-1' : 'w-full'}`}>
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">🗺️ Interactive Catchment Map</h3>
-                        <div className="flex items-center space-x-4">
-                            <div className="text-xs text-gray-500">
-                                Zones: {circles.length} | Favorites: {favoriteSchools.length}/6 
+                {/* Map Display - Responsive */}
+                <div className={`${isFullscreen ? 'flex-1 min-h-0' : 'w-full'}`}>
+                    <div className={`flex ${isFullscreen ? 'flex-col sm:flex-row' : 'flex-col sm:flex-row'} justify-between items-start sm:items-center ${isFullscreen ? 'mb-2 sm:mb-4' : 'mb-4'} gap-2 sm:gap-4`}>
+                        <h3 className={`${isFullscreen ? 'text-base sm:text-lg' : 'text-lg'} font-semibold text-gray-900`}>
+                            <span className="hidden sm:inline">🗺️ Interactive Catchment Map</span>
+                            <span className="sm:hidden">🗺️ Map</span>
+                        </h3>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                            <div className={`${isFullscreen ? 'text-xs' : 'text-xs'} text-gray-500`}>
+                                <span className="hidden sm:inline">Zones: {circles.length} | Favorites: {favoriteSchools.length}/6</span>
+                                <span className="sm:hidden">{circles.length} zones | {favoriteSchools.length}/6 favs</span>
                                 {selectedYearFilter !== 'all' && ` | Year: ${selectedYearFilter}`}
                                 {showAverageZones && ' | Averages: ON'}
                                 {comparisonMode && ' | Comparison Mode'}
-                                {focusedSchoolId && ` | Focused: ${favoriteSchools.find(s => s.id === focusedSchoolId)?.name}`}
+                                {focusedSchoolId && (
+                                    <span className="block sm:inline">
+                                        {` | Focused: ${(() => {
+                                            const focusedSchool = favoriteSchools.find(s => s.id === focusedSchoolId);
+                                            if (!focusedSchool) return 'Unknown';
+                                            return focusedSchool.name.length > 15 
+                                                ? focusedSchool.name.substring(0, 15) + '...' 
+                                                : focusedSchool.name;
+                                        })()}`}
+                                    </span>
+                                )}
                             </div>
                             {(circles.length > 0 || favoriteSchools.length > 0) && (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 sm:gap-2">
                                     {canSaveData() ? (
                                         <SaveResultsButton
                                             toolType="school-catchment"
                                             results={getCalculationResults()}
                                             formData={getFormData()}
                                             onSaveComplete={handleSaveComplete}
-                                            className="text-xs px-3 py-1"
+                                            className={`${isFullscreen ? 'text-xs px-2 py-1' : 'text-xs px-3 py-1'}`}
                                         />
                                     ) : (
-                                        <div className="text-xs text-gray-500 px-3 py-1 bg-gray-100 rounded border" title="Add favorite schools or generate catchment zones to enable saving">
-                                            💾 Save (Add schools or zones first)
+                                        <div className={`${isFullscreen ? 'text-xs' : 'text-xs'} text-gray-500 px-2 py-1 bg-gray-100 rounded border`} title="Add favorite schools or generate catchment zones to enable saving">
+                                            <span className="hidden sm:inline">💾 Save (Add schools or zones first)</span>
+                                            <span className="sm:hidden">💾 Save</span>
                                         </div>
                                     )}
                                     
                                     {(circles.length > 0 || favoriteSchools.length > 0) && (
                                         <button
                                             onClick={clearAll}
-                                            className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                            className={`text-red-600 hover:text-red-800 font-medium ${isFullscreen ? 'text-xs' : 'text-sm'}`}
                                         >
-                                            Clear All
+                                            <span className="hidden sm:inline">Clear All</span>
+                                            <span className="sm:hidden">Clear</span>
                                         </button>
                                     )}
                                 </div>
@@ -2392,9 +2442,14 @@ export default function SchoolCatchmentMap({
                     <div 
                         ref={mapContainerRef}
                         className={`w-full rounded-lg border border-gray-300 relative overflow-hidden bg-gray-100 ${
-                            isFullscreen ? 'h-full' : 'h-96'
+                            isFullscreen 
+                                ? 'flex-1 min-h-0 h-full' 
+                                : 'h-64 sm:h-80 md:h-96 lg:h-[28rem] xl:h-[32rem]'
                         }`}
-                        style={{ minHeight: isFullscreen ? '100%' : '400px' }}
+                        style={{ 
+                            minHeight: isFullscreen ? '100%' : '16rem',
+                            maxHeight: isFullscreen ? 'none' : '32rem'
+                        }}
                     >
                         {!mapInitialized && (
                             <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-[1000]">
@@ -2637,20 +2692,27 @@ export default function SchoolCatchmentMap({
                 </>
             )}
 
-            {/* Fullscreen Mode Tips Overlay */}
+            {/* Fullscreen Mode Tips Overlay - Responsive */}
             {isFullscreen && (
-                <div className="absolute bottom-4 left-4 bg-black bg-opacity-75 text-white px-4 py-3 rounded-lg text-sm max-w-md z-10">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">💡</span>
-                        <span className="font-medium">Fullscreen Mode Tips:</span>
+                <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 bg-black bg-opacity-75 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm max-w-xs sm:max-w-md z-10">
+                    <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                        <span className="text-sm sm:text-lg">💡</span>
+                        <span className="font-medium">
+                            <span className="hidden sm:inline">Fullscreen Mode Tips:</span>
+                            <span className="sm:hidden">Tips:</span>
+                        </span>
                     </div>
                     <ul className="text-xs space-y-1 text-gray-200">
-                        <li>• Use mouse wheel to zoom in/out for detailed catchment analysis</li>
-                        <li>• Drag to pan around and explore different areas</li>
-                        <li>• Click on schools to see detailed catchment information</li>
-                        <li>• Click anywhere on map to check catchment coverage</li>
-                        <li>• Use the controls panel to manage your favorite schools</li>
-                        <li>• Press <span className="bg-gray-600 px-1 rounded font-mono">ESC</span> to exit or <span className="bg-gray-600 px-1 rounded font-mono">F11</span> to toggle fullscreen</li>
+                        <li className="hidden sm:block">• Use mouse wheel to zoom in/out for detailed catchment analysis</li>
+                        <li className="sm:hidden">• Zoom/pan to explore areas</li>
+                        <li className="hidden sm:block">• Drag to pan around and explore different areas</li>
+                        <li className="hidden sm:block">• Click on schools to see detailed catchment information</li>
+                        <li className="sm:hidden">• Click schools for details</li>
+                        <li className="hidden sm:block">• Click anywhere on map to check catchment coverage</li>
+                        <li className="sm:hidden">• Click map to check coverage</li>
+                        <li className="hidden sm:block">• Use the controls panel to manage your favorite schools</li>
+                        <li className="sm:hidden">• Use controls to manage schools</li>
+                        <li>• Press <span className="bg-gray-600 px-1 rounded font-mono text-xs">ESC</span> to exit or <span className="bg-gray-600 px-1 rounded font-mono text-xs">F11</span> to toggle fullscreen</li>
                     </ul>
                 </div>
             )}

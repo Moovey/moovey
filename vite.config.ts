@@ -22,4 +22,17 @@ export default defineConfig({
             'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
         },
     },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    // Separate CSS-heavy dependencies into their own chunks
+                    'leaflet': ['leaflet'],
+                    'react-toastify': ['react-toastify'],
+                },
+            },
+        },
+        // Optimize CSS loading
+        cssCodeSplit: true,
+    },
 });
