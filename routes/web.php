@@ -276,6 +276,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // User Management
         Route::get('users', [AdminController::class, 'users'])->name('users');
+        Route::get('api/users', [AdminController::class, 'getUsersData'])->name('api.users');
         
         // Business Management
         Route::get('businesses', [AdminController::class, 'businesses'])->name('businesses');
