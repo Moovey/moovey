@@ -201,7 +201,7 @@ export default function WelcomeLayoutTest() {
                                     <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight drop-shadow-2xl">
                                         {heroData.title}
                                     </h1>
-                                    <p className="text-base sm:text-lg md:text-xl text-white/95 leading-relaxed max-w-2xl mx-auto lg:mx-0 drop-shadow-lg font-medium px-2 sm:px-0">
+                                    <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 leading-relaxed max-w-xl mx-auto lg:mx-0 drop-shadow-md px-2 sm:px-0">
                                         {heroData.description}
                                     </p>
                                 </div>
@@ -209,7 +209,7 @@ export default function WelcomeLayoutTest() {
                                 <div className="flex justify-center lg:justify-start pt-4">
                                     <a 
                                         href={heroData.ctaLink}
-                                        className="bg-[#17B7C7] text-white px-6 py-3 md:px-8 md:py-4 rounded-full font-bold text-sm md:text-base hover:bg-[#139AAA] transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105"
+                                        className="bg-[#17B7C7] text-white px-8 sm:px-10 lg:px-12 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                                     >
                                         {heroData.ctaText}
                                     </a>
@@ -223,10 +223,10 @@ export default function WelcomeLayoutTest() {
                 <section className="py-12 md:py-20 bg-white">
                     <div className="max-w-7xl mx-auto px-4 md:px-8">
                         <div className="text-center mb-12 md:mb-16">
-                            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+                            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 leading-tight">
                                 Everything You Need for a <span className="text-[#17B7C7]">Successful Move</span>
                             </h2>
-                            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                            <p className="text-gray-600 leading-relaxed max-w-3xl mx-auto">
                                 Access our comprehensive suite of moving resources, connect with trusted professionals, and join a supportive community.
                             </p>
                         </div>
@@ -251,13 +251,13 @@ export default function WelcomeLayoutTest() {
                                             </svg>
                                         )}
                                     </div>
-                                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 leading-tight">{prop.title}</h3>
-                                    <p className="text-base md:text-lg text-gray-600 mb-6 leading-relaxed">
+                                    <h3 className="text-xl font-bold text-gray-900 mb-4 leading-tight">{prop.title}</h3>
+                                    <p className="text-gray-600 mb-6 leading-relaxed">
                                         {prop.description}
                                     </p>
                                     <a 
                                         href={prop.link}
-                                        className={`bg-${prop.color === 'blue' ? '[#17B7C7] hover:bg-[#139AAA]' : prop.color + '-500 hover:bg-' + prop.color + '-600'} text-white px-6 py-3 md:px-8 md:py-4 rounded-full font-semibold text-sm md:text-base transition-all duration-300 inline-block`}
+                                        className={`bg-${prop.color === 'blue' ? '[#17B7C7] hover:bg-[#139AAA]' : prop.color + '-500 hover:bg-' + prop.color + '-600'} text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 inline-block`}
                                     >
                                         {prop.linkText}
                                     </a>

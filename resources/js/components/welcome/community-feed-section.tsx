@@ -93,20 +93,20 @@ const CommunityFeedSection = memo(({ stats }: CommunityFeedSectionProps) => {
     }
 
     return (
-        <section className="py-8 sm:py-12 md:py-16 lg:py-20 xl:py-24 2xl:py-28 bg-gray-100">
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-                <div className="text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16 xl:mb-20 2xl:mb-24">
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 lg:mb-6 xl:mb-8 leading-tight">
+        <section className="py-20 bg-gray-100">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center mb-12">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 leading-tight">
                         Join the <span className="text-[#17B7C7]">Conversation</span>
                     </h2>
-                    <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl text-gray-600 max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto leading-relaxed px-4 sm:px-0">
+                    <p className="text-gray-600 max-w-3xl mx-auto leading-relaxed">
                         Connect with thousands of movers sharing tips, asking questions, and supporting each other through their moving journey.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 md:gap-10 lg:gap-12 xl:gap-16 2xl:gap-20 items-center">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     {/* Community Feed Preview */}
-                    <div className="space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6 xl:space-y-8">{/*... rest stays same...*/}
+                    <div className="space-y-4">{/*... rest stays same...*/}
                         {posts.map((post) => (
                             <div key={post.id} className="bg-white rounded-xl p-6 shadow-lg transition-transform hover:scale-[1.02]">
                                 <div className="flex items-center space-x-3 mb-4">
@@ -157,7 +157,7 @@ const CommunityFeedSection = memo(({ stats }: CommunityFeedSectionProps) => {
 
                     {/* Right Column - CTA */}
                     <div className="text-center lg:text-left space-y-6">
-                        <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                        <h3 className="text-2xl font-bold text-gray-900">
                             Get instant answers from people who've been there
                         </h3>
                         <p className="text-gray-600 leading-relaxed">

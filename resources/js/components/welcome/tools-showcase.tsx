@@ -112,36 +112,36 @@ const ToolsShowcase = memo(() => {
     };
 
     return (
-        <section className="py-8 sm:py-12 md:py-16 lg:py-20 xl:py-24 2xl:py-28 bg-white">
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-                <div className="text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16 xl:mb-20 2xl:mb-24">
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 lg:mb-6 xl:mb-8 leading-tight">
+        <section className="py-20 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center mb-12">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 leading-tight">
                         Powerful <span className="text-[#17B7C7]">Moving Tools</span>
                     </h2>
-                    <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl text-gray-600 max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto leading-relaxed px-4 sm:px-0">
+                    <p className="text-gray-600 max-w-3xl mx-auto leading-relaxed">
                         Access our suite of professional-grade tools designed to simplify every aspect of your move.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-10 2xl:gap-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {tools.map((tool) => (
                         <div 
                             key={tool.id}
-                            className={`bg-gradient-to-br from-${tool.bgColor} to-white rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 2xl:p-12 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center`}
+                            className={`bg-gradient-to-br from-${tool.bgColor} to-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center`}
                         >
-                            <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 xl:w-16 xl:h-16 2xl:w-18 2xl:h-18 bg-${tool.color} rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-3 md:mb-4 lg:mb-5 xl:mb-6 2xl:mb-8`}>
-                                {renderIcon(tool.icon, "w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 2xl:w-9 2xl:h-9 text-white")}
+                            <div className={`w-12 h-12 bg-${tool.color} rounded-xl flex items-center justify-center mx-auto mb-4`}>
+                                {renderIcon(tool.icon, "w-6 h-6 text-white")}
                             </div>
-                            <h4 className="font-bold text-gray-900 mb-1 sm:mb-2 md:mb-3 lg:mb-4 xl:mb-5 2xl:mb-6 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl leading-tight">{tool.name}</h4>
-                            <p className="text-gray-600 mb-2 sm:mb-3 md:mb-4 lg:mb-5 xl:mb-6 2xl:mb-8 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl leading-relaxed">{tool.description}</p>
+                            <h4 className="font-bold text-gray-900 mb-3 leading-tight">{tool.name}</h4>
+                            <p className="text-gray-600 mb-4 text-sm leading-relaxed">{tool.description}</p>
                         </div>
                     ))}
                 </div>
 
-                <div className="text-center mt-8 sm:mt-10 md:mt-12 lg:mt-16 xl:mt-20 2xl:mt-24">
+                <div className="text-center mt-12">
                     <a 
                         href="/tools"
-                        className="bg-[#17B7C7] text-white px-6 py-3 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 xl:px-14 xl:py-7 2xl:px-16 2xl:py-8 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl font-semibold text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 inline-block"
+                        className="bg-[#17B7C7] text-white px-8 py-3 rounded-full font-semibold hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 inline-block"
                     >
                         Try Now
                     </a>
