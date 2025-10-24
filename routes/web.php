@@ -273,6 +273,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Admin Academy Dashboard
         Route::get('academy', [AdminController::class, 'academy'])->name('academy');
+        Route::get('api/lessons', [AdminController::class, 'getLessonsData'])->name('api.lessons');
         
         // User Management
         Route::get('users', [AdminController::class, 'users'])->name('users');

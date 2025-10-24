@@ -42,10 +42,85 @@ class AdminController extends Controller
             abort(403, 'Admin access required');
         }
         
-        $lessons = Lesson::latest()->get();
+        // Use caching for performance
+        $lessons = Cache::remember('admin_academy_lessons', 300, function () {
+            return Lesson::select([
+                    'id', 'title', 'description', 'lesson_stage', 'duration',
+                    'difficulty', 'status', 'lesson_order', 'content_file_path',
+                    'thumbnail_file_path', 'created_at', 'updated_at'
+                ])
+                ->orderBy('lesson_order')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($lesson) {
+                    // Add computed URLs
+                    $lesson->content_file_url = $lesson->content_file_path 
+                        ? asset('storage/' . $lesson->content_file_path) 
+                        : null;
+                    $lesson->thumbnail_file_url = $lesson->thumbnail_file_path 
+                        ? asset('storage/' . $lesson->thumbnail_file_path) 
+                        : null;
+                    return $lesson;
+                });
+        });
         
         return Inertia::render('admin/academy', [
-            'lessons' => $lessons
+            'lessons' => $lessons,
+            'initialFilters' => [
+                'search' => request('search', ''),
+                'status' => request('status', 'All Lessons'),
+                'page' => request('page', 1),
+            ]
+        ]);
+    }
+
+    /**
+     * Get lessons data via AJAX for partial reloads
+     */
+    public function getLessonsData(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Admin access required');
+        }
+
+        $query = Lesson::select([
+                'id', 'title', 'description', 'lesson_stage', 'duration',
+                'difficulty', 'status', 'lesson_order', 'content_file_path',
+                'thumbnail_file_path', 'created_at', 'updated_at'
+            ]);
+
+        // Apply filters
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('description', 'like', "%{$searchTerm}%")
+                  ->orWhere('lesson_stage', 'like', "%{$searchTerm}%")
+                  ->orWhere('difficulty', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        if ($request->filled('status') && $request->status !== 'All Lessons') {
+            $query->where('status', $request->status);
+        }
+
+        // Apply sorting
+        $query->orderBy('lesson_order')->orderBy('created_at', 'desc');
+
+        $lessons = $query->get()->map(function ($lesson) {
+            // Add computed URLs
+            $lesson->content_file_url = $lesson->content_file_path 
+                ? asset('storage/' . $lesson->content_file_path) 
+                : null;
+            $lesson->thumbnail_file_url = $lesson->thumbnail_file_path 
+                ? asset('storage/' . $lesson->thumbnail_file_path) 
+                : null;
+            return $lesson;
+        });
+
+        return response()->json([
+            'lessons' => $lessons,
+            'timestamp' => now()->toISOString()
         ]);
     }
 
