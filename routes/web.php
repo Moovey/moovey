@@ -43,6 +43,7 @@ Route::get('/storage-file/{path}', function ($path) {
 */
 
 Route::get('/', [PublicController::class, 'welcome'])->name('home');
+Route::get('/welcome-test', [PublicController::class, 'welcomeTest'])->name('welcome-test');
 Route::get('/academy', [PublicController::class, 'academy'])->name('academy');
 Route::get('/tools', [PublicController::class, 'tools'])->name('tools');
 Route::get('/marketplace', [PublicController::class, 'marketplace'])->name('marketplace');
@@ -136,6 +137,7 @@ Route::middleware('auth')->group(function () {
 // API Routes for async data loading
 Route::get('/api/welcome/featured-lessons', [PublicController::class, 'getFeaturedLessons'])->name('api.welcome.featured-lessons');
 Route::get('/api/welcome/business-network', [PublicController::class, 'getBusinessNetwork'])->name('api.welcome.business-network');
+Route::get('/api/stats', [PublicController::class, 'getStats'])->name('api.stats');
 
 // Lesson Viewing Routes (public access)
 Route::get('/lessons/{lesson}', [LessonController::class, 'show'])->name('lessons.show');
