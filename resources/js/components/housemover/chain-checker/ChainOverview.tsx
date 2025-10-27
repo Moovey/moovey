@@ -1781,34 +1781,90 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
 
                         {chainData.chain_role === 'buyer_seller' && (
                             <>
-                                {/* Down Chain Connected Participants */}
-                                {chainData.chain_participants && chainData.chain_participants.filter((p: any) => p.role === 'down_chain').length > 0 ? (
-                                    chainData.chain_participants.filter((p: any) => p.role === 'down_chain').map((participant: any, index: number) => (
-                                        participant.properties && participant.properties.map((property: any, propIndex: number) => (
-                                            <React.Fragment key={`down-${participant.user_id}-${propIndex}`}>
-                                                <PropertyHouseBlock
-                                                    title={`${participant.user_name || 'Down Chain'}'s Property`}
-                                                    linkHealth={property.progress_score || 0}
-                                                    isUserOwned={false}
-                                                    isEditable={false}
-                                                    type="linked"
-                                                    isUnknown={false}
-                                                    onRefresh={onRefresh}
-                                                    chainData={{
-                                                        ...participant.chain_data,
-                                                        linked_property: property,
-                                                        linked_user: participant,
-                                                        chain_status: participant.chain_status || property.chain_status || {}
-                                                    }}
-                                                />
-                                                {/* Chain Connector */}
-                                                <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
-                                            </React.Fragment>
-                                        ))
-                                    ))
+                                {/* Connected Participants - Show all connected participants */}
+                                {chainData.chain_participants && chainData.chain_participants.length > 0 ? (
+                                    <>
+                                        {/* First show connected participants' properties before user's selling property */}
+                                        {chainData.chain_participants.slice(0, Math.ceil(chainData.chain_participants.length / 2)).map((participant: any, index: number) => (
+                                            participant.properties && participant.properties.map((property: any, propIndex: number) => (
+                                                <React.Fragment key={`pre-${participant.user_id}-${propIndex}`}>
+                                                    <PropertyHouseBlock
+                                                        title={`${participant.user_name || 'Chain Partner'}'s Property`}
+                                                        linkHealth={property.progress_score || 0}
+                                                        isUserOwned={false}
+                                                        isEditable={false}
+                                                        type="linked"
+                                                        isUnknown={false}
+                                                        onRefresh={onRefresh}
+                                                        chainData={{
+                                                            ...participant.chain_data,
+                                                            linked_property: property,
+                                                            linked_user: participant,
+                                                            chain_status: participant.chain_status || property.chain_status || {}
+                                                        }}
+                                                    />
+                                                    {/* Chain Connector */}
+                                                    <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
+                                                </React.Fragment>
+                                            ))
+                                        ))}
+                                        
+                                        {/* User's Selling Property */}
+                                        <PropertyHouseBlock
+                                            title="The house I'm selling"
+                                            linkHealth={30}
+                                            isUserOwned={true}
+                                            isEditable={true}
+                                            type="selling"
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                        {/* Chain Connector */}
+                                        <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
+                                        
+                                        {/* User's Buying Property */}
+                                        <PropertyHouseBlock
+                                            title="The house I'm buying"
+                                            linkHealth={50}
+                                            isUserOwned={true}
+                                            isEditable={true}
+                                            type="buying"
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                        {/* Chain Connector */}
+                                        <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
+                                        
+                                        {/* Remaining connected participants' properties after user's buying property */}
+                                        {chainData.chain_participants.slice(Math.ceil(chainData.chain_participants.length / 2)).map((participant: any, index: number) => (
+                                            participant.properties && participant.properties.map((property: any, propIndex: number) => (
+                                                <React.Fragment key={`post-${participant.user_id}-${propIndex}`}>
+                                                    <PropertyHouseBlock
+                                                        title={`${participant.user_name || 'Chain Partner'}'s Property`}
+                                                        linkHealth={property.progress_score || 0}
+                                                        isUserOwned={false}
+                                                        isEditable={false}
+                                                        type="linked"
+                                                        isUnknown={false}
+                                                        onRefresh={onRefresh}
+                                                        chainData={{
+                                                            ...participant.chain_data,
+                                                            linked_property: property,
+                                                            linked_user: participant,
+                                                            chain_status: participant.chain_status || property.chain_status || {}
+                                                        }}
+                                                    />
+                                                    {/* Chain Connector - only add if not the last item */}
+                                                    {!(index === Math.floor(chainData.chain_participants.length / 2) - 1 && propIndex === participant.properties.length - 1) && (
+                                                        <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
+                                                    )}
+                                                </React.Fragment>
+                                            ))
+                                        ))}
+                                    </>
                                 ) : (
                                     <>
-                                        {/* Unknown Down Chain */}
+                                        {/* No connected participants - show unknown chain */}
                                         <PropertyHouseBlock
                                             title="Down chain property"
                                             linkHealth={0}
@@ -1821,60 +1877,33 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                         />
                                         {/* Chain Connector */}
                                         <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
-                                    </>
-                                )}
-                                
-                                {/* User's Selling Property */}
-                                <PropertyHouseBlock
-                                    title="The house I'm selling"
-                                    linkHealth={30}
-                                    isUserOwned={true}
-                                    isEditable={true}
-                                    type="selling"
-                                    onRefresh={onRefresh}
-                                    chainData={chainData}
-                                />
-                                {/* Chain Connector */}
-                                <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
-                                
-                                {/* User's Buying Property */}
-                                <PropertyHouseBlock
-                                    title="The house I'm buying"
-                                    linkHealth={50}
-                                    isUserOwned={true}
-                                    isEditable={true}
-                                    type="buying"
-                                    onRefresh={onRefresh}
-                                    chainData={chainData}
-                                />
-                                {/* Chain Connector */}
-                                <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
-                                
-                                {/* Up Chain Connected Participants */}
-                                {chainData.chain_participants && chainData.chain_participants.filter((p: any) => p.role === 'up_chain').length > 0 ? (
-                                    chainData.chain_participants.filter((p: any) => p.role === 'up_chain').map((participant: any, index: number) => (
-                                        participant.properties && participant.properties.map((property: any, propIndex: number) => (
-                                            <React.Fragment key={`up-${participant.user_id}-${propIndex}`}>
-                                                <PropertyHouseBlock
-                                                    title={`${participant.user_name || 'Up Chain'}'s Property`}
-                                                    linkHealth={property.progress_score || 0}
-                                                    isUserOwned={false}
-                                                    isEditable={false}
-                                                    type="linked"
-                                                    isUnknown={false}
-                                                    onRefresh={onRefresh}
-                                                    chainData={{
-                                                        ...participant.chain_data,
-                                                        linked_property: property,
-                                                        linked_user: participant,
-                                                        chain_status: participant.chain_status || property.chain_status || {}
-                                                    }}
-                                                />
-                                            </React.Fragment>
-                                        ))
-                                    ))
-                                ) : (
-                                    <>
+                                        
+                                        {/* User's Selling Property */}
+                                        <PropertyHouseBlock
+                                            title="The house I'm selling"
+                                            linkHealth={30}
+                                            isUserOwned={true}
+                                            isEditable={true}
+                                            type="selling"
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                        {/* Chain Connector */}
+                                        <div className="w-4 lg:w-8 h-1 bg-green-400 rounded flex-shrink-0"></div>
+                                        
+                                        {/* User's Buying Property */}
+                                        <PropertyHouseBlock
+                                            title="The house I'm buying"
+                                            linkHealth={50}
+                                            isUserOwned={true}
+                                            isEditable={true}
+                                            type="buying"
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                        {/* Chain Connector */}
+                                        <div className="w-4 lg:w-8 h-1 bg-gray-300 rounded flex-shrink-0"></div>
+                                        
                                         {/* Unknown Up Chain */}
                                         <PropertyHouseBlock
                                             title="Up chain property"
@@ -1981,53 +2010,147 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
 
                         {chainData.chain_role === 'buyer_seller' && (
                             <>
-                                <PropertyHouseBlockMobile
-                                    title="Down chain property"
-                                    linkHealth={0}
-                                    isUserOwned={false}
-                                    isEditable={false}
-                                    type="unknown"
-                                    isUnknown={true}
-                                    onRefresh={onRefresh}
-                                    chainData={chainData}
-                                />
-                                <div className="flex justify-center">
-                                    <div className="w-1 h-8 bg-gray-300 rounded"></div>
-                                </div>
-                                <PropertyHouseBlockMobile
-                                    title="The house I'm selling"
-                                    linkHealth={30}
-                                    isUserOwned={true}
-                                    isEditable={true}
-                                    type="selling"
-                                    onRefresh={onRefresh}
-                                    chainData={chainData}
-                                />
-                                <div className="flex justify-center">
-                                    <div className="w-1 h-8 bg-gray-300 rounded"></div>
-                                </div>
-                                <PropertyHouseBlockMobile
-                                    title="The house I'm buying"
-                                    linkHealth={50}
-                                    isUserOwned={true}
-                                    isEditable={true}
-                                    type="buying"
-                                    onRefresh={onRefresh}
-                                    chainData={chainData}
-                                />
-                                <div className="flex justify-center">
-                                    <div className="w-1 h-8 bg-gray-300 rounded"></div>
-                                </div>
-                                <PropertyHouseBlockMobile
-                                    title="Up chain property"
-                                    linkHealth={0}
-                                    isUserOwned={false}
-                                    isEditable={false}
-                                    type="unknown"
-                                    isUnknown={true}
-                                    onRefresh={onRefresh}
-                                    chainData={chainData}
-                                />
+                                {/* Connected Participants - Show all connected participants */}
+                                {chainData.chain_participants && chainData.chain_participants.length > 0 ? (
+                                    <>
+                                        {/* First show connected participants' properties before user's selling property */}
+                                        {chainData.chain_participants.slice(0, Math.ceil(chainData.chain_participants.length / 2)).map((participant: any, index: number) => (
+                                            participant.properties && participant.properties.map((property: any, propIndex: number) => (
+                                                <React.Fragment key={`mobile-pre-${participant.user_id}-${propIndex}`}>
+                                                    <PropertyHouseBlockMobile
+                                                        title={`${participant.user_name || 'Chain Partner'}'s Property`}
+                                                        linkHealth={property.progress_score || 0}
+                                                        isUserOwned={false}
+                                                        isEditable={false}
+                                                        type="linked"
+                                                        isUnknown={false}
+                                                        onRefresh={onRefresh}
+                                                        chainData={{
+                                                            ...participant.chain_data,
+                                                            linked_property: property,
+                                                            linked_user: participant,
+                                                            chain_status: participant.chain_status || property.chain_status || {}
+                                                        }}
+                                                    />
+                                                    <div className="flex justify-center">
+                                                        <div className="w-1 h-8 bg-green-400 rounded"></div>
+                                                    </div>
+                                                </React.Fragment>
+                                            ))
+                                        ))}
+                                        
+                                        {/* User's Selling Property */}
+                                        <PropertyHouseBlockMobile
+                                            title="The house I'm selling"
+                                            linkHealth={30}
+                                            isUserOwned={true}
+                                            isEditable={true}
+                                            type="selling"
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                        <div className="flex justify-center">
+                                            <div className="w-1 h-8 bg-green-400 rounded"></div>
+                                        </div>
+                                        
+                                        {/* User's Buying Property */}
+                                        <PropertyHouseBlockMobile
+                                            title="The house I'm buying"
+                                            linkHealth={50}
+                                            isUserOwned={true}
+                                            isEditable={true}
+                                            type="buying"
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                        
+                                        {/* Remaining connected participants' properties after user's buying property */}
+                                        {chainData.chain_participants.slice(Math.ceil(chainData.chain_participants.length / 2)).length > 0 && (
+                                            <div className="flex justify-center">
+                                                <div className="w-1 h-8 bg-green-400 rounded"></div>
+                                            </div>
+                                        )}
+                                        
+                                        {chainData.chain_participants.slice(Math.ceil(chainData.chain_participants.length / 2)).map((participant: any, index: number) => (
+                                            participant.properties && participant.properties.map((property: any, propIndex: number) => (
+                                                <React.Fragment key={`mobile-post-${participant.user_id}-${propIndex}`}>
+                                                    <PropertyHouseBlockMobile
+                                                        title={`${participant.user_name || 'Chain Partner'}'s Property`}
+                                                        linkHealth={property.progress_score || 0}
+                                                        isUserOwned={false}
+                                                        isEditable={false}
+                                                        type="linked"
+                                                        isUnknown={false}
+                                                        onRefresh={onRefresh}
+                                                        chainData={{
+                                                            ...participant.chain_data,
+                                                            linked_property: property,
+                                                            linked_user: participant,
+                                                            chain_status: participant.chain_status || property.chain_status || {}
+                                                        }}
+                                                    />
+                                                    {/* Only add connector if not the last item */}
+                                                    {!(index === Math.floor(chainData.chain_participants.length / 2) - 1 && propIndex === participant.properties.length - 1) && (
+                                                        <div className="flex justify-center">
+                                                            <div className="w-1 h-8 bg-green-400 rounded"></div>
+                                                        </div>
+                                                    )}
+                                                </React.Fragment>
+                                            ))
+                                        ))}
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* No connected participants - show unknown chain */}
+                                        <PropertyHouseBlockMobile
+                                            title="Down chain property"
+                                            linkHealth={0}
+                                            isUserOwned={false}
+                                            isEditable={false}
+                                            type="unknown"
+                                            isUnknown={true}
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                        <div className="flex justify-center">
+                                            <div className="w-1 h-8 bg-gray-300 rounded"></div>
+                                        </div>
+                                        <PropertyHouseBlockMobile
+                                            title="The house I'm selling"
+                                            linkHealth={30}
+                                            isUserOwned={true}
+                                            isEditable={true}
+                                            type="selling"
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                        <div className="flex justify-center">
+                                            <div className="w-1 h-8 bg-gray-300 rounded"></div>
+                                        </div>
+                                        <PropertyHouseBlockMobile
+                                            title="The house I'm buying"
+                                            linkHealth={50}
+                                            isUserOwned={true}
+                                            isEditable={true}
+                                            type="buying"
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                        <div className="flex justify-center">
+                                            <div className="w-1 h-8 bg-gray-300 rounded"></div>
+                                        </div>
+                                        <PropertyHouseBlockMobile
+                                            title="Up chain property"
+                                            linkHealth={0}
+                                            isUserOwned={false}
+                                            isEditable={false}
+                                            type="unknown"
+                                            isUnknown={true}
+                                            onRefresh={onRefresh}
+                                            chainData={chainData}
+                                        />
+                                    </>
+                                )}
                             </>
                         )}
                     </div>
