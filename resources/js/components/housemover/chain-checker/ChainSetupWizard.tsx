@@ -564,9 +564,6 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                             {property.address}
                                                         </div>
                                                     )}
-                                                    <div className="text-sm text-gray-600">
-                                                        {property.formatted_price || `£${property.price?.toLocaleString() || 'Price on request'}`}
-                                                    </div>
                                                     {property.summary && (
                                                         <div className="text-xs text-gray-500">
                                                             {property.summary}
