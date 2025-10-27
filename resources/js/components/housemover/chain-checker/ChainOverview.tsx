@@ -1575,7 +1575,7 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                                                          stage.status === 'in_progress' ? '🔄' :
                                                          stage.status === 'started' ? '🚀' : '⏳'}
                                                     </span>
-                                                    <span className="font-medium text-sm">{stage.label}</span>
+                                                    <span className="font-medium text-sm text-gray-800">{stage.label}</span>
                                                 </div>
                                                 <span className={`text-xs font-semibold ${
                                                     stage.status === 'completed' ? 'text-green-600' :
