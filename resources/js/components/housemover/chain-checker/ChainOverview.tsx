@@ -15,7 +15,7 @@ interface PropertyHouseBlockProps {
     chainData?: any;
 }
 
-const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
+const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = React.memo(({
     title,
     linkHealth,
     isUserOwned,
@@ -25,7 +25,21 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
     onRefresh,
     chainData
 }) => {
-    const [showModal, setShowModal] = useState(false);
+    // Create simple unique modal ID
+    const modalId = `property-modal-${type}-${title.replace(/\s+/g, '-').toLowerCase()}`;
+    const modalData = { title, type, isUnknown, isEditable, chainData, onRefresh };
+    const { isOpen: showModal, openModal, closeModal } = useUniversalModal(modalId, modalData);
+    
+    const [isComponentLoading, setIsComponentLoading] = useState(false);
+    const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+
+    // Reset loading states when modal closes
+    useEffect(() => {
+        if (!showModal) {
+            setIsComponentLoading(false);
+            setIsButtonDisabled(false);
+        }
+    }, [showModal]);
 
     // Get real stage data from chainData or use defaults
     const getStageProgress = (stage: string) => {
@@ -131,19 +145,61 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
     };
 
     const getButtonAction = () => {
+        // Prevent multiple clicks during loading or if button is disabled
+        if (isComponentLoading || isButtonDisabled || showModal) return;
+        
+        setIsButtonDisabled(true);
+        setIsComponentLoading(true);
+        
+        // Re-enable button after delay to prevent spam clicking
+        setTimeout(() => {
+            setIsButtonDisabled(false);
+        }, 1000);
+        
         if (type === 'linked') {
             // Navigate to the chain partner's profile or show their details
             const linkedUser = chainData?.linked_user;
             if (linkedUser?.user_id) {
+                setIsComponentLoading(false);
                 window.location.href = `/messages?user=${linkedUser.user_id}`;
             } else {
+                setIsComponentLoading(false);
                 toast.info('Chain partner details not available');
             }
         } else if (isUnknown || (isEditable && isUserOwned)) {
-            setShowModal(true);
+            // Open modal with current component data
+            setTimeout(() => {
+                openModal({ 
+                    title, 
+                    type, 
+                    isUnknown, 
+                    isEditable, 
+                    chainData, 
+                    onRefresh: () => {
+                        if (onRefresh) onRefresh();
+                        setIsComponentLoading(false);
+                        setIsButtonDisabled(false);
+                    }
+                });
+                setIsComponentLoading(false);
+            }, 100);
         } else {
             // Contact link owner logic
-            setShowModal(true);
+            setTimeout(() => {
+                openModal({ 
+                    title, 
+                    type, 
+                    isUnknown, 
+                    isEditable, 
+                    chainData, 
+                    onRefresh: () => {
+                        if (onRefresh) onRefresh();
+                        setIsComponentLoading(false);
+                        setIsButtonDisabled(false);
+                    }
+                });
+                setIsComponentLoading(false);
+            }, 100);
         }
     };
 
@@ -298,8 +354,11 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
             {/* Action Button */}
             <button
                 onClick={getButtonAction}
-                className={`w-full py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                    isUnknown
+                disabled={isButtonDisabled || isComponentLoading}
+                className={`w-full py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center justify-center ${
+                    isButtonDisabled || isComponentLoading
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : isUnknown
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
                         : type === 'linked'
                         ? 'bg-purple-600 text-white hover:bg-purple-700'
@@ -308,32 +367,25 @@ const PropertyHouseBlock: React.FC<PropertyHouseBlockProps> = ({
                         : 'bg-gray-600 text-white hover:bg-gray-700'
                 }`}
             >
-                {getButtonText()}
+                {isComponentLoading ? (
+                    <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Loading...
+                    </>
+                ) : (
+                    getButtonText()
+                )}
             </button>
                 </div>
             </div>
 
-            {/* Modal for editing/building links */}
-            {showModal && (
-                <PropertyModal
-                    isOpen={showModal}
-                    onClose={() => setShowModal(false)}
-                    title={title}
-                    type={type}
-                    isUnknown={isUnknown}
-                    isEditable={isEditable}
-                    chainData={chainData}
-                    onUpdate={(data) => {
-                        // Handle update callback - refresh parent component
-                        if (onRefresh) {
-                            onRefresh();
-                        }
-                    }}
-                />
-            )}
+            {/* Modal removed - now handled globally */}
         </motion.div>
     );
-};
+});
 
 interface PropertyModalProps {
     isOpen: boolean;
@@ -357,6 +409,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
     chainData
 }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(true);
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     // Helper function to get current progress from chainData
@@ -388,16 +441,43 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
         agentEmail: '',
         // For progress updates - initialize with current or fallback values
         stages: {
-            offerAccepted: getCurrentProgress('offer_accepted', type === 'buying' ? 100 : type === 'selling' ? 100 : 0),
-            mortgageApproved: getCurrentProgress('mortgage_approval', type === 'buying' ? 100 : type === 'selling' ? 75 : 0),
-            searchesComplete: getCurrentProgress('searches_surveys', type === 'buying' ? 50 : type === 'selling' ? 50 : 0),
-            surveysComplete: getCurrentProgress('surveys_complete', type === 'buying' ? 50 : type === 'selling' ? 50 : 0),
-            contractsExchanged: getCurrentProgress('contracts_exchanged', 0),
-            completionAchieved: getCurrentProgress('completion', 0)
+            offerAccepted: 0,
+            mortgageApproved: 0,
+            searchesComplete: 0,
+            surveysComplete: 0,
+            contractsExchanged: 0,
+            completionAchieved: 0
         },
         // For contact messages
         message: ''
     });
+
+    // Initialize form data when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setIsInitializing(true);
+            setSuccessMessage('');
+            setErrorMessage('');
+            
+            // Initialize form data with current values
+            setFormData(prev => ({
+                ...prev,
+                stages: {
+                    offerAccepted: getCurrentProgress('offer_accepted', type === 'buying' ? 100 : type === 'selling' ? 100 : 0),
+                    mortgageApproved: getCurrentProgress('mortgage_approval', type === 'buying' ? 100 : type === 'selling' ? 75 : 0),
+                    searchesComplete: getCurrentProgress('searches_surveys', type === 'buying' ? 50 : type === 'selling' ? 50 : 0),
+                    surveysComplete: getCurrentProgress('surveys_complete', type === 'buying' ? 50 : type === 'selling' ? 50 : 0),
+                    contractsExchanged: getCurrentProgress('contracts_exchanged', 0),
+                    completionAchieved: getCurrentProgress('completion', 0)
+                }
+            }));
+            
+            // Small delay to prevent flash
+            setTimeout(() => {
+                setIsInitializing(false);
+            }, 200);
+        }
+    }, [isOpen, chainData]);
 
     const handleStageChange = (stage: string, value: number) => {
         const currentStages = formData.stages as any;
@@ -530,8 +610,8 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-xl p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 sm:p-6">
+            <div className="bg-white rounded-xl p-4 sm:p-6 max-w-md w-full max-h-[85vh] overflow-y-auto shadow-2xl mx-auto my-8" style={{ maxWidth: 'calc(100vw - 2rem)' }}>
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900 pr-4">
                         {isUnknown ? 'Build Link' : isEditable ? 'Update Progress' : 'Contact Link Owner'}
@@ -565,7 +645,16 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                     </div>
                 )}
 
-                <div className="space-y-3 sm:space-y-4">
+                {/* Loading State */}
+                {isInitializing ? (
+                    <div className="space-y-3 sm:space-y-4">
+                        <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                            <span className="ml-2 text-gray-600 text-sm">Loading...</span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-3 sm:space-y-4">
                     {isUnknown ? (
                         <>
                             <div>
@@ -609,90 +698,90 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                     ) : isEditable ? (
                         <div>
                             <h4 className="text-sm sm:text-base font-medium text-gray-900 mb-3">Update Stage Progress</h4>
-                            <div className="space-y-2 sm:space-y-3">
+                            <div className="space-y-3 sm:space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Offer Accepted</span>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            value={formData.stages.offerAccepted}
-                                            onChange={(e) => handleStageChange('offerAccepted', parseInt(e.target.value))}
-                                            className="w-16 sm:w-24"
-                                        />
-                                        <span className="text-xs text-gray-600 w-8">{formData.stages.offerAccepted}%</span>
-                                    </div>
+                                    <select
+                                        value={formData.stages.offerAccepted}
+                                        onChange={(e) => handleStageChange('offerAccepted', parseInt(e.target.value))}
+                                        className="text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                                    >
+                                        <option value={0}>Not Started (0%)</option>
+                                        <option value={25}>Started (25%)</option>
+                                        <option value={50}>In Progress (50%)</option>
+                                        <option value={75}>Nearly Complete (75%)</option>
+                                        <option value={100}>Completed (100%)</option>
+                                    </select>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Mortgage Approved</span>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            value={formData.stages.mortgageApproved}
-                                            onChange={(e) => handleStageChange('mortgageApproved', parseInt(e.target.value))}
-                                            className="w-16 sm:w-24"
-                                        />
-                                        <span className="text-xs text-gray-600 w-8">{formData.stages.mortgageApproved}%</span>
-                                    </div>
+                                    <select
+                                        value={formData.stages.mortgageApproved}
+                                        onChange={(e) => handleStageChange('mortgageApproved', parseInt(e.target.value))}
+                                        className="text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                                    >
+                                        <option value={0}>Not Started (0%)</option>
+                                        <option value={25}>Applied (25%)</option>
+                                        <option value={50}>Under Review (50%)</option>
+                                        <option value={75}>Offer Received (75%)</option>
+                                        <option value={100}>Approved (100%)</option>
+                                    </select>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Searches Complete</span>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            value={formData.stages.searchesComplete}
-                                            onChange={(e) => handleStageChange('searchesComplete', parseInt(e.target.value))}
-                                            className="w-16 sm:w-24"
-                                        />
-                                        <span className="text-xs text-gray-600 w-8">{formData.stages.searchesComplete}%</span>
-                                    </div>
+                                    <select
+                                        value={formData.stages.searchesComplete}
+                                        onChange={(e) => handleStageChange('searchesComplete', parseInt(e.target.value))}
+                                        className="text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                                    >
+                                        <option value={0}>Not Started (0%)</option>
+                                        <option value={25}>Ordered (25%)</option>
+                                        <option value={50}>In Progress (50%)</option>
+                                        <option value={75}>Results Received (75%)</option>
+                                        <option value={100}>Completed (100%)</option>
+                                    </select>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Surveys Complete</span>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            value={formData.stages.surveysComplete}
-                                            onChange={(e) => handleStageChange('surveysComplete', parseInt(e.target.value))}
-                                            className="w-16 sm:w-24"
-                                        />
-                                        <span className="text-xs text-gray-600 w-8">{formData.stages.surveysComplete}%</span>
-                                    </div>
+                                    <select
+                                        value={formData.stages.surveysComplete}
+                                        onChange={(e) => handleStageChange('surveysComplete', parseInt(e.target.value))}
+                                        className="text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                                    >
+                                        <option value={0}>Not Started (0%)</option>
+                                        <option value={25}>Booked (25%)</option>
+                                        <option value={50}>Survey Done (50%)</option>
+                                        <option value={75}>Report Received (75%)</option>
+                                        <option value={100}>Reviewed (100%)</option>
+                                    </select>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Contracts Exchanged</span>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            value={formData.stages.contractsExchanged}
-                                            onChange={(e) => handleStageChange('contractsExchanged', parseInt(e.target.value))}
-                                            className="w-16 sm:w-24"
-                                        />
-                                        <span className="text-xs text-gray-600 w-8">{formData.stages.contractsExchanged}%</span>
-                                    </div>
+                                    <select
+                                        value={formData.stages.contractsExchanged}
+                                        onChange={(e) => handleStageChange('contractsExchanged', parseInt(e.target.value))}
+                                        className="text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                                    >
+                                        <option value={0}>Not Started (0%)</option>
+                                        <option value={25}>Preparing (25%)</option>
+                                        <option value={50}>Ready to Exchange (50%)</option>
+                                        <option value={75}>Date Set (75%)</option>
+                                        <option value={100}>Exchanged (100%)</option>
+                                    </select>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs sm:text-sm text-gray-700 flex-1 mr-3">Completion Achieved</span>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            value={formData.stages.completionAchieved}
-                                            onChange={(e) => handleStageChange('completionAchieved', parseInt(e.target.value))}
-                                            className="w-16 sm:w-24"
-                                        />
-                                        <span className="text-xs text-gray-600 w-8">{formData.stages.completionAchieved}%</span>
-                                    </div>
+                                    <select
+                                        value={formData.stages.completionAchieved}
+                                        onChange={(e) => handleStageChange('completionAchieved', parseInt(e.target.value))}
+                                        className="text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                                    >
+                                        <option value={0}>Not Started (0%)</option>
+                                        <option value={25}>Keys Arranged (25%)</option>
+                                        <option value={50}>Final Checks (50%)</option>
+                                        <option value={75}>Funds Transferred (75%)</option>
+                                        <option value={100}>Completed (100%)</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -709,7 +798,8 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                             />
                         </div>
                     )}
-                </div>
+                    </div>
+                )}
 
                 <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-6">
                     <button
@@ -745,7 +835,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
 };
 
 // Mobile version of the PropertyHouseBlock component
-const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
+const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = React.memo(({
     title,
     linkHealth,
     isUserOwned,
@@ -755,7 +845,21 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
     onRefresh,
     chainData
 }) => {
-    const [showModal, setShowModal] = useState(false);
+    // Use same modal ID as desktop version for unified behavior
+    const modalId = `property-modal-${type}-${title.replace(/\s+/g, '-').toLowerCase()}`;
+    const modalData = { title, type, isUnknown, isEditable, chainData, onRefresh };
+    const { isOpen: showModal, openModal, closeModal } = useUniversalModal(modalId, modalData);
+    
+    const [isComponentLoading, setIsComponentLoading] = useState(false);
+    const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+
+    // Reset loading states when modal closes
+    useEffect(() => {
+        if (!showModal) {
+            setIsComponentLoading(false);
+            setIsButtonDisabled(false);
+        }
+    }, [showModal]);
 
     const getButtonText = () => {
         if (isUnknown) return 'Build this Link';
@@ -765,18 +869,59 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
     };
 
     const getButtonAction = () => {
+        // Prevent multiple clicks during loading or if button is disabled
+        if (isComponentLoading || isButtonDisabled || showModal) return;
+        
+        setIsButtonDisabled(true);
+        setIsComponentLoading(true);
+        
+        // Re-enable button after delay to prevent spam clicking
+        setTimeout(() => {
+            setIsButtonDisabled(false);
+        }, 1000);
+        
         if (type === 'linked') {
             // Navigate to the chain partner's profile or show their details
             const linkedUser = chainData?.linked_user;
             if (linkedUser?.user_id) {
+                setIsComponentLoading(false);
                 window.location.href = `/messages?user=${linkedUser.user_id}`;
             } else {
+                setIsComponentLoading(false);
                 toast.info('Chain partner details not available');
             }
         } else if (isUnknown || (isEditable && isUserOwned)) {
-            setShowModal(true);
+            setTimeout(() => {
+                openModal({ 
+                    title, 
+                    type, 
+                    isUnknown, 
+                    isEditable, 
+                    chainData, 
+                    onRefresh: () => {
+                        if (onRefresh) onRefresh();
+                        setIsComponentLoading(false);
+                        setIsButtonDisabled(false);
+                    }
+                });
+                setIsComponentLoading(false);
+            }, 100);
         } else {
-            setShowModal(true);
+            setTimeout(() => {
+                openModal({ 
+                    title, 
+                    type, 
+                    isUnknown, 
+                    isEditable, 
+                    chainData, 
+                    onRefresh: () => {
+                        if (onRefresh) onRefresh();
+                        setIsComponentLoading(false);
+                        setIsButtonDisabled(false);
+                    }
+                });
+                setIsComponentLoading(false);
+            }, 100);
         }
     };
 
@@ -900,9 +1045,24 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
                             {isUserOwned && (
                                 <button
                                     onClick={getButtonAction}
-                                    className="mt-1 text-xs text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
+                                    disabled={isButtonDisabled || isComponentLoading}
+                                    className={`mt-1 text-xs transition-colors flex items-center ${
+                                        isButtonDisabled || isComponentLoading
+                                            ? 'text-gray-400 cursor-not-allowed'
+                                            : 'text-[#00BCD4] hover:text-[#00ACC1]'
+                                    }`}
                                 >
-                                    Edit Progress
+                                    {isComponentLoading ? (
+                                        <>
+                                            <svg className="animate-spin -ml-1 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Loading...
+                                        </>
+                                    ) : (
+                                        'Edit Progress'
+                                    )}
                                 </button>
                             )}
                         </div>
@@ -926,32 +1086,63 @@ const PropertyHouseBlockMobile: React.FC<PropertyHouseBlockProps> = ({
                 </div>
             </div>
 
-            {/* Modal for editing/building links */}
-            {showModal && (
-                <PropertyModal
-                    isOpen={showModal}
-                    onClose={() => setShowModal(false)}
-                    title={title}
-                    type={type}
-                    isUnknown={isUnknown}
-                    isEditable={isEditable}
-                    chainData={chainData}
-                    onUpdate={(data) => {
-                        // Handle update callback - refresh parent component  
-                        if (onRefresh) {
-                            onRefresh();
-                        }
-                    }}
-                />
-            )}
+            {/* Modal removed - now handled globally */}
         </motion.div>
     );
-};
+});
 
 interface ChainOverviewProps {
     chainData: any;
     onRefresh: () => void;
 }
+
+// Global modal manager with modal data storage
+let globalModalController: {
+    currentModal: string | null;
+    modalData: any;
+    setCurrentModal: (modalId: string | null, data?: any) => void;
+    closeAllModals: () => void;
+    subscribers: Set<(modalId: string | null, data?: any) => void>;
+} = {
+    currentModal: null,
+    modalData: null,
+    setCurrentModal: function(modalId: string | null, data?: any) {
+        this.currentModal = modalId;
+        this.modalData = data;
+        this.subscribers.forEach(callback => callback(modalId, data));
+    },
+    closeAllModals: function() {
+        this.setCurrentModal(null, null);
+    },
+    subscribers: new Set()
+};
+
+// Universal modal hook - works on all devices
+const useUniversalModal = (modalId: string, modalData?: any) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        const handleModalChange = (currentModalId: string | null) => {
+            setIsOpen(currentModalId === modalId);
+        };
+
+        globalModalController.subscribers.add(handleModalChange);
+        
+        return () => {
+            globalModalController.subscribers.delete(handleModalChange);
+        };
+    }, [modalId]);
+
+    const openModal = (data?: any) => {
+        globalModalController.setCurrentModal(modalId, data || modalData);
+    };
+
+    const closeModal = () => {
+        globalModalController.setCurrentModal(null, null);
+    };
+
+    return { isOpen, openModal, closeModal };
+};
 
 const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) => {
     const [showPropertyBasket, setShowPropertyBasket] = useState(false);
@@ -2241,8 +2432,45 @@ const ChainOverview: React.FC<ChainOverviewProps> = ({ chainData, onRefresh }) =
                     </button>
                 </div>
             </div>
+
+            {/* Global Modal Renderer - Single modal for all devices */}
+            <GlobalModalRenderer onRefresh={onRefresh} />
         </div>
     );
+};
+
+// Global Modal Renderer Component
+const GlobalModalRenderer: React.FC<{ onRefresh?: () => void }> = ({ onRefresh }) => {
+    const [showModal, setShowModal] = useState(false);
+    
+    useEffect(() => {
+        const handleModalChange = (currentModalId: string | null) => {
+            setShowModal(currentModalId !== null);
+        };
+
+        globalModalController.subscribers.add(handleModalChange);
+        
+        return () => {
+            globalModalController.subscribers.delete(handleModalChange);
+        };
+    }, []);
+
+    const closeModal = () => {
+        globalModalController.setCurrentModal(null, null);
+    };
+    
+    return showModal && globalModalController.modalData ? (
+        <PropertyModal
+            isOpen={showModal}
+            onClose={closeModal}
+            title={globalModalController.modalData.title}
+            type={globalModalController.modalData.type}
+            isUnknown={globalModalController.modalData.isUnknown}
+            isEditable={globalModalController.modalData.isEditable}
+            onUpdate={onRefresh}
+            chainData={globalModalController.modalData.chainData}
+        />
+    ) : null;
 };
 
 export default ChainOverview;
