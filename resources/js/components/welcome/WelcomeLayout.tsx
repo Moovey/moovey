@@ -75,6 +75,7 @@ export default function WelcomeLayout() {
                 {/* Preload critical resources */}
                 <link rel="preload" href="/images/hero-banner2.webp" as="image" />
                 <link rel="preload" href="/images/hero-banner3.webp" as="image" />
+                <link rel="preload" href="/images/hero-banner4.webp" as="image" />
                 <meta name="description" content="Moovey empowers you with free e-learning, tools, trade connections, and a community for a seamless moving journey." />
             </Head>
             

@@ -12,6 +12,12 @@ export const HERO_DATA_ARRAY: HeroData[] = [
         description: "With our custom task builder and free toolbox to help you make your move a success.",
         ctaText: "Start Your Free Move Plan",
         ctaLink: "/register"
+    },
+    {
+        title: "Join the Community",
+        description: "And engage with other house movers, professionals and unlock loads of cool features.",
+        ctaText: "Explore Trade Directory",
+        ctaLink: "/trade-directory"
     }
 ];
 

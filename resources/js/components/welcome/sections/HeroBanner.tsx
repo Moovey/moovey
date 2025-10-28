@@ -26,7 +26,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({
         >
             {/* Hero image positioned on top of gradient background */}
             <div 
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat z-10 transition-all duration-1000 ease-in-out"
+                className="absolute inset-0 bg-contain bg-center bg-no-repeat z-10 transition-all duration-1000 ease-in-out"
                 style={{ backgroundImage: `url('${heroBanners[currentImageIndex]}')` }}
             ></div>
             

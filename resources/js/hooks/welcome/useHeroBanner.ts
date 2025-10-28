@@ -7,6 +7,7 @@ export const useHeroBanner = () => {
     const heroBanners = useMemo(() => [
         '/images/hero-banner2.webp',
         '/images/hero-banner3.webp',
+        '/images/hero-banner4.webp',
         // Add more banner images here if needed
     ], []);
 
