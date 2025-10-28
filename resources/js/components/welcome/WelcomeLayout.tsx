@@ -73,8 +73,8 @@ export default function WelcomeLayout() {
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700" rel="stylesheet" />
                 {/* Preload critical resources */}
-                <link rel="preload" href="/images/hero-banner2.png" as="image" />
-                <link rel="preload" href="/images/hero-banner3.png" as="image" />
+                <link rel="preload" href="/images/hero-banner2.webp" as="image" />
+                <link rel="preload" href="/images/hero-banner3.webp" as="image" />
                 <meta name="description" content="Moovey empowers you with free e-learning, tools, trade connections, and a community for a seamless moving journey." />
             </Head>
             
