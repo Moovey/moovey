@@ -19,23 +19,14 @@ const HeroBanner: React.FC<HeroBannerProps> = ({
 
     return (
         <section 
-            className="h-[50vh] md:h-[60vh] relative overflow-hidden flex items-center transition-all duration-1000 ease-in-out" 
+            className="relative overflow-hidden py-4 md:py-6 lg:py-8 h-[50vh] flex items-center" 
             style={{ 
                 background: 'linear-gradient(135deg, #8ae2eb 0%, #eafffe 100%)' 
             }}
         >
-            {/* Hero image positioned on top of gradient background */}
-            <div 
-                className="absolute inset-0 bg-contain bg-center bg-no-repeat z-10 transition-all duration-1000 ease-in-out"
-                style={{ backgroundImage: `url('${heroBanners[currentImageIndex]}')` }}
-            ></div>
-            
-            {/* Subtle overlay for text readability */}
-            <div className="absolute inset-0 bg-black/10 z-20"></div>
-            
             {/* Decorative elements - responsive positioning and sizing */}
-            <div className="absolute top-8 right-8 md:top-12 md:right-12 w-20 h-20 md:w-32 md:h-32 bg-white/10 rounded-full blur-xl z-30"></div>
-            <div className="absolute bottom-12 left-8 md:bottom-20 md:left-12 w-16 h-16 md:w-24 md:h-24 bg-white/5 rounded-full blur-lg z-30"></div>
+            <div className="absolute top-8 right-8 md:top-12 md:right-12 w-20 h-20 md:w-32 md:h-32 bg-white/10 rounded-full blur-xl"></div>
+            <div className="absolute bottom-12 left-8 md:bottom-20 md:left-12 w-16 h-16 md:w-24 md:h-24 bg-white/5 rounded-full blur-lg"></div>
             
             {/* Image Pagination Dots */}
             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3 z-40">
@@ -74,26 +65,73 @@ const HeroBanner: React.FC<HeroBannerProps> = ({
                 </svg>
             </button>
             
-            <div className="max-w-7xl mx-auto px-4 md:px-8 w-full py-8 md:py-16 relative z-30">
-                <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
-                    {/* Left Column - Content */}
-                    <div className="text-center lg:text-left space-y-4 sm:space-y-6 relative">
-                        <div className="space-y-3 sm:space-y-4">
-                            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight drop-shadow-2xl">
+            <div className="max-w-7xl mx-auto px-4 md:px-8 w-full relative z-30">
+                {/* Mobile and Tablet Layout: Image on top, content below */}
+                <div className="flex flex-col lg:hidden items-center space-y-3 md:space-y-4 h-full">
+                    {/* Image Container - Mobile/Tablet */}
+                    <div className="w-full flex justify-center flex-1 items-center">
+                        <div className="relative w-full max-w-xs md:max-w-sm h-32 md:h-40">
+                            <img
+                                src={heroBanners[currentImageIndex]}
+                                alt={currentHeroData.title}
+                                className="w-full h-full object-contain transition-all duration-1000 ease-in-out"
+                            />
+                        </div>
+                    </div>
+                    
+                    {/* Content Container - Mobile/Tablet */}
+                    <div className="text-center space-y-2 sm:space-y-3 w-full">
+                        <div className="space-y-1 sm:space-y-2">
+                            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-tight drop-shadow-2xl px-2">
                                 {currentHeroData.title}
                             </h1>
-                            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 leading-relaxed max-w-xl mx-auto lg:mx-0 drop-shadow-md px-2 sm:px-0">
+                            <p className="text-xs sm:text-sm md:text-base text-white/90 leading-relaxed max-w-xl mx-auto drop-shadow-md px-4">
                                 {currentHeroData.description}
                             </p>
                         </div>
                         
-                        <div className="flex justify-center lg:justify-start pt-4">
+                        <div className="flex justify-center pt-1">
                             <a 
                                 href={currentHeroData.ctaLink}
-                                className="bg-[#17B7C7] text-white px-8 sm:px-10 lg:px-12 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                                className="bg-[#17B7C7] text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full font-bold text-sm sm:text-base hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                             >
                                 {currentHeroData.ctaText}
                             </a>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Desktop Layout: Side by side */}
+                <div className="hidden lg:grid lg:grid-cols-2 gap-8 xl:gap-12 items-center h-full">
+                    {/* Left Column - Content (Desktop) */}
+                    <div className="text-left space-y-4 xl:space-y-5">
+                        <div className="space-y-3 xl:space-y-4">
+                            <h1 className="text-3xl xl:text-4xl 2xl:text-5xl font-bold text-white leading-tight drop-shadow-2xl">
+                                {currentHeroData.title}
+                            </h1>
+                            <p className="text-base xl:text-lg 2xl:text-xl text-white/90 leading-relaxed drop-shadow-md">
+                                {currentHeroData.description}
+                            </p>
+                        </div>
+                        
+                        <div className="flex justify-start pt-2">
+                            <a 
+                                href={currentHeroData.ctaLink}
+                                className="bg-[#17B7C7] text-white px-8 xl:px-10 py-3 xl:py-4 rounded-full font-bold text-base xl:text-lg hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                            >
+                                {currentHeroData.ctaText}
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* Right Column - Image (Desktop) */}
+                    <div className="flex justify-center lg:justify-end items-center h-full">
+                        <div className="relative max-w-sm xl:max-w-md 2xl:max-w-lg h-48 xl:h-56 2xl:h-64">
+                            <img
+                                src={heroBanners[currentImageIndex]}
+                                alt={currentHeroData.title}
+                                className="w-full h-full object-contain transition-all duration-1000 ease-in-out"
+                            />
                         </div>
                     </div>
                 </div>
