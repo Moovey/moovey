@@ -93,20 +93,13 @@ const CommunityFeedSection = memo(({ stats }: CommunityFeedSectionProps) => {
                 setIsLoading(true);
                 setError(null);
                 
-                console.log('Fetching community posts from API...');
-                console.log('Current URL:', window.location.href);
-                
                 const response = await api.get('/api/community/posts?page=1');
-                console.log('API Response:', response.data);
-                console.log('Posts received:', response.data.posts?.length || 0);
                 
                 if (response.data.success && response.data.posts && response.data.posts.length > 0) {
                     // Take only the 2 latest posts for the welcome section
                     const livePosts = response.data.posts.slice(0, 2);
-                    console.log('Using live posts:', livePosts);
                     setPosts(livePosts);
                 } else {
-                    console.log('No posts available, using fallback');
                     // Use fallback posts if no posts available (also limit to 2)
                     setPosts(fallbackPosts.slice(0, 2));
                 }
