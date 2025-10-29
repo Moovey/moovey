@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState, useEffect, useRef } from 'react';
 
 interface Tool {
     id: string;
@@ -10,6 +10,11 @@ interface Tool {
 }
 
 const ToolsShowcase = memo(() => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isUserInteracting, setIsUserInteracting] = useState(false);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const autoScrollInterval = useRef<NodeJS.Timeout | null>(null);
+
     // Memoized tools data to prevent re-renders
     const tools: Tool[] = useMemo(() => [
         {
@@ -23,7 +28,7 @@ const ToolsShowcase = memo(() => {
         {
             id: 'affordability',
             name: 'Affordability Calculator',
-            description: 'Discover how much house you can afford based on your income',
+            description: 'Work out how much you can afford',
             color: 'green-500',
             bgColor: 'green-50',
             icon: 'calculator'
@@ -31,7 +36,7 @@ const ToolsShowcase = memo(() => {
         {
             id: 'school',
             name: 'School Catchment Map',
-            description: 'Search for homes within specific school district boundaries',
+            description: 'Research and plot school catchment areas',
             color: 'purple-500',
             bgColor: 'purple-50',
             icon: 'map'
@@ -39,7 +44,7 @@ const ToolsShowcase = memo(() => {
         {
             id: 'volume',
             name: 'Volume Calculator',
-            description: 'Estimate the volume of your belongings for moving',
+            description: 'Calculate the volume of the things you need to move',
             color: 'orange-500',
             bgColor: 'orange-50',
             icon: 'box'
@@ -47,12 +52,46 @@ const ToolsShowcase = memo(() => {
         {
             id: 'declutter',
             name: 'Declutter List',
-            description: 'Create a list to decide what to throw away, donate, or sell',
+            description: 'List the things you need to ditch, and find buyers through moovey',
             color: 'pink-500',
             bgColor: 'pink-50',
             icon: 'trash'
         }
     ], []);
+
+    // Auto-scroll functionality
+    useEffect(() => {
+        if (!isUserInteracting) {
+            autoScrollInterval.current = setInterval(() => {
+                setCurrentIndex((prevIndex) => (prevIndex + 1) % tools.length);
+            }, 3000); // Auto-scroll every 3 seconds
+        }
+
+        return () => {
+            if (autoScrollInterval.current) {
+                clearInterval(autoScrollInterval.current);
+            }
+        };
+    }, [isUserInteracting, tools.length]);
+
+    // Handle manual navigation
+    const handlePrevious = () => {
+        setIsUserInteracting(true);
+        setCurrentIndex((prevIndex) => (prevIndex - 1 + tools.length) % tools.length);
+        setTimeout(() => setIsUserInteracting(false), 5000); // Resume auto-scroll after 5 seconds
+    };
+
+    const handleNext = () => {
+        setIsUserInteracting(true);
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % tools.length);
+        setTimeout(() => setIsUserInteracting(false), 5000); // Resume auto-scroll after 5 seconds
+    };
+
+    const handleDotClick = (index: number) => {
+        setIsUserInteracting(true);
+        setCurrentIndex(index);
+        setTimeout(() => setIsUserInteracting(false), 5000); // Resume auto-scroll after 5 seconds
+    };
 
     const renderIcon = (iconType: string, className: string) => {
         const iconProps = {
@@ -123,19 +162,66 @@ const ToolsShowcase = memo(() => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {tools.map((tool) => (
-                        <div 
-                            key={tool.id}
-                            className={`bg-gradient-to-br from-${tool.bgColor} to-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center`}
-                        >
-                            <div className={`w-12 h-12 bg-${tool.color} rounded-xl flex items-center justify-center mx-auto mb-4`}>
-                                {renderIcon(tool.icon, "w-6 h-6 text-white")}
+                {/* Carousel Container */}
+                <div className="relative overflow-hidden">
+                    {/* Navigation Arrows */}
+                    <button
+                        onClick={handlePrevious}
+                        className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all duration-300 hover:scale-105"
+                        aria-label="Previous tool"
+                    >
+                        <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+
+                    <button
+                        onClick={handleNext}
+                        className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all duration-300 hover:scale-105"
+                        aria-label="Next tool"
+                    >
+                        <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+
+                    {/* Carousel Content */}
+                    <div 
+                        ref={scrollContainerRef}
+                        className="flex transition-transform duration-500 ease-in-out"
+                        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+                    >
+                        {tools.map((tool) => (
+                            <div 
+                                key={tool.id}
+                                className="w-full flex-shrink-0 px-4 sm:px-8"
+                            >
+                                <div className={`bg-gradient-to-br from-${tool.bgColor} to-white rounded-2xl p-8 sm:p-12 shadow-lg text-center max-w-2xl mx-auto`}>
+                                    <div className={`w-16 h-16 sm:w-20 sm:h-20 bg-${tool.color} rounded-xl flex items-center justify-center mx-auto mb-6`}>
+                                        {renderIcon(tool.icon, "w-8 h-8 sm:w-10 sm:h-10 text-white")}
+                                    </div>
+                                    <h4 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 leading-tight">{tool.name}</h4>
+                                    <p className="text-gray-600 text-lg sm:text-xl leading-relaxed max-w-xl mx-auto">{tool.description}</p>
+                                </div>
                             </div>
-                            <h4 className="font-bold text-gray-900 mb-3 leading-tight">{tool.name}</h4>
-                            <p className="text-gray-600 mb-4 text-sm leading-relaxed">{tool.description}</p>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+
+                    {/* Pagination Dots */}
+                    <div className="flex justify-center mt-8 space-x-2">
+                        {tools.map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => handleDotClick(index)}
+                                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                                    index === currentIndex 
+                                        ? 'bg-[#17B7C7] scale-125' 
+                                        : 'bg-gray-300 hover:bg-gray-400'
+                                }`}
+                                aria-label={`Go to tool ${index + 1}`}
+                            />
+                        ))}
+                    </div>
                 </div>
 
                 <div className="text-center mt-12">
