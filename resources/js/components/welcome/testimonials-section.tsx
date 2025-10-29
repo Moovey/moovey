@@ -137,11 +137,11 @@ const TestimonialsSection = memo(({ stats }: TestimonialsSectionProps) => {
                         
                         {/* Right Cow Icon */}
                         <div className="hidden md:block">
-                            <div className="w-12 h-12 bg-[#17B7C7] rounded-full flex items-center justify-center">
-                                <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H9L3 7V9H21M21 19V10H3V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19ZM6 12H8V14H6V12ZM16 12H18V14H16V12ZM9 15H15V17H9V15Z"/>
-                                </svg>
-                            </div>
+                            <img 
+                                src="/images/circular_cow_mascot.png" 
+                                alt="Moovey Cow Mascot" 
+                                className="w-12 h-12 rounded-full object-cover"
+                            />
                         </div>
                     </div>
                     
