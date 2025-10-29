@@ -6,7 +6,7 @@ import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
 import NotificationDropdown from '@/components/NotificationDropdown';
 import MessageDropdown from '@/components/MessageDropdown';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
 import { getAvatarUrl } from '@/utils/fileUtils';
@@ -22,7 +22,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
 
     const isActive = (page: string) => currentPage === page;
     const currentUrl = url || '';
-    const isHomePage = currentUrl === '/' || currentUrl === '/welcome-test';
+    const isHomePage = currentPage === 'home' || currentUrl === '/';
 
     const toggleMobileMenu = () => {
         setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -58,47 +58,17 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
 
                     {/* Navigation */}
                     <nav className="hidden lg:flex items-center space-x-0.5 xl:space-x-1 2xl:space-x-3">
-                        {/* Home Dropdown */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button 
-                                    className={`flex items-center space-x-1 px-1.5 py-2 lg:px-2 xl:px-3 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
-                                        isHomePage
-                                            ? 'bg-[#17B7C7] text-white' 
-                                            : 'text-gray-700 hover:text-[#17B7C7]'
-                                    }`}
-                                >
-                                    <span>HOME</span>
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="w-48 bg-white rounded-xl shadow-lg border border-gray-200 p-1">
-                                <DropdownMenuItem asChild>
-                                    <Link 
-                                        href="/" 
-                                        className="flex items-center justify-between w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                                    >
-                                        <span>Home 1 (Original)</span>
-                                        {currentUrl === '/' && (
-                                            <div className="w-2 h-2 bg-[#17B7C7] rounded-full"></div>
-                                        )}
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link 
-                                        href="/welcome-test" 
-                                        className="flex items-center justify-between w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                                    >
-                                        <span>Home 2 (New Layout)</span>
-                                        {currentUrl === '/welcome-test' && (
-                                            <div className="w-2 h-2 bg-[#17B7C7] rounded-full"></div>
-                                        )}
-                                    </Link>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        {/* Home Link */}
+                        <Link
+                            href="/"
+                            className={`px-1.5 py-2 lg:px-2 xl:px-3 rounded text-xs lg:text-sm xl:text-base font-medium transition-colors duration-200 whitespace-nowrap ${
+                                isHomePage
+                                    ? 'bg-[#17B7C7] text-white' 
+                                    : 'text-gray-700 hover:text-[#17B7C7]'
+                            }`}
+                        >
+                            HOME
+                        </Link>
                         {auth.user && (
                             <Link 
                                 href={route('dashboard')} 
@@ -277,34 +247,18 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                     {/* Mobile Navigation */}
                     <nav className="flex-1 overflow-y-auto py-6">
                         <div className="space-y-2 px-6">
-                            {/* Home Dropdown for Mobile */}
-                            <div className="space-y-1">
-                                <div className="px-4 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
-                                    Home Pages
-                                </div>
-                                <Link 
-                                    href="/" 
-                                    onClick={closeMobileMenu}
-                                    className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
-                                        currentUrl === '/'
-                                            ? 'bg-[#17B7C7] text-white' 
-                                            : 'text-gray-700 hover:bg-gray-100'
-                                    }`}
-                                >
-                                    Home 1 (Original)
-                                </Link>
-                                <Link 
-                                    href="/welcome-test" 
-                                    onClick={closeMobileMenu}
-                                    className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
-                                        currentUrl === '/welcome-test'
-                                            ? 'bg-[#17B7C7] text-white' 
-                                            : 'text-gray-700 hover:bg-gray-100'
-                                    }`}
-                                >
-                                    Home 2 (New Layout)
-                                </Link>
-                            </div>
+                            {/* Home Link for Mobile */}
+                            <Link 
+                                href="/" 
+                                onClick={closeMobileMenu}
+                                className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                    isHomePage
+                                        ? 'bg-[#17B7C7] text-white' 
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                }`}
+                            >
+                                HOME
+                            </Link>
                             
                             <div className="border-t border-gray-200 my-4"></div>
                             {auth.user && (

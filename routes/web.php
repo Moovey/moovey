@@ -42,8 +42,7 @@ Route::get('/storage-file/{path}', function ($path) {
 | Routes accessible to all users without authentication
 */
 
-Route::get('/', [PublicController::class, 'welcome'])->name('home');
-Route::get('/welcome-test', [PublicController::class, 'welcomeTest'])->name('welcome-test');
+Route::get('/', [PublicController::class, 'welcomeTest'])->name('home');
 Route::get('/academy', [PublicController::class, 'academy'])->name('academy');
 Route::get('/tools', [PublicController::class, 'tools'])->name('tools');
 Route::get('/marketplace', [PublicController::class, 'marketplace'])->name('marketplace');

@@ -14,27 +14,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class PublicController extends Controller
 {
     /**
-     * Display the welcome page with minimal cached data.
-     */
-    public function welcome(): Response
-    {
-        // Cache basic stats for 1 hour since they don't change frequently
-        $stats = Cache::remember('welcome_page_stats', 3600, function () {
-            return [
-                'total_lessons' => Lesson::published()->count(),
-                'featured_count' => 6, // Static for now
-                'community_members' => 2500, // Can be made dynamic later
-                'verified_businesses' => 250,
-            ];
-        });
-
-        return Inertia::render('welcome', [
-            'stats' => $stats,
-        ]);
-    }
-
-    /**
-     * Display the new welcome layout test page.
+     * Display the welcome page with WelcomeLayoutTest component.
      */
     public function welcomeTest(): Response
     {
