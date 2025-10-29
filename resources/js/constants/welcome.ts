@@ -25,18 +25,18 @@ export const VALUE_PROPS: ValueProp[] = [
     {
         id: 'learn',
         title: 'Learn & Plan',
-        description: 'Master the art of moving with our comprehensive guides, checklists, and expert-led courses designed to make you confident and prepared.',
+        description: 'Learn how to move seamlessly with our school of movingology. The complete beginners guide to moving house.',
         color: 'blue',
-        icon: 'book',
+        icon: 'moovey-crest',
         link: '/academy',
-        linkText: 'Explore Academy'
+        linkText: 'Learn how to move'
     },
     {
         id: 'connect',
-        title: 'Connect & Save',
+        title: 'Find Professionals',
         description: 'Find verified moving professionals, compare quotes, and connect with trusted service providers to save time and money.',
         color: 'green',
-        icon: 'users',
+        icon: 'professionals',
         link: '/trade-directory',
         linkText: 'Browse Directory'
     },
@@ -45,7 +45,7 @@ export const VALUE_PROPS: ValueProp[] = [
         title: 'Track & Engage',
         description: 'Stay on top of your move with our progress tracking tools and engage with a supportive community of fellow movers.',
         color: 'purple',
-        icon: 'chat',
+        icon: 'tasks',
         link: '/community',
         linkText: 'See Community Feed'
     }

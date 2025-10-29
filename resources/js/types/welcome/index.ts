@@ -23,7 +23,7 @@ export interface ValueProp {
     title: string;
     description: string;
     color: 'blue' | 'green' | 'purple';
-    icon: 'book' | 'users' | 'chat';
+    icon: 'book' | 'users' | 'chat' | 'moovey-crest' | 'professionals' | 'tasks';
     link: string;
     linkText: string;
 }
