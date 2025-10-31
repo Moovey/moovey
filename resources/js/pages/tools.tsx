@@ -1,17 +1,8 @@
-import { Head, usePage } from '@inertiajs/react';
-import { useState, useEffect, Suspense, useCallback, useMemo, memo, ReactNode } from 'react';
+import { Head, usePage, router } from '@inertiajs/react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
-import ToolLoadingSkeleton from '@/components/tools/ToolLoadingSkeleton';
-import ToolErrorBoundary from '@/components/tools/ToolErrorBoundary';
-import { 
-    LazyMortgageCalculator, 
-    LazyAffordabilityCalculator, 
-    LazySchoolCatchmentMap, 
-    LazyVolumeCalculator, 
-    LazyDeclutterList,
-    useToolPreloader 
-} from '@/hooks/use-tool-preloader';
+import { useToolPreloader } from '@/hooks/use-tool-preloader';
 import { usePerformanceMonitoring } from '@/hooks/use-performance-monitoring';
 
 // Memoized tool button component for better performance
@@ -132,7 +123,7 @@ export default function Tools() {
         return 0;
     }, []);
 
-    const [activeToolIndex, setActiveToolIndex] = useState(getInitialToolIndex);
+
 
     // Memoized tools data
     const tools = useMemo(() => [
@@ -163,99 +154,29 @@ export default function Tools() {
         }
     ], []);
 
-    // Listen for URL parameter changes and update active tool
-    useEffect(() => {
-        const urlParams = new URLSearchParams(url.split('?')[1] || '');
-        const toolParam = urlParams.get('tool');
-        if (toolParam) {
-            const index = parseInt(toolParam, 10);
-            if (!isNaN(index) && index >= 0 && index <= 4) {
-                setActiveToolIndex(index);
-            }
-        } else {
-            setActiveToolIndex(0); // Default to first tool if no parameter
-        }
-    }, [url]);
 
-    // Update URL when active tool changes
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.set('tool', activeToolIndex.toString());
-            window.history.replaceState({}, '', url.toString());
-        }
-    }, [activeToolIndex]);
-
-    // Preload adjacent tools when tool changes
-    useEffect(() => {
-        preloadAdjacentTools(activeToolIndex);
-    }, [activeToolIndex, preloadAdjacentTools]);
-
-    // Handle tool switching with performance measurement
-    const handleToolSwitch = useCallback((newIndex: number) => {
-        if (newIndex === activeToolIndex) return;
-        
-        measureToolSwitch(tools[newIndex].name, () => {
-            setActiveToolIndex(newIndex);
-        });
-    }, [activeToolIndex, tools, measureToolSwitch]);
 
     // Handle tool hover for preloading
     const handleToolHover = useCallback((toolIndex: number) => {
         preloadTool(toolIndex);
     }, [preloadTool]);
 
-    // Memoized active tool component with error boundaries
-    const renderActiveTool = useMemo(() => {
-        const toolName = tools[activeToolIndex].name;
+    // Navigate to dedicated tool page
+    const navigateToTool = useCallback((toolIndex: number) => {
+        const toolRoutes = [
+            '/tools/mortgage-calculator',
+            '/tools/affordability-calculator', 
+            '/tools/school-catchment-map',
+            '/tools/volume-calculator',
+            '/tools/declutter-list'
+        ];
         
-        const ToolWrapper = ({ children }: { children: ReactNode }) => (
-            <ToolErrorBoundary>
-                <Suspense fallback={<ToolLoadingSkeleton toolName={toolName} />}>
-                    {children}
-                </Suspense>
-            </ToolErrorBoundary>
-        );
-        
-        switch (activeToolIndex) {
-            case 0:
-                return (
-                    <ToolWrapper>
-                        <LazyMortgageCalculator />
-                    </ToolWrapper>
-                );
-            case 1:
-                return (
-                    <ToolWrapper>
-                        <LazyAffordabilityCalculator />
-                    </ToolWrapper>
-                );
-            case 2:
-                return (
-                    <ToolWrapper>
-                        <LazySchoolCatchmentMap />
-                    </ToolWrapper>
-                );
-            case 3:
-                return (
-                    <ToolWrapper>
-                        <LazyVolumeCalculator />
-                    </ToolWrapper>
-                );
-            case 4:
-                return (
-                    <ToolWrapper>
-                        <LazyDeclutterList />
-                    </ToolWrapper>
-                );
-            default:
-                return (
-                    <ToolWrapper>
-                        <LazyMortgageCalculator />
-                    </ToolWrapper>
-                );
+        if (toolRoutes[toolIndex]) {
+            router.visit(toolRoutes[toolIndex]);
         }
-    }, [activeToolIndex, tools]);
+    }, []);
+
+
 
     return (
         <>
@@ -279,56 +200,111 @@ export default function Tools() {
                     </div>
                 </section>
 
-                {/* Tools Carousel Section */}
-                <section className="py-8 px-4 sm:px-6 lg:px-8 bg-gray-50">
+                {/* Tools Cards Section */}
+                <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
                     <div className="max-w-6xl mx-auto">
-                        <div className="overflow-x-auto pb-4">
-                            <div className="flex gap-6 min-w-max px-4">
-                                {tools.map((tool, index) => (
-                                    <ToolButton
-                                        key={index}
-                                        tool={tool}
-                                        index={index}
-                                        isActive={activeToolIndex === index}
-                                        onClick={() => handleToolSwitch(index)}
-                                        onHover={() => handleToolHover(index)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                        
-                        {/* Scroll Indicator */}
-                        <div className="flex justify-center mt-2">
-                            <div className="flex space-x-2">
-                                {tools.map((_, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => handleToolSwitch(index)}
-                                        className={`w-2 h-2 rounded-full transition-colors ${
-                                            activeToolIndex === index ? 'bg-[#17B7C7]' : 'bg-gray-300'
-                                        }`}
-                                    />
-                                ))}
-                            </div>
+                        <div className="space-y-8">
+                            {tools.map((tool, index) => (
+                                <div
+                                    key={index}
+                                    className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
+                                >
+                                    <div className="flex flex-col lg:flex-row">
+                                        {/* Left Section - Illustration */}
+                                        <div className="lg:w-1/3 p-8 flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #f0fffe, #e6fdfc)' }}>
+                                            {/* Background decorative elements */}
+                                            <div className="absolute top-4 right-4 opacity-30" style={{ color: '#17B7C7' }}>
+                                                <span className="text-2xl">✨</span>
+                                            </div>
+                                            <div className="absolute bottom-4 left-4 opacity-30" style={{ color: '#138994' }}>
+                                                <span className="text-xl">🎯</span>
+                                            </div>
+                                            <div className="absolute top-1/2 left-1/4 opacity-20" style={{ color: '#17B7C7' }}>
+                                                <span className="text-lg">💫</span>
+                                            </div>
+                                            
+                                            {/* Tool Icon/Illustration */}
+                                            <div className="text-center z-10">
+                                                <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center text-white shadow-lg" style={{ background: 'linear-gradient(135deg, #17B7C7, #138994)' }}>
+                                                    {tool.icon === 'mortgage' && (
+                                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21l18-18M12 3l9 9-3 3v6a2 2 0 01-2 2H8a2 2 0 01-2-2v-6l-3-3 9-9z"/>
+                                                        </svg>
+                                                    )}
+                                                    {tool.icon === 'affordability' && (
+                                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                        </svg>
+                                                    )}
+                                                    {tool.icon === 'school' && (
+                                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        </svg>
+                                                    )}
+                                                    {tool.icon === 'volume' && (
+                                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                                        </svg>
+                                                    )}
+                                                    {tool.icon === 'declutter' && (
+                                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                                                        </svg>
+                                                    )}
+                                                </div>
+                                                <div className="flex justify-center space-x-2">
+                                                    <span className="text-yellow-400 text-lg">⭐</span>
+                                                    <span className="text-lg" style={{ color: '#17B7C7' }}>🔧</span>
+                                                    <span className="text-lg" style={{ color: '#138994' }}>📊</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Right Section - Content */}
+                                        <div className="lg:w-2/3 p-8 flex flex-col justify-center">
+                                            <div className="mb-6">
+                                                <h2 className="text-2xl lg:text-3xl font-bold mb-3" style={{ color: '#17B7C7' }}>
+                                                    {tool.name}
+                                                </h2>
+                                                <p className="text-gray-600 text-lg leading-relaxed mb-4">
+                                                    {tool.description}
+                                                </p>
+                                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                    <span className="px-2 py-1 rounded-full" style={{ backgroundColor: '#17B7C7', color: 'white' }}>
+                                                        Free Tool
+                                                    </span>
+                                                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                                        Instant Results
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <button
+                                                    onClick={() => navigateToTool(index)}
+                                                    onMouseEnter={(e) => {
+                                                        handleToolHover(index);
+                                                        (e.target as HTMLElement).style.backgroundColor = '#138994';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        (e.target as HTMLElement).style.backgroundColor = '#17B7C7';
+                                                    }}
+                                                    className="text-white font-semibold py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                                                    style={{ backgroundColor: '#17B7C7' }}
+                                                >
+                                                    Give it a try! 🚀
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </section>
 
-                {/* Main Tool Section */}
-                <section className="py-8 px-4 sm:px-6 lg:px-8">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="text-center mb-6">
-                            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                                {tools[activeToolIndex].name}
-                            </h2>
-                            <div className="w-16 h-1 bg-[#17B7C7] mx-auto rounded-full"></div>
-                        </div>
 
-                        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
-                            {renderActiveTool}
-                        </div>
-                    </div>
-                </section>
 
                 {/* Welcome Footer */}
                 <WelcomeFooter />

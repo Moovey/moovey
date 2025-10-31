@@ -136,6 +136,46 @@ class PublicController extends Controller
     }
 
     /**
+     * Display the mortgage calculator tool page.
+     */
+    public function mortgageCalculator(): Response
+    {
+        return Inertia::render('tools/mortgage-calculator');
+    }
+
+    /**
+     * Display the affordability calculator tool page.
+     */
+    public function affordabilityCalculator(): Response
+    {
+        return Inertia::render('tools/affordability-calculator');
+    }
+
+    /**
+     * Display the school catchment map tool page.
+     */
+    public function schoolCatchmentMap(): Response
+    {
+        return Inertia::render('tools/school-catchment-map');
+    }
+
+    /**
+     * Display the volume calculator tool page.
+     */
+    public function volumeCalculator(): Response
+    {
+        return Inertia::render('tools/volume-calculator');
+    }
+
+    /**
+     * Display the declutter list tool page.
+     */
+    public function declutterList(): Response
+    {
+        return Inertia::render('tools/declutter-list');
+    }
+
+    /**
      * Display the marketplace page.
      */
     public function marketplace(): Response

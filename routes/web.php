@@ -45,6 +45,14 @@ Route::get('/storage-file/{path}', function ($path) {
 Route::get('/', [PublicController::class, 'welcomeTest'])->name('home');
 Route::get('/academy', [PublicController::class, 'academy'])->name('academy');
 Route::get('/tools', [PublicController::class, 'tools'])->name('tools');
+
+// Individual Tool Pages
+Route::get('/tools/mortgage-calculator', [PublicController::class, 'mortgageCalculator'])->name('tools.mortgage-calculator');
+Route::get('/tools/affordability-calculator', [PublicController::class, 'affordabilityCalculator'])->name('tools.affordability-calculator');
+Route::get('/tools/school-catchment-map', [PublicController::class, 'schoolCatchmentMap'])->name('tools.school-catchment-map');
+Route::get('/tools/volume-calculator', [PublicController::class, 'volumeCalculator'])->name('tools.volume-calculator');
+Route::get('/tools/declutter-list', [PublicController::class, 'declutterList'])->name('tools.declutter-list');
+
 Route::get('/marketplace', [PublicController::class, 'marketplace'])->name('marketplace');
 Route::get('/trade-directory', [PublicController::class, 'tradeDirectory'])->name('trade-directory');
 Route::get('/community', [\App\Http\Controllers\CommunityController::class, 'index'])->name('community');
