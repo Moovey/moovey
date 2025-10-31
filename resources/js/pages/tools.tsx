@@ -188,15 +188,46 @@ export default function Tools() {
             <div className="min-h-screen bg-white font-['Inter',sans-serif]">
                 <GlobalHeader currentPage="tools" />
 
-                {/* Small Header Banner */}
-                <section className="py-6 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#17B7C7] to-[#1A237E]">
-                    <div className="max-w-7xl mx-auto text-center">
-                        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                            Moovey Tools
-                        </h1>
-                        <p className="text-white/90 text-sm sm:text-base">
-                            Choose a tool below to help calculate and plan your move
-                        </p>
+                {/* Small Header Banner - Fully Responsive */}
+                <section 
+                    className="pt-4 px-3 xs:pt-6 xs:px-4 sm:pt-8 sm:px-6 md:px-8 lg:px-12 xl:px-16 relative bg-cover bg-center bg-no-repeat h-[50vh] flex flex-col"
+                    style={{
+                        background: `linear-gradient(135deg, #8ae2eb 0%, #eafffe 100%), url('/images/tools-background.png')`,
+                        backgroundSize: 'cover, cover',
+                        backgroundPosition: 'center, center',
+                        backgroundRepeat: 'no-repeat, no-repeat',
+                        backgroundBlendMode: 'overlay'
+                    }}
+                >
+                    {/* Text Content Container with horizontal padding only */}
+                    <div className="max-w-7xl mx-auto w-full relative z-10 flex-grow flex flex-col">
+                        {/* Text Content at Top - Compact Responsive */}
+                        <div className="text-center pt-2 xs:pt-3 sm:pt-4 md:pt-6 lg:pt-8">
+                            <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black text-gray-700 mb-1 sm:mb-2 tracking-tight leading-tight" 
+                                style={{ 
+                                    fontFamily: '"Comic Sans MS", cursive, system-ui',
+                                    textShadow: '2px 2px 0px rgba(255,255,255,0.3), 4px 4px 0px rgba(255,255,255,0.1)',
+                                    transform: 'rotate(-1.5deg)'
+                                }}
+                            >
+                                <span className="inline-block">🚀 Explore Our Moovey Tools 🎯</span>
+                            </h1>
+                        </div>
+                        
+                        {/* Compact Spacer to push image to bottom */}
+                        <div className="flex-grow min-h-[10px] sm:min-h-[15px]"></div>
+                    </div>
+                    
+                    {/* Banner Image at Absolute Bottom - Mobile Compact, Desktop Large */}
+                    <div className="w-full flex justify-center items-end absolute bottom-0 left-0 right-0">
+                        <img 
+                            src="/images/tools-banner.webp" 
+                            alt="Moovey Tools Banner" 
+                            className="h-24 xs:h-28 sm:h-48 md:h-56 lg:h-64 xl:h-72 2xl:h-80 w-auto object-contain max-w-[95%] sm:max-w-[90%] md:max-w-[85%] lg:max-w-full block"
+                            style={{
+                                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
+                            }}
+                        />
                     </div>
                 </section>
 
