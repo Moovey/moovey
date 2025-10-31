@@ -15,18 +15,6 @@ export default function SchoolCatchmentMapPage() {
             <div className="min-h-screen bg-white font-['Inter',sans-serif]">
                 <GlobalHeader currentPage="tools" />
 
-                {/* Small Header Banner */}
-                <section className="py-6 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#17B7C7] to-[#1A237E]">
-                    <div className="max-w-7xl mx-auto text-center">
-                        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                            School Catchment Map
-                        </h1>
-                        <p className="text-white/90 text-sm sm:text-base">
-                            Search for homes within specific school district boundaries to secure the best education for your children
-                        </p>
-                    </div>
-                </section>
-
                 {/* Tool Section */}
                 <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
                     <div className="max-w-6xl mx-auto">
