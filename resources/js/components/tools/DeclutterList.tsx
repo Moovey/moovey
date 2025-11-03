@@ -125,6 +125,25 @@ export default function DeclutterList() {
         setAuthCheckComplete(true);
     }, [isAuthenticated]);
 
+    // Handle escape key to close modal
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && showAddForm) {
+                setShowAddForm(false);
+                setEditingItem(null);
+                resetForm();
+            }
+        };
+
+        if (showAddForm) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showAddForm]);
+
     const fetchItems = async () => {
         // Skip API call if user is not authenticated
         if (!isAuthenticated) {
@@ -524,87 +543,295 @@ export default function DeclutterList() {
     }
 
     return (
-        <div className="space-y-6">
-            {/* Header and Stats */}
-            <div className="bg-gradient-to-r from-[#17B7C7] to-[#1A237E] rounded-xl p-6 text-white">
-                <h3 className="text-2xl font-bold mb-4">Declutter List</h3>
-                <p className="text-white/90 mb-6">
-                    Create a list of items you're planning to declutter. Decide whether to throw away, donate, sell, or keep each item.
-                </p>
-                
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-                    <div className="bg-white/10 rounded-lg p-3">
-                        <div className="text-2xl font-bold">{stats.total}</div>
-                        <div className="text-sm text-white/80">Total Items</div>
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#17B7C7] to-[#138994] rounded-full flex items-center justify-center text-white">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">Declutter List</h2>
+                            <p className="text-sm text-gray-600">Organize and manage your moving items</p>
+                        </div>
                     </div>
-                    <div className="bg-white/10 rounded-lg p-3">
-                        <div className="text-2xl font-bold">{stats.sell}</div>
-                        <div className="text-sm text-white/80">To Sell</div>
+                    
+                    <button
+                        onClick={() => setShowAddForm(true)}
+                        className="bg-[#17B7C7] text-white px-4 py-2 rounded-lg hover:bg-[#138994] transition-colors font-medium text-sm"
+                    >
+                        Add Item
+                    </button>
+                </div>
+            </div>
+
+            {/* Two-Column Layout */}
+            <div className="flex flex-col lg:flex-row min-h-[600px]">
+                {/* Left Column - Controls and Form */}
+                <div className="lg:w-1/2 bg-white p-6 border-r border-gray-100">
+                    {/* Stats Dashboard */}
+                    <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <span>📊</span>
+                            <span>Overview</span>
+                        </h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-gradient-to-r from-[#17B7C7] to-[#138994] rounded-xl p-4 text-white text-center">
+                                <div className="text-2xl font-bold">{stats.total}</div>
+                                <div className="text-sm opacity-90">Total Items</div>
+                            </div>
+                            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 text-white text-center">
+                                <div className="text-2xl font-bold">£{totalEstimatedValue}</div>
+                                <div className="text-sm opacity-90">Est. Value</div>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-4 gap-2 mt-3">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                                <div className="text-lg font-bold text-blue-700">{stats.sell}</div>
+                                <div className="text-xs text-blue-600">Sell</div>
+                            </div>
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                                <div className="text-lg font-bold text-green-700">{stats.donate}</div>
+                                <div className="text-xs text-green-600">Donate</div>
+                            </div>
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                                <div className="text-lg font-bold text-red-700">{stats.throw}</div>
+                                <div className="text-xs text-red-600">Throw</div>
+                            </div>
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+                                <div className="text-lg font-bold text-gray-700">{stats.keep}</div>
+                                <div className="text-xs text-gray-600">Keep</div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white/10 rounded-lg p-3">
-                        <div className="text-2xl font-bold">{stats.donate}</div>
-                        <div className="text-sm text-white/80">To Donate</div>
+
+                    {/* Filters and Search */}
+                    <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <span>🔍</span>
+                            <span>Filter Items</span>
+                        </h3>
+                        <div className="space-y-3">
+                            <input
+                                type="text"
+                                placeholder="Search items..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white font-medium"
+                            />
+                            
+                            <select
+                                value={filterCategory}
+                                onChange={(e) => setFilterCategory(e.target.value)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-all duration-200 text-gray-900 bg-white font-medium"
+                            >
+                                <option value="all">All Categories</option>
+                                {categories.map(category => (
+                                    <option key={category} value={category}>{category}</option>
+                                ))}
+                            </select>
+                            
+                            <select
+                                value={filterAction}
+                                onChange={(e) => setFilterAction(e.target.value)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-all duration-200 text-gray-900 bg-white font-medium"
+                            >
+                                <option value="all">All Actions</option>
+                                <option value="throw">Throw Away</option>
+                                <option value="donate">Donate</option>
+                                <option value="sell">Sell</option>
+                                <option value="keep">Keep</option>
+                            </select>
+                        </div>
                     </div>
-                    <div className="bg-white/10 rounded-lg p-3">
-                        <div className="text-2xl font-bold">{stats.throw}</div>
-                        <div className="text-sm text-white/80">To Throw</div>
+
+                    {/* Quick Actions */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <span>⚡</span>
+                            <span>Quick Actions</span>
+                        </h3>
+                        <div className="space-y-2">
+                            <div className="text-sm text-gray-600 mb-3">
+                                <strong>{stats.listed}</strong> items currently listed in marketplace
+                            </div>
+                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                <h4 className="font-semibold text-blue-900 mb-2 text-sm">💡 Pro Tips</h4>
+                                <ul className="text-xs text-blue-800 space-y-1">
+                                    <li>• Research prices online for accurate estimates</li>
+                                    <li>• Take photos to help with selling decisions</li>
+                                    <li>• Consider donation for tax benefits</li>
+                                    <li>• List valuable items early for best results</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-white/10 rounded-lg p-3">
-                        <div className="text-2xl font-bold">£{totalEstimatedValue}</div>
-                        <div className="text-sm text-white/80">Est. Value</div>
+                </div>
+
+                {/* Right Column - Items List */}
+                <div className="lg:w-1/2 bg-gray-50">
+                    <div className="p-6 h-full">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900">Items List ({filteredItems.length})</h3>
+                            {filteredItems.length > 0 && (
+                                <div className="text-sm text-gray-600">
+                                    Showing {filteredItems.length} of {items.length} items
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Items Display */}
+                        <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                            {filteredItems.length === 0 ? (
+                                <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+                                    <div className="text-4xl mb-4">📦</div>
+                                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                                        {items.length === 0 ? 'No items yet' : 'No items match your filters'}
+                                    </h3>
+                                    <p className="text-gray-500 text-sm">
+                                        {items.length === 0 
+                                            ? 'Start by adding items you want to declutter'
+                                            : 'Try adjusting your search or filter criteria'
+                                        }
+                                    </p>
+                                </div>
+                            ) : (
+                                filteredItems.map(item => (
+                                    <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                                        <div className="flex items-start gap-3">
+                                            {/* Image Display */}
+                                            {item.images && item.images.length > 0 ? (
+                                                <div className="flex-shrink-0">
+                                                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 relative">
+                                                        <img
+                                                            src={getImageUrl(item.images[0])}
+                                                            alt={item.name}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => handleImageError(e, item.images?.[0] || '')}
+                                                            data-attempt="0"
+                                                        />
+                                                        {item.images.length > 1 && (
+                                                            <div className="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                                                                +{item.images.length - 1}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex-shrink-0">
+                                                    <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center">
+                                                        <div className="text-2xl text-gray-400">📦</div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <h4 className="font-semibold text-gray-900 text-sm truncate">{item.name}</h4>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                                item.action === 'sell' ? 'bg-green-100 text-green-800' :
+                                                                item.action === 'donate' ? 'bg-blue-100 text-blue-800' :
+                                                                item.action === 'throw' ? 'bg-red-100 text-red-800' :
+                                                                'bg-gray-100 text-gray-800'
+                                                            }`}>
+                                                                {item.action === 'throw' ? 'Throw' : 
+                                                                 item.action.charAt(0).toUpperCase() + item.action.slice(1)}
+                                                            </span>
+                                                            {item.is_listed_for_sale && (
+                                                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                                                    Listed
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-xs text-gray-600 mt-1 space-y-1">
+                                                            <div>{item.category} • {item.condition}</div>
+                                                            {item.estimated_value > 0 && (
+                                                                <div>Est. Value: £{item.estimated_value}</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="flex flex-col gap-1 ml-2">
+                                                        <button
+                                                            onClick={() => handleEditItem(item)}
+                                                            className="bg-[#17B7C7] text-white px-2 py-1 rounded text-xs hover:bg-[#138994] transition-colors"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                        {!item.is_listed_for_sale && item.action === 'sell' ? (
+                                                            <button
+                                                                onClick={() => handleListForSale(item)}
+                                                                className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors"
+                                                            >
+                                                                List
+                                                            </button>
+                                                        ) : item.is_listed_for_sale ? (
+                                                            <button
+                                                                onClick={() => handleUnlistFromSale(item)}
+                                                                className="bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700 transition-colors"
+                                                            >
+                                                                Unlist
+                                                            </button>
+                                                        ) : null}
+                                                        <button
+                                                            onClick={() => handleDeleteItem(item.id)}
+                                                            className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition-colors"
+                                                        >
+                                                            Del
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Controls */}
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-                <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                    <input
-                        type="text"
-                        placeholder="Search items..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900 placeholder-gray-500"
-                    />
-                    
-                    <select
-                        value={filterCategory}
-                        onChange={(e) => setFilterCategory(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900"
-                    >
-                        <option value="all">All Categories</option>
-                        {categories.map(category => (
-                            <option key={category} value={category}>{category}</option>
-                        ))}
-                    </select>
-                    
-                    <select
-                        value={filterAction}
-                        onChange={(e) => setFilterAction(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900"
-                    >
-                        <option value="all">All Actions</option>
-                        <option value="throw">Throw Away</option>
-                        <option value="donate">Donate</option>
-                        <option value="sell">Sell</option>
-                        <option value="keep">Keep</option>
-                    </select>
-                </div>
-                
-                <button
-                    onClick={() => setShowAddForm(true)}
-                    className="bg-[#17B7C7] text-white px-6 py-2 rounded-lg hover:bg-[#139AAA] transition-colors font-medium"
-                >
-                    Add Item
-                </button>
-            </div>
-
-            {/* Add/Edit Form */}
+            {/* Add/Edit Form Modal */}
             {showAddForm && (
-                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
-                    <h4 className="text-xl font-semibold mb-4">
-                        {editingItem ? 'Edit Item' : 'Add New Item'}
-                    </h4>
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fadeIn"
+                    onClick={() => {
+                        setShowAddForm(false);
+                        setEditingItem(null);
+                        resetForm();
+                    }}
+                >
+                    <div 
+                        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-scaleIn"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <h4 className="text-xl font-semibold text-gray-900">
+                                {editingItem ? 'Edit Item' : 'Add New Item'}
+                            </h4>
+                            <button
+                                onClick={() => {
+                                    setShowAddForm(false);
+                                    setEditingItem(null);
+                                    resetForm();
+                                }}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6">
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -615,7 +842,7 @@ export default function DeclutterList() {
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900 placeholder-gray-500"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white font-medium"
                                 placeholder="e.g., Old Coffee Table, Dining Chair, Laptop"
                             />
                         </div>
@@ -627,7 +854,7 @@ export default function DeclutterList() {
                             <select
                                 value={formData.category}
                                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-all duration-200 text-gray-900 bg-white font-medium"
                             >
                                 {categories.map(category => (
                                     <option key={category} value={category}>{category}</option>
@@ -642,7 +869,7 @@ export default function DeclutterList() {
                             <select
                                 value={formData.condition}
                                 onChange={(e) => setFormData(prev => ({ ...prev, condition: e.target.value as any }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-all duration-200 text-gray-900 bg-white font-medium"
                             >
                                 {conditions.map(condition => (
                                     <option key={condition.value} value={condition.value}>
@@ -662,7 +889,7 @@ export default function DeclutterList() {
                                 step="0.01"
                                 value={formData.estimated_value}
                                 onChange={(e) => setFormData(prev => ({ ...prev, estimated_value: parseFloat(e.target.value) || 0 }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900 placeholder-gray-500"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white font-medium"
                                 placeholder="e.g., 25.00, 150.00"
                             />
                         </div>
@@ -675,7 +902,7 @@ export default function DeclutterList() {
                                 type="text"
                                 value={formData.location}
                                 onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900 placeholder-gray-500"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white font-medium"
                                 placeholder="e.g., Manchester, Birmingham, London SE1"
                             />
                         </div>
@@ -687,7 +914,7 @@ export default function DeclutterList() {
                             <select
                                 value={formData.action}
                                 onChange={(e) => setFormData(prev => ({ ...prev, action: e.target.value as any }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-all duration-200 text-gray-900 bg-white font-medium"
                             >
                                 <option value="throw">Throw Away</option>
                                 <option value="donate">Donate</option>
@@ -705,7 +932,7 @@ export default function DeclutterList() {
                             value={formData.description}
                             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900 placeholder-gray-500"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none transition-all duration-200 text-gray-900 placeholder-gray-400 bg-white font-medium resize-none"
                             placeholder="e.g., Brown leather sofa with minor scratches, 3-seater, good cushions. Dimensions: 200cm x 90cm"
                         />
                     </div>
@@ -793,7 +1020,7 @@ export default function DeclutterList() {
                     <div className="flex gap-3 mt-6">
                         <button
                             onClick={editingItem ? handleUpdateItem : handleAddItem}
-                            className="bg-[#17B7C7] text-white px-6 py-2 rounded-lg hover:bg-[#139AAA] transition-colors font-medium"
+                            className="bg-[#17B7C7] text-white px-6 py-3 rounded-xl hover:bg-[#138994] transition-all duration-200 font-semibold shadow-md"
                         >
                             {editingItem ? 'Update Item' : 'Add Item'}
                         </button>
@@ -803,139 +1030,15 @@ export default function DeclutterList() {
                                 setEditingItem(null);
                                 resetForm();
                             }}
-                            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                            className="bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition-all duration-200 font-semibold shadow-md"
                         >
                             Cancel
                         </button>
                     </div>
+                        </div>
+                    </div>
                 </div>
             )}
-
-            {/* Items List */}
-            <div className="space-y-4">
-                {filteredItems.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 rounded-xl">
-                        <div className="text-6xl mb-4">📦</div>
-                        <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                            {items.length === 0 ? 'No items yet' : 'No items match your filters'}
-                        </h3>
-                        <p className="text-gray-500">
-                            {items.length === 0 
-                                ? 'Start by adding items you want to declutter'
-                                : 'Try adjusting your search or filter criteria'
-                            }
-                        </p>
-                    </div>
-                ) : (
-                    filteredItems.map(item => (
-                        <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                                {/* Image Display */}
-                                {item.images && item.images.length > 0 ? (
-                                    <div className="flex-shrink-0">
-                                        <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 relative">
-                                            <img
-                                                src={getImageUrl(item.images[0])}
-                                                alt={item.name}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => handleImageError(e, item.images?.[0] || '')}
-                                                data-attempt="0"
-                                            />
-                                            {item.images.length > 1 && (
-                                                <div className="absolute bottom-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
-                                                    +{item.images.length - 1}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex-shrink-0">
-                                        <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 relative flex items-center justify-center">
-                                            <div className="text-4xl text-gray-400">📦</div>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <h4 className="text-lg font-semibold text-gray-900">{item.name}</h4>
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                            item.action === 'sell' ? 'bg-green-100 text-green-800' :
-                                            item.action === 'donate' ? 'bg-blue-100 text-blue-800' :
-                                            item.action === 'throw' ? 'bg-red-100 text-red-800' :
-                                            'bg-gray-100 text-gray-800'
-                                        }`}>
-                                            {item.action === 'throw' ? 'Throw Away' : 
-                                             item.action.charAt(0).toUpperCase() + item.action.slice(1)}
-                                        </span>
-                                        {item.is_listed_for_sale && (
-                                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                                Listed for Marketplace
-                                            </span>
-                                        )}
-                                    </div>
-                                    
-                                    <div className="text-sm text-gray-600 space-y-1">
-                                        <p><span className="font-medium">Category:</span> {item.category}</p>
-                                        <p><span className="font-medium">Condition:</span> {item.condition.charAt(0).toUpperCase() + item.condition.slice(1)}</p>
-                                        {item.estimated_value > 0 && (
-                                            <p><span className="font-medium">Estimated Value:</span> £{item.estimated_value}</p>
-                                        )}
-                                        {item.location && (
-                                            <p><span className="font-medium">Location:</span> {item.location}</p>
-                                        )}
-                                        {item.description && (
-                                            <p><span className="font-medium">Description:</span> {item.description}</p>
-                                        )}
-                                    </div>
-                                </div>
-                                
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                    {!item.is_listed_for_sale ? (
-                                        <button
-                                            onClick={() => handleListForSale(item)}
-                                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-                                        >
-                                            List for Sale
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => handleUnlistFromSale(item)}
-                                            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
-                                        >
-                                            Unlist from Marketplace
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={() => handleEditItem(item)}
-                                        className="bg-[#17B7C7] text-white px-4 py-2 rounded-lg hover:bg-[#139AAA] transition-colors text-sm font-medium"
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteItem(item.id)}
-                                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
-
-            {/* Tips Section */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                <h4 className="font-semibold text-blue-900 mb-3">💡 Decluttering Tips</h4>
-                <ul className="text-sm text-blue-800 space-y-2">
-                    <li>• Be honest about condition - it helps set realistic expectations for selling</li>
-                    <li>• Research similar items online to estimate fair market values</li>
-                    <li>• Consider donation for items that are hard to sell but still usable</li>
-                    <li>• Take photos of valuable items to help with selling or insurance</li>
-                    <li>• List items you're unsure about as "keep" initially - you can always change later</li>
-                </ul>
-            </div>
         </div>
     );
 }

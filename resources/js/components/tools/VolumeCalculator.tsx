@@ -424,11 +424,18 @@ export default function VolumeCalculator() {
         : [...furnitureDatabase, ...customItems].filter(item => item.category === selectedCategory);
 
     return (
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-gray-100">
+        <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden font-sans">
             {/* Header */}
-            <div className="mb-6">
+            <div className="p-6 bg-gray-50 border-b border-gray-200">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">📦 Moving Volume Calculator</h3>
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-2xl font-bold text-gray-700">Volume Calculator</h3>
+                        <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
                     <div className="flex items-center gap-3">
                         {calculateTotalVolume() > 0 && (
                             <SaveResultsButton
@@ -441,13 +448,12 @@ export default function VolumeCalculator() {
                         )}
                         <button
                             onClick={clearAll}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium"
+                            className="text-red-600 hover:text-red-800 text-sm font-medium px-3 py-1 rounded-full hover:bg-red-50 transition-colors"
                         >
                             Clear All
                         </button>
                     </div>
                 </div>
-                <p className="text-gray-600 text-sm">Calculate the total volume of your belongings to estimate moving truck size and costs.</p>
                 
                 {/* Save Message */}
                 {saveMessage && (
@@ -462,36 +468,39 @@ export default function VolumeCalculator() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-1">Total Volume</h4>
-                    <p className="text-2xl font-bold text-blue-600">
-                        {calculateTotalVolume().toFixed(1)} m³
-                    </p>
-                </div>
-                
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-1">Recommended Truck</h4>
-                    <p className="text-lg font-bold text-green-600">
-                        {getRecommendedTruck().icon} {getRecommendedTruck().name}
-                    </p>
-                </div>
-                
-                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-1">Estimated Cost</h4>
-                    <p className="text-lg font-bold text-purple-600">
-                        {getRecommendedTruck().price}
-                    </p>
+            <div className="p-6 bg-white">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                    <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-600 mb-2">Total Volume</p>
+                        <p className="text-4xl font-bold text-gray-900">
+                            {calculateTotalVolume().toFixed(1)}
+                        </p>
+                        <p className="text-sm text-gray-500">cubic metres</p>
+                    </div>
+                    
+                    <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-600 mb-2">Recommended Truck</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                            {getRecommendedTruck().icon} {getRecommendedTruck().name}
+                        </p>
+                    </div>
+                    
+                    <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-600 mb-2">Estimated Cost</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                            {getRecommendedTruck().price}
+                        </p>
+                    </div>
                 </div>
             </div>
 
             {/* Room Management - With Item Display */}
-            <div className="mb-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-lg font-semibold text-gray-900">🏠 Rooms</h4>
+            <div className="p-6 bg-gray-50 border-t border-gray-200">
+                <div className="flex justify-between items-center mb-6">
+                    <h4 className="text-xl font-bold text-gray-700">Rooms & Items</h4>
                     <button
                         onClick={addRoom}
-                        className="bg-[#17B7C7] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#139AAA] transition-colors"
+                        className="bg-[#17B7C7] text-white px-6 py-3 rounded-full text-sm font-semibold hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                     >
                         Add Room
                     </button>
@@ -607,54 +616,54 @@ export default function VolumeCalculator() {
 
                 {/* Custom Item Form */}
                 {showCustomForm && (
-                    <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <h5 className="font-medium text-gray-900 mb-3">Add Custom Item</h5>
-                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="mb-6 p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
+                        <h5 className="font-semibold text-gray-900 mb-4">Add Custom Item</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Item Name</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Item Name</label>
                                 <input
                                     type="text"
-                                    placeholder="e.g., Large Bookshelf"
+                                    placeholder="Large Bookshelf"
                                     value={customForm.name}
                                     onChange={(e) => setCustomForm(prev => ({ ...prev, name: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none"
+                                    className="w-full px-4 py-3 bg-gray-200 border-0 rounded-full text-gray-900 placeholder-gray-500 font-medium focus:bg-white focus:ring-2 focus:ring-[#17B7C7] focus:outline-none transition-all duration-200 shadow-sm"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Length (cm)</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Length (cm)</label>
                                 <input
                                     type="number"
                                     placeholder="120"
                                     value={customForm.length}
                                     onChange={(e) => setCustomForm(prev => ({ ...prev, length: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none"
+                                    className="w-full px-4 py-3 bg-gray-200 border-0 rounded-full text-gray-900 placeholder-gray-500 font-medium focus:bg-white focus:ring-2 focus:ring-[#17B7C7] focus:outline-none transition-all duration-200 shadow-sm"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Width (cm)</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Width (cm)</label>
                                 <input
                                     type="number"
                                     placeholder="80"
                                     value={customForm.width}
                                     onChange={(e) => setCustomForm(prev => ({ ...prev, width: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none"
+                                    className="w-full px-4 py-3 bg-gray-200 border-0 rounded-full text-gray-900 placeholder-gray-500 font-medium focus:bg-white focus:ring-2 focus:ring-[#17B7C7] focus:outline-none transition-all duration-200 shadow-sm"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Height (cm)</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Height (cm)</label>
                                 <input
                                     type="number"
                                     placeholder="180"
                                     value={customForm.height}
                                     onChange={(e) => setCustomForm(prev => ({ ...prev, height: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none"
+                                    className="w-full px-4 py-3 bg-gray-200 border-0 rounded-full text-gray-900 placeholder-gray-500 font-medium focus:bg-white focus:ring-2 focus:ring-[#17B7C7] focus:outline-none transition-all duration-200 shadow-sm"
                                 />
                             </div>
                         </div>
-                        <div className="flex gap-2 mt-3">
+                        <div className="flex gap-3 mt-4">
                             <button
                                 onClick={addCustomItem}
-                                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                className="bg-[#17B7C7] text-white px-6 py-3 rounded-full text-sm font-semibold hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                             >
                                 Add Item
                             </button>
@@ -671,15 +680,15 @@ export default function VolumeCalculator() {
                     </div>
                 )}
 
-                {/* Furniture Grid - Simplified */}
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                {/* Furniture Grid - Modern Design */}
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
                     {filteredItems.map(item => (
-                        <div key={item.id} className="border border-gray-200 rounded-lg p-3 hover:border-[#17B7C7] transition-colors cursor-pointer"
+                        <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-4 hover:border-[#17B7C7] hover:shadow-md transition-all duration-200 cursor-pointer group"
                              onClick={() => openRoomSelectionModal(item)}>
                             <div className="text-center">
-                                <div className="text-2xl mb-2">{item.icon}</div>
-                                <h5 className="font-medium text-gray-900 text-xs mb-1 line-clamp-2">{item.name}</h5>
-                                <p className="text-xs text-gray-600">{item.volume}m³</p>
+                                <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-200">{item.icon}</div>
+                                <h5 className="font-semibold text-gray-900 text-xs mb-2 line-clamp-2">{item.name}</h5>
+                                <p className="text-xs text-[#17B7C7] font-medium">{item.volume}m³</p>
                             </div>
                         </div>
                     ))}
@@ -737,25 +746,25 @@ export default function VolumeCalculator() {
             {/* Room Selection Modal */}
             {roomSelectionModal.isOpen && roomSelectionModal.selectedItem && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-200">
+                        <h3 className="text-xl font-bold text-gray-900 mb-6">
                             Add {roomSelectionModal.selectedItem.name}
                         </h3>
                         
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                        <div className="mb-6">
+                            <label className="block text-sm font-semibold text-gray-800 mb-3">Quantity</label>
                             <input
                                 type="number"
                                 min="1"
                                 value={itemQuantity}
                                 onChange={(e) => setItemQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] focus:bg-white outline-none transition-all duration-200"
                             />
                         </div>
                         
-                        <div className="mb-6">
-                            <p className="text-sm font-medium text-gray-700 mb-3">Select room or add without room:</p>
-                            <div className="space-y-2">
+                        <div className="mb-8">
+                            <p className="text-sm font-semibold text-gray-800 mb-4">Select room or add without room:</p>
+                            <div className="space-y-3">
                                 {rooms.map(room => (
                                     <button
                                         key={room.id}
@@ -763,7 +772,7 @@ export default function VolumeCalculator() {
                                             addItemToRoom(room.id, roomSelectionModal.selectedItem!.id, itemQuantity);
                                             closeRoomSelectionModal();
                                         }}
-                                        className="w-full text-left px-3 py-2 bg-gray-100 hover:bg-[#17B7C7] hover:text-white rounded-lg transition-colors"
+                                        className="w-full text-left px-4 py-3 bg-gray-50 text-gray-900 font-medium hover:bg-[#17B7C7] hover:text-white rounded-xl transition-all duration-200 border border-gray-200 hover:border-[#17B7C7]"
                                     >
                                         🏠 {room.name}
                                     </button>
@@ -773,7 +782,7 @@ export default function VolumeCalculator() {
                                         addItemUnassigned(roomSelectionModal.selectedItem!.id, itemQuantity);
                                         closeRoomSelectionModal();
                                     }}
-                                    className="w-full text-left px-3 py-2 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors"
+                                    className="w-full text-left px-4 py-3 bg-blue-50 text-blue-900 font-medium hover:bg-blue-100 rounded-xl transition-all duration-200 border border-blue-200 hover:border-blue-300"
                                 >
                                     📦 Add without room
                                 </button>
@@ -783,7 +792,7 @@ export default function VolumeCalculator() {
                         <div className="flex justify-end space-x-3">
                             <button
                                 onClick={closeRoomSelectionModal}
-                                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                                className="px-6 py-3 bg-gray-600 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                             >
                                 Cancel
                             </button>
@@ -794,9 +803,9 @@ export default function VolumeCalculator() {
 
             {/* Truck Recommendations */}
             {calculateTotalVolume() > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">🚚 Truck Size Recommendations</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="p-6 bg-white border-t border-gray-200">
+                    <h4 className="text-xl font-bold text-gray-700 mb-6">Truck Size Recommendations</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {truckSizes.map(truck => {
                             const isRecommended = truck.volume >= calculateTotalVolume() && 
                                                 (truckSizes.find(t => t.volume >= calculateTotalVolume())?.name === truck.name);
@@ -804,25 +813,28 @@ export default function VolumeCalculator() {
                             return (
                                 <div 
                                     key={truck.name}
-                                    className={`p-3 rounded-lg border ${
+                                    className={`p-4 rounded-xl border-2 transition-all duration-200 ${
                                         isRecommended 
-                                            ? 'border-green-500 bg-green-50' 
+                                            ? 'border-[#17B7C7] bg-blue-50 shadow-lg transform scale-105' 
                                             : truck.volume < calculateTotalVolume()
-                                                ? 'border-red-300 bg-red-50 opacity-60'
-                                                : 'border-gray-300 bg-white'
+                                                ? 'border-red-200 bg-red-50 opacity-60'
+                                                : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
                                     }`}
                                 >
                                     <div className="text-center">
-                                        <div className="text-2xl mb-2">{truck.icon}</div>
-                                        <h5 className="font-medium text-gray-900 text-sm mb-1">
+                                        <div className="text-3xl mb-3">{truck.icon}</div>
+                                        <h5 className="font-semibold text-gray-900 text-sm mb-2">
                                             {truck.name}
-                                            {isRecommended && <span className="text-green-600 ml-1">✓</span>}
+                                            {isRecommended && <span className="text-[#17B7C7] ml-1 text-lg">✓</span>}
                                         </h5>
-                                        <p className="text-xs text-gray-600 mb-1">{truck.volume}m³ capacity</p>
-                                        <p className="text-xs text-gray-600 mb-1">{truck.description}</p>
-                                        <p className="text-xs font-medium text-gray-900">{truck.price}</p>
+                                        <p className="text-xs text-gray-600 mb-1 font-medium">{truck.volume}m³ capacity</p>
+                                        <p className="text-xs text-gray-500 mb-2">{truck.description}</p>
+                                        <p className="text-sm font-bold text-gray-900">{truck.price}</p>
+                                        {isRecommended && (
+                                            <p className="text-xs text-[#17B7C7] font-semibold mt-2">Recommended</p>
+                                        )}
                                         {truck.volume < calculateTotalVolume() && (
-                                            <p className="text-xs text-red-600 mt-1">Too small</p>
+                                            <p className="text-xs text-red-600 mt-2 font-medium">Too small</p>
                                         )}
                                     </div>
                                 </div>

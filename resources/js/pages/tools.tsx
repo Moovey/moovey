@@ -190,7 +190,7 @@ export default function Tools() {
 
                 {/* Small Header Banner - Fully Responsive */}
                 <section 
-                    className="pt-4 px-3 xs:pt-6 xs:px-4 sm:pt-8 sm:px-6 md:px-8 lg:px-12 xl:px-16 relative bg-cover bg-center bg-no-repeat h-[50vh] flex flex-col"
+                    className="pt-4 px-3 xs:pt-6 xs:px-4 sm:pt-8 sm:px-6 md:px-8 lg:px-12 xl:px-16 relative bg-cover bg-center bg-no-repeat min-h-[360px] flex flex-col"
                     style={{
                         background: `linear-gradient(135deg, #8ae2eb 0%, #eafffe 100%), url('/images/tools-background.png')`,
                         backgroundSize: 'cover, cover',

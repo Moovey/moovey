@@ -1,3 +1,8 @@
+/**
+ * Tailwind CSS v4 Configuration
+ * These are valid Tailwind CSS v4 directives, ignore linter warnings
+ */
+
 @import 'tailwindcss';
 @import './rich-text-editor.css';
 
@@ -133,10 +138,12 @@
 
 @layer base {
     * {
+        /* stylelint-disable-next-line at-rule-no-unknown */
         @apply border-border;
     }
 
     body {
+        /* stylelint-disable-next-line at-rule-no-unknown */
         @apply bg-background text-foreground;
     }
 }
@@ -147,5 +154,34 @@
         display: -webkit-box;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    .animate-fadeIn {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .animate-scaleIn {
+        animation: scaleIn 0.3s ease-out;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
     }
 }
