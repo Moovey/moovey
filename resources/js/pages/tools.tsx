@@ -241,55 +241,43 @@ export default function Tools() {
                                     className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
                                 >
                                     <div className="flex flex-col lg:flex-row">
-                                        {/* Left Section - Illustration */}
-                                        <div className="lg:w-1/3 p-8 flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #f0fffe, #e6fdfc)' }}>
-                                            {/* Background decorative elements */}
-                                            <div className="absolute top-4 right-4 opacity-30" style={{ color: '#17B7C7' }}>
-                                                <span className="text-2xl">✨</span>
-                                            </div>
-                                            <div className="absolute bottom-4 left-4 opacity-30" style={{ color: '#138994' }}>
-                                                <span className="text-xl">🎯</span>
-                                            </div>
-                                            <div className="absolute top-1/2 left-1/4 opacity-20" style={{ color: '#17B7C7' }}>
-                                                <span className="text-lg">💫</span>
-                                            </div>
-                                            
-                                            {/* Tool Icon/Illustration */}
-                                            <div className="text-center z-10">
-                                                <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center text-white shadow-lg" style={{ background: 'linear-gradient(135deg, #17B7C7, #138994)' }}>
-                                                    {tool.icon === 'mortgage' && (
-                                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21l18-18M12 3l9 9-3 3v6a2 2 0 01-2 2H8a2 2 0 01-2-2v-6l-3-3 9-9z"/>
-                                                        </svg>
-                                                    )}
-                                                    {tool.icon === 'affordability' && (
-                                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                        </svg>
-                                                    )}
-                                                    {tool.icon === 'school' && (
-                                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                        </svg>
-                                                    )}
-                                                    {tool.icon === 'volume' && (
-                                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                                                        </svg>
-                                                    )}
-                                                    {tool.icon === 'declutter' && (
-                                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                                                        </svg>
-                                                    )}
-                                                </div>
-                                                <div className="flex justify-center space-x-2">
-                                                    <span className="text-yellow-400 text-lg">⭐</span>
-                                                    <span className="text-lg" style={{ color: '#17B7C7' }}>🔧</span>
-                                                    <span className="text-lg" style={{ color: '#138994' }}>📊</span>
-                                                </div>
-                                            </div>
+                                        {/* Left Section - Tool Image */}
+                                        <div className="lg:w-1/3 p-4 flex items-center justify-center bg-white">
+                                            {tool.icon === 'mortgage' && (
+                                                <img 
+                                                    src="/images/Mortgage-Calculator.png" 
+                                                    alt="Mortgage Calculator" 
+                                                    className="w-full h-auto object-contain max-w-xs"
+                                                />
+                                            )}
+                                            {tool.icon === 'affordability' && (
+                                                <img 
+                                                    src="/images/Affordability-Calculator.png" 
+                                                    alt="Affordability Calculator" 
+                                                    className="w-full h-auto object-contain max-w-xs"
+                                                />
+                                            )}
+                                            {tool.icon === 'school' && (
+                                                <img 
+                                                    src="/images/School-Catchment-Map.png" 
+                                                    alt="School Catchment Map" 
+                                                    className="w-full h-auto object-contain max-w-xs"
+                                                />
+                                            )}
+                                            {tool.icon === 'volume' && (
+                                                <img 
+                                                    src="/images/Volume-Calculator.png" 
+                                                    alt="Volume Calculator" 
+                                                    className="w-full h-auto object-contain max-w-xs"
+                                                />
+                                            )}
+                                            {tool.icon === 'declutter' && (
+                                                <img 
+                                                    src="/images/Declutter-List.png" 
+                                                    alt="Declutter List" 
+                                                    className="w-full h-auto object-contain max-w-xs"
+                                                />
+                                            )}
                                         </div>
 
                                         {/* Right Section - Content */}
