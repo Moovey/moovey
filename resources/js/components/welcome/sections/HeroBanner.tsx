@@ -19,7 +19,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({
 
     return (
         <section 
-            className="relative overflow-hidden py-4 md:py-6 lg:py-8 h-[50vh] flex items-center" 
+            className="relative overflow-hidden py-4 md:py-6 lg:py-8 min-h-[360px] flex items-center" 
             style={{ 
                 background: 'linear-gradient(135deg, #8ae2eb 0%, #eafffe 100%)' 
             }}
@@ -126,7 +126,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({
 
                     {/* Right Column - Image (Desktop) */}
                     <div className="flex justify-center lg:justify-end items-center h-full">
-                        <div className="relative max-w-sm xl:max-w-md 2xl:max-w-lg h-48 xl:h-56 2xl:h-64">
+                        <div className="relative max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl h-56 lg:h-64 xl:h-72 2xl:h-80">
                             <img
                                 src={heroBanners[currentImageIndex]}
                                 alt={currentHeroData.title}
