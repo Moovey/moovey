@@ -1,5 +1,7 @@
 import React from 'react';
+import { usePage } from '@inertiajs/react';
 import type { HeroBannerProps } from '@/types/welcome';
+import type { SharedData } from '@/types';
 
 const HeroBanner: React.FC<HeroBannerProps> = ({
     heroDataArray,
@@ -7,8 +9,27 @@ const HeroBanner: React.FC<HeroBannerProps> = ({
     currentImageIndex,
     setCurrentImageIndex
 }) => {
+    // Get authentication status
+    const { auth } = usePage<SharedData>().props;
+    const isAuthenticated = !!auth?.user;
+
     // Get the current hero data based on the image index
     const currentHeroData = heroDataArray[currentImageIndex] || heroDataArray[0];
+    
+    // Conditionally modify the CTA link based on authentication and content
+    const getCtaLink = (heroData: typeof currentHeroData) => {
+        if (isAuthenticated) {
+            // Check if this is the "New to Moving House?" banner that mentions academy/school of moovology
+            if (heroData.title === "New to Moving House?") {
+                return "/academy";
+            }
+            // Check if this is the "Make Your Move!" banner that mentions toolbox
+            if (heroData.title === "Make Your Move!") {
+                return "/tools";
+            }
+        }
+        return heroData.ctaLink;
+    };
     const previousImage = () => {
         setCurrentImageIndex(currentImageIndex === 0 ? heroBanners.length - 1 : currentImageIndex - 1);
     };
@@ -92,7 +113,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({
                         
                         <div className="flex justify-center pt-1">
                             <a 
-                                href={currentHeroData.ctaLink}
+                                href={getCtaLink(currentHeroData)}
                                 className="bg-[#17B7C7] text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full font-bold text-sm sm:text-base hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                             >
                                 {currentHeroData.ctaText}
@@ -116,7 +137,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({
                         
                         <div className="flex justify-start pt-2">
                             <a 
-                                href={currentHeroData.ctaLink}
+                                href={getCtaLink(currentHeroData)}
                                 className="bg-[#17B7C7] text-white px-8 xl:px-10 py-3 xl:py-4 rounded-full font-bold text-base xl:text-lg hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                             >
                                 {currentHeroData.ctaText}
