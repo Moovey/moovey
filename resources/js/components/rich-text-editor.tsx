@@ -9,6 +9,7 @@ import Dropcursor from '@tiptap/extension-dropcursor';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import { NodeSelection } from 'prosemirror-state';
 import TaskButton from './tiptap-extensions/task-button';
+import CustomImage from './tiptap-extensions/custom-image';
 import './rich-text-editor.css';
 
 interface RichTextEditorProps {
@@ -68,7 +69,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
                 },
             }),
             Underline,
-            Image.configure({
+            CustomImage.configure({
                 allowBase64: true,
                 inline: false,
                 HTMLAttributes: {
@@ -109,7 +110,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
                     // Find the image node in the document
                     let imageNodePos = -1;
                     view.state.doc.descendants((node, nodePos) => {
-                        if (node.type.name === 'image') {
+                        if (node.type.name === 'customImage') {
                             // Check if this is the clicked image by comparing src
                             const imgSrc = target.getAttribute('src');
                             const nodeSrc = node.attrs.src;
@@ -135,8 +136,14 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
     const getCurrentImageSize = () => {
         const { selection } = editor.state;
         
-        if (selection instanceof NodeSelection && selection.node.type.name === 'image') {
-            // Check if the image has a data-size attribute in the HTML
+        if (selection instanceof NodeSelection && selection.node.type.name === 'customImage') {
+            // First check if the node has the data-size attribute directly
+            const dataSize = selection.node.attrs['data-size'];
+            if (dataSize) {
+                return dataSize;
+            }
+            
+            // Fallback: check the HTML content
             const html = editor.getHTML();
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
@@ -144,7 +151,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
             
             for (const img of images) {
                 if (img.src === selection.node.attrs.src) {
-                    return img.getAttribute('data-size') || 'medium';
+                    return img.getAttribute('data-size') || 'full';
                 }
             }
         }
@@ -227,15 +234,17 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
                             const inlineStyle = getImageSizeStyle(size.toLowerCase());
                             
                             // Insert image as HTML with inline styles and data attribute
-                            const imageHTML = `<img src="${result.url}" alt="Uploaded lesson image" class="editor-image" style="${inlineStyle}" data-size="${size.toLowerCase()}" />`;
+                            const imageHTML = `<img src="${result.url}" alt="Uploaded image" class="editor-image" style="${inlineStyle}" data-size="${size.toLowerCase()}" />`;
                             
                             const success = editor.chain().focus().insertContent(imageHTML).run();
                             
-                            // Fallback to basic setImage if HTML insertion fails
+                            // Fallback to basic setCustomImage if HTML insertion fails
                             if (!success) {
-                                editor.chain().focus().setImage({
+                                editor.chain().focus().setCustomImage({
                                     src: result.url,
-                                    alt: 'Uploaded lesson image'
+                                    alt: 'Uploaded lesson image',
+                                    'data-size': size.toLowerCase(),
+                                    style: inlineStyle
                                 }).run();
                             }
                         }
@@ -251,58 +260,79 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
     };
 
     const resizeSelectedImage = (size: string) => {
-        const { selection } = editor.state;
+        const { selection, tr } = editor.state;
         
-        if (selection instanceof NodeSelection && selection.node.type.name === 'image') {
+        console.log(`Attempting to resize image to: ${size}`);
+        
+        // First, try to find a selected image
+        if (selection instanceof NodeSelection && selection.node.type.name === 'customImage') {
             const currentSrc = selection.node.attrs.src;
             const currentAlt = selection.node.attrs.alt || 'Image';
             
-            // Get the inline style for the size
-            const inlineStyle = getImageSizeStyle(size);
+            // Update the image node attributes directly
+            const newAttrs = {
+                ...selection.node.attrs,
+                'data-size': size,
+                style: getImageSizeStyle(size)
+            };
             
-            // Create new image HTML with size data attribute for instant CSS updates
-            const imageHTML = `<img src="${currentSrc}" alt="${currentAlt}" class="editor-image" style="${inlineStyle}" data-size="${size}" />`;
+            // Use setNodeMarkup to update the existing node
+            const newTr = tr.setNodeMarkup(selection.from, null, newAttrs);
+            editor.view.dispatch(newTr);
             
-            // Replace immediately using chain commands
-            editor.chain()
-                .deleteSelection()
-                .insertContent(imageHTML)
-                .focus()
-                .run();
+            console.log(`Successfully resized selected image to: ${size}`);
+            
+            // Force a re-render by briefly losing and regaining focus
+            setTimeout(() => {
+                editor.commands.focus();
+            }, 10);
+            
+            return;
+        }
+        
+        // If no image is selected, look for images near the cursor
+        const { from, to } = selection;
+        let imageFound = false;
+        
+        // Search in a reasonable range around the cursor
+        const searchFrom = Math.max(0, from - 5);
+        const searchTo = Math.min(editor.state.doc.content.size, to + 5);
+        
+        editor.state.doc.nodesBetween(searchFrom, searchTo, (node, pos) => {
+            if (node.type.name === 'customImage' && !imageFound) {
+                // Create a NodeSelection for this image
+                const nodeSelection = NodeSelection.create(editor.state.doc, pos);
                 
-        } else {
-            // Try to find an image near the cursor
-            const { from, to } = selection;
-            let imageFound = false;
-            
-            // Look in a wider range for images
-            const searchFrom = Math.max(0, from - 10);
-            const searchTo = Math.min(editor.state.doc.content.size, to + 10);
-            
-            editor.state.doc.nodesBetween(searchFrom, searchTo, (node, pos) => {
-                if (node.type.name === 'image' && !imageFound) {
-                    const currentSrc = node.attrs.src;
-                    const currentAlt = node.attrs.alt || 'Image';
+                // Apply the selection first
+                const selectionTr = editor.state.tr.setSelection(nodeSelection);
+                editor.view.dispatch(selectionTr);
+                
+                // Then update the image
+                setTimeout(() => {
+                    const newAttrs = {
+                        ...node.attrs,
+                        'data-size': size,
+                        style: getImageSizeStyle(size)
+                    };
                     
-                    // Get the inline style for the size
-                    const inlineStyle = getImageSizeStyle(size);
-                    const imageHTML = `<img src="${currentSrc}" alt="${currentAlt}" class="editor-image" style="${inlineStyle}" data-size="${size}" />`;
+                    const updateTr = editor.state.tr.setNodeMarkup(pos, null, newAttrs);
+                    editor.view.dispatch(updateTr);
                     
-                    // Replace the image immediately
-                    editor.chain()
-                        .deleteRange({ from: pos, to: pos + node.nodeSize })
-                        .insertContent(imageHTML)
-                        .focus()
-                        .run();
+                    console.log(`Successfully resized nearby image to: ${size}`);
                     
-                    imageFound = true;
-                    return false; // Stop searching
-                }
-            });
-            
-            if (!imageFound) {
-                alert('Please click on an image first to resize it');
+                    // Focus after update
+                    setTimeout(() => {
+                        editor.commands.focus();
+                    }, 10);
+                }, 10);
+                
+                imageFound = true;
+                return false; // Stop searching
             }
+        });
+        
+        if (!imageFound) {
+            alert('Please click on an image first to resize it, or place your cursor near an image.');
         }
     };
 
@@ -609,7 +639,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
                         // Delete selected image
                         const { selection } = editor.state;
                         
-                        if (selection instanceof NodeSelection && selection.node.type.name === 'image') {
+                        if (selection instanceof NodeSelection && selection.node.type.name === 'customImage') {
                             editor.chain().focus().deleteSelection().run();
                         } else {
                             // Find image near cursor
@@ -617,7 +647,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
                             let imageFound = false;
                             
                             editor.state.doc.nodesBetween(from, to, (node, pos) => {
-                                if (node.type.name === 'image') {
+                                if (node.type.name === 'customImage') {
                                     editor.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).run();
                                     imageFound = true;
                                     return false;
