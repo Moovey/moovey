@@ -156,12 +156,12 @@ export default function OptimizedCommunityFeed({
     return (
         <section className="py-8 sm:py-12 lg:py-16 px-3 sm:px-6 lg:px-8 bg-gray-50">
             <div className="max-w-7xl mx-auto">
-                <div className="lg:flex lg:gap-6 xl:gap-8">
+                <div className="lg:flex lg:gap-6 xl:gap-8 lg:items-start">
                     {/* Sidebar */}
                     <CommunitySidebar />
                     
                     {/* Main Content Area */}
-                    <div className="flex-1 w-full">
+                    <div className="flex-1 w-full lg:max-w-none">
                         {/* User Profile Header */}
                         {isAuthenticated && currentUser && (
                             <div className="bg-white rounded-2xl lg:rounded-3xl p-4 sm:p-6 shadow-lg mb-4 sm:mb-6">

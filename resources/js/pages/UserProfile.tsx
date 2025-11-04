@@ -61,18 +61,19 @@ export default function UserProfile({
 
                 <section className="py-8 sm:py-12 lg:py-16 px-3 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
-                        <CommunitySidebar 
-                            userStats={{
-                                postCount: userProfile.post_count,
-                                friendCount: userProfile.friend_count,
-                                memberSince: new Date(user.created_at).getFullYear()
-                            }}
-                            showCommunityLink={true}
-                        />
+                        <div className="lg:flex lg:gap-6 xl:gap-8 lg:items-start">
+                            {/* Sidebar */}
+                            <CommunitySidebar 
+                                userStats={{
+                                    postCount: userProfile.post_count,
+                                    friendCount: userProfile.friend_count,
+                                    memberSince: new Date(user.created_at).getFullYear()
+                                }}
+                                showCommunityLink={true}
+                            />
 
-                        <div className="lg:flex lg:gap-6 xl:gap-8">
                             {/* Main Content Area */}
-                            <div className="flex-1 w-full lg:max-w-4xl lg:ml-auto">
+                            <div className="flex-1 w-full lg:max-w-none">
                                 {/* Profile Header */}
                                 <UserProfileHeader
                                     user={user}
