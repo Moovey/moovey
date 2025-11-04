@@ -93,6 +93,37 @@ const ToolsShowcase = memo(() => {
         setTimeout(() => setIsUserInteracting(false), 5000); // Resume auto-scroll after 5 seconds
     };
 
+    const getToolImageBackground = (iconType: string) => {
+        const imageMap: { [key: string]: string } = {
+            'home': '/images/Mortgage-Calculator.png',
+            'calculator': '/images/Affordability-Calculator.png',
+            'map': '/images/School-Catchment-Map.png',
+            'box': '/images/Volume-Calculator.png',
+            'trash': '/images/Declutter-List.png'
+        };
+
+        const imageSrc = imageMap[iconType] || '/images/Mortgage-Calculator.png';
+        
+        return {
+            backgroundImage: `url('${imageSrc}')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+        };
+    };
+
+    const getToolPageUrl = (toolId: string) => {
+        const toolRoutes: { [key: string]: string } = {
+            'mortgage': '/tools/mortgage-calculator',
+            'affordability': '/tools/affordability-calculator',
+            'school': '/tools/school-catchment-map',
+            'volume': '/tools/volume-calculator',
+            'declutter': '/tools/declutter-list'
+        };
+
+        return toolRoutes[toolId] || '/tools';
+    };
+
     const renderIcon = (iconType: string, className: string) => {
         const iconProps = {
             className,
@@ -196,12 +227,21 @@ const ToolsShowcase = memo(() => {
                                 key={tool.id}
                                 className="w-full flex-shrink-0 px-4 sm:px-8"
                             >
-                                <div className={`bg-gradient-to-br from-${tool.bgColor} to-white rounded-2xl p-8 sm:p-12 shadow-lg text-center max-w-2xl mx-auto`}>
-                                    <div className={`w-16 h-16 sm:w-20 sm:h-20 bg-${tool.color} rounded-xl flex items-center justify-center mx-auto mb-6`}>
-                                        {renderIcon(tool.icon, "w-8 h-8 sm:w-10 sm:h-10 text-white")}
+                                <div 
+                                    className="relative rounded-2xl p-6 sm:p-8 shadow-lg text-center max-w-xl mx-auto overflow-hidden min-h-[300px] flex flex-col justify-center"
+                                    style={getToolImageBackground(tool.icon)}
+                                >
+                                    {/* Lighter overlay for better image visibility */}
+                                    <div className="absolute inset-0 bg-white/40"></div>
+                                    
+                                    {/* Content */}
+                                    <div className="relative z-10">
+                                        <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-${tool.color} rounded-xl flex items-center justify-center mx-auto mb-4`}>
+                                            {renderIcon(tool.icon, "w-6 h-6 sm:w-8 sm:h-8 text-white")}
+                                        </div>
+                                        <h4 className="text-xl sm:text-2xl font-bold mb-3 leading-tight drop-shadow-sm" style={{ color: '#17B7C7' }}>{tool.name}</h4>
+                                        <p className="text-gray-800 text-base sm:text-lg leading-relaxed max-w-sm mx-auto font-semibold drop-shadow-sm">{tool.description}</p>
                                     </div>
-                                    <h4 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 leading-tight">{tool.name}</h4>
-                                    <p className="text-gray-600 text-lg sm:text-xl leading-relaxed max-w-xl mx-auto">{tool.description}</p>
                                 </div>
                             </div>
                         ))}
@@ -226,10 +266,10 @@ const ToolsShowcase = memo(() => {
 
                 <div className="text-center mt-12">
                     <a 
-                        href="/tools"
+                        href={getToolPageUrl(tools[currentIndex].id)}
                         className="bg-[#17B7C7] text-white px-8 py-3 rounded-full font-semibold hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 inline-block"
                     >
-                        Try Now
+                        Try {tools[currentIndex].name}
                     </a>
                 </div>
             </div>
