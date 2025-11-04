@@ -219,11 +219,21 @@ export default function Tools() {
                     </div>
                     
                     {/* Banner Image at Absolute Bottom - Mobile Compact, Desktop Large */}
-                    <div className="w-full flex justify-center items-end absolute bottom-0 left-0 right-0">
+                    <div className="w-full flex justify-center items-center absolute bottom-0 left-0 right-0">
+                        {/* Mobile Banner Image */}
+                        <img 
+                            src="/images/tools-banner-small.webp" 
+                            alt="Moovey Tools Banner" 
+                            className="sm:hidden h-64 xs:h-72 w-auto object-contain max-w-[95%] block mx-auto"
+                            style={{
+                                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
+                            }}
+                        />
+                        {/* Desktop Banner Image */}
                         <img 
                             src="/images/tools-banner.webp" 
                             alt="Moovey Tools Banner" 
-                            className="h-24 xs:h-28 sm:h-48 md:h-56 lg:h-64 xl:h-72 2xl:h-80 w-auto object-contain max-w-[95%] sm:max-w-[90%] md:max-w-[85%] lg:max-w-full block"
+                            className="hidden sm:block h-48 md:h-56 lg:h-64 xl:h-72 2xl:h-80 w-auto object-contain max-w-[90%] md:max-w-[85%] lg:max-w-full mx-auto"
                             style={{
                                 filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
                             }}
