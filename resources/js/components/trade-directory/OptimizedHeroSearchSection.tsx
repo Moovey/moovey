@@ -137,7 +137,7 @@ export default function OptimizedHeroSearchSection({
         <section 
             className="h-[360px] px-4 sm:px-6 lg:px-8 flex items-center relative bg-cover bg-center bg-no-repeat"
             style={{
-                background: `linear-gradient(135deg, #8ae2eb 0%, #eafffe 100%), url('/images/trade-directory-background.webp')`,
+                background: `linear-gradient(135deg, #8ae2eb 0%, #eafffe 100%), url('/images/community-background.webp')`,
                 backgroundSize: 'cover, cover',
                 backgroundPosition: 'center, center',
                 backgroundRepeat: 'no-repeat, no-repeat',
