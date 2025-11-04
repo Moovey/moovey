@@ -134,15 +134,24 @@ export default function OptimizedHeroSearchSection({
         )), [handlePopularServiceClick, isSearching]);
 
     return (
-        <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-            <div className="max-w-7xl mx-auto">
-                <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <section 
+            className="h-[360px] px-4 sm:px-6 lg:px-8 flex items-center relative bg-cover bg-center bg-no-repeat"
+            style={{
+                background: `linear-gradient(135deg, #8ae2eb 0%, #eafffe 100%), url('/images/trade-directory-background.webp')`,
+                backgroundSize: 'cover, cover',
+                backgroundPosition: 'center, center',
+                backgroundRepeat: 'no-repeat, no-repeat',
+                backgroundBlendMode: 'overlay'
+            }}
+        >
+            <div className="max-w-7xl mx-auto w-full relative z-10">
+                <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-center h-full">
                     {/* Left Side - Mascot Image */}
-                    <div className="text-center lg:text-left order-2 lg:order-1">
+                    <div className="text-center lg:text-left order-2 lg:order-1 flex items-center justify-center">
                         <div className="relative inline-block">
                             {/* Mascot Image Container */}
                             <div 
-                                className="w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[30rem] lg:h-[30rem] mx-auto mb-4 sm:mb-6 relative rounded-full overflow-hidden"
+                                className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 mx-auto relative rounded-full overflow-hidden"
                             >
                                 {/* Loading placeholder */}
                                 {!imageLoaded && (
@@ -185,28 +194,28 @@ export default function OptimizedHeroSearchSection({
                     </div>
 
                     {/* Right Side - Search Interface */}
-                    <div className="order-1 lg:order-2">
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[#17B7C7] mb-4 sm:mb-6 leading-tight text-center lg:text-left">
+                    <div className="order-1 lg:order-2 flex flex-col justify-center">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl font-bold text-[#17B7C7] mb-3 sm:mb-4 leading-tight text-center lg:text-left">
                             Find Movers & Services
                         </h1>
                         
                         {/* Primary Search Bar */}
-                        <div className="mb-4 sm:mb-6">
+                        <div className="mb-3 sm:mb-4">
                             <div className="flex flex-col sm:flex-row gap-2 sm:gap-0">
                                 <input
                                     type="text"
-                                    placeholder="Search for movers, services, or business names..."
+                                    placeholder="Search for movers, services..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyPress={handleKeyPress}
                                     disabled={isSearching}
-                                    className="flex-1 px-4 sm:px-6 py-3 sm:py-4 text-base sm:text-lg text-gray-900 placeholder-gray-500 border-2 border-gray-300 rounded-lg sm:rounded-l-xl sm:rounded-r-none focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
+                                    className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-900 placeholder-gray-500 border-2 border-gray-300 rounded-lg sm:rounded-l-xl sm:rounded-r-none focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
                                 />
                                 <select
                                     value={selectedLocation}
                                     onChange={(e) => setSelectedLocation(e.target.value)}
                                     disabled={isSearching}
-                                    className="px-4 sm:px-6 py-3 sm:py-4 text-base sm:text-lg text-gray-900 border-2 border-gray-300 sm:border-l-0 rounded-lg sm:rounded-none focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
+                                    className="px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-900 border-2 border-gray-300 sm:border-l-0 rounded-lg sm:rounded-none focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
                                 >
                                     <option className="text-gray-900">Your Location</option>
                                     {locations.map((location) => (
@@ -216,7 +225,7 @@ export default function OptimizedHeroSearchSection({
                                 <button 
                                     onClick={handleSearch}
                                     disabled={isSearching}
-                                    className="px-6 sm:px-8 py-3 sm:py-4 bg-[#17B7C7] text-white font-semibold rounded-lg sm:rounded-r-xl sm:rounded-l-none hover:bg-[#139AAA] transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="px-4 sm:px-6 py-2 sm:py-3 bg-[#17B7C7] text-white font-semibold rounded-lg sm:rounded-r-xl sm:rounded-l-none hover:bg-[#139AAA] transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {isSearching ? (
                                         <>
@@ -237,12 +246,12 @@ export default function OptimizedHeroSearchSection({
                         </div>
 
                         {/* Advanced Filters */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
                             <select
                                 value={selectedService}
                                 onChange={(e) => setSelectedService(e.target.value)}
                                 disabled={isSearching}
-                                className="px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-900 border-2 border-[#17B7C7] rounded-lg focus:border-[#139AAA] focus:outline-none bg-white font-medium disabled:opacity-50"
+                                className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-900 border-2 border-[#17B7C7] rounded-lg focus:border-[#139AAA] focus:outline-none bg-white font-medium disabled:opacity-50"
                             >
                                 <option className="text-gray-900">I'm looking for a...</option>
                                 {serviceTypes.map((service) => (
@@ -254,7 +263,7 @@ export default function OptimizedHeroSearchSection({
                                 value={selectedRegion}
                                 onChange={(e) => setSelectedRegion(e.target.value)}
                                 disabled={isSearching}
-                                className="px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-900 border-2 border-gray-300 rounded-lg focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
+                                className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-900 border-2 border-gray-300 rounded-lg focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
                             >
                                 <option className="text-gray-900">Location...</option>
                                 {locations.map((location) => (
@@ -266,7 +275,7 @@ export default function OptimizedHeroSearchSection({
                                 value={ratingFilter}
                                 onChange={(e) => setRatingFilter(e.target.value)}
                                 disabled={isSearching}
-                                className="px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-900 border-2 border-gray-300 rounded-lg focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
+                                className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-900 border-2 border-gray-300 rounded-lg focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
                             >
                                 <option value="" className="text-gray-900">Ratings</option>
                                 <option value="5" className="text-gray-900">5 Stars</option>
@@ -276,23 +285,22 @@ export default function OptimizedHeroSearchSection({
                             
                             <input
                                 type="text"
-                                placeholder="Service keywords..."
+                                placeholder="Keywords..."
                                 value={keywordsInput}
                                 onChange={(e) => setKeywordsInput(e.target.value)}
                                 onKeyPress={handleKeyPress}
                                 disabled={isSearching}
-                                className="px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-900 placeholder-gray-500 border-2 border-gray-300 rounded-lg focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
+                                className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-900 placeholder-gray-500 border-2 border-gray-300 rounded-lg focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
                             />
                         </div>
                         
                         {/* Service Filters Explanation */}
-                        <div className="mt-4 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <div className="flex items-start space-x-2">
-                                <span className="text-blue-600">💡</span>
+                        <div className="mt-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                            <div className="flex items-start space-x-1">
+                                <span className="text-blue-600 text-sm">💡</span>
                                 <div>
-                                    <strong className="text-blue-800">Search Tips:</strong> Use the main search bar for business names or general terms. 
-                                    Select specific services from the dropdown, or use service keywords like "packing", "cleaning", "storage" to find businesses offering those services.
-                                    {isSearching && <span className="block mt-1 text-blue-700">Searching for the best matches...</span>}
+                                    <strong className="text-blue-800">Tips:</strong> Use main search for business names. Select services or use keywords like "packing", "cleaning".
+                                    {isSearching && <span className="block mt-1 text-blue-700">Searching...</span>}
                                 </div>
                             </div>
                         </div>
