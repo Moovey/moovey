@@ -1,5 +1,6 @@
 import { useState, useEffect, memo } from 'react';
 import axios from 'axios';
+import { getStorageFileUrl, getFallbackAvatarUrl } from '../../utils/fileUtils';
 
 // Extend window interface to include mooveyConfig
 declare global {
@@ -26,6 +27,40 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
 if (csrfToken) {
     api.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
 }
+
+// Enhanced error handler that tries alternative paths
+const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, imagePath: string) => {
+    const target = e.target as HTMLImageElement;
+    
+    // Extract the clean path without /storage/ prefix for alternative attempts
+    const cleanPath = imagePath.startsWith('/storage/') 
+        ? imagePath.replace('/storage/', '') 
+        : imagePath;
+    
+    // Alternative paths to try if the primary path fails
+    const alternativePaths = [
+        imagePath.startsWith('/storage/') ? imagePath : `/storage/${imagePath}`, // Original or standard Laravel storage link
+        `/storage-file/${cleanPath}`, // Direct storage file route 
+        `/${cleanPath}` // Direct image path
+    ];
+    
+    // Get the current attempt from a data attribute
+    const currentAttempt = parseInt(target.dataset.attempt || '0');
+    
+    if (currentAttempt < alternativePaths.length) {
+        // Try the next alternative path
+        target.dataset.attempt = (currentAttempt + 1).toString();
+        target.src = alternativePaths[currentAttempt];
+    } else {
+        // All paths failed, show fallback
+        console.error(`Community: All image paths failed for: ${imagePath}`);
+        target.style.display = 'none';
+        const parent = target.parentElement;
+        if (parent) {
+            parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-4xl text-gray-400">📦</div>';
+        }
+    }
+};
 
 interface CommunityPost {
     id: number;
@@ -180,9 +215,14 @@ const CommunityFeedSection = memo(({ stats }: CommunityFeedSectionProps) => {
                                     <div className="flex items-center space-x-3 mb-4">
                                         {post.userAvatar ? (
                                             <img 
-                                                src={post.userAvatar} 
+                                                src={getStorageFileUrl(post.userAvatar)} 
                                                 alt={post.userName}
                                                 className="w-10 h-10 rounded-full object-cover"
+                                                onError={(e) => {
+                                                    // Fallback to UI Avatars on error
+                                                    const target = e.target as HTMLImageElement;
+                                                    target.src = getFallbackAvatarUrl(post.userName, 40);
+                                                }}
                                             />
                                         ) : (
                                             <div className={`w-10 h-10 ${avatarColor} rounded-full flex items-center justify-center`}>
@@ -209,9 +249,11 @@ const CommunityFeedSection = memo(({ stats }: CommunityFeedSectionProps) => {
                                     {post.images && post.images.length > 0 && (
                                         <div className="mb-4">
                                             <img 
-                                                src={post.images[0]} 
+                                                src={getStorageFileUrl(post.images[0])} 
                                                 alt="Post content"
                                                 className="w-full h-32 object-cover rounded-lg"
+                                                onError={(e) => handleImageError(e, post.images?.[0] || '')}
+                                                data-attempt="0"
                                             />
                                             {post.images.length > 1 && (
                                                 <p className="text-sm text-gray-500 mt-1">+{post.images.length - 1} more images</p>
