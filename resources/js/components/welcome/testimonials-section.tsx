@@ -126,7 +126,7 @@ const TestimonialsSection = memo(({ stats }: TestimonialsSectionProps) => {
                             <img 
                                 src="/images/moovey-logo.png" 
                                 alt="Moovey Logo" 
-                                className="h-12 w-auto opacity-70"
+                                className="h-16 w-auto opacity-70"
                             />
                         </div>
                         
@@ -138,7 +138,7 @@ const TestimonialsSection = memo(({ stats }: TestimonialsSectionProps) => {
                         {/* Right Cow Icon */}
                         <div className="hidden md:block">
                             <img 
-                                src="/images/circular_cow_mascot.png" 
+                                src="/images/circular_cow_mascot.webp" 
                                 alt="Moovey Cow Mascot" 
                                 className="w-12 h-12 rounded-full object-cover"
                             />
