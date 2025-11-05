@@ -148,6 +148,21 @@ export default function SchoolCatchmentMap({
         name: 'vibrant'
     });
 
+    // Utility functions
+    const convertToMeters = (radius: number, unit: 'km' | 'miles' | 'meters'): number => {
+        if (isNaN(radius) || radius <= 0) {
+            console.error('Invalid radius for conversion:', radius);
+            return 1000;
+        }
+        
+        switch (unit) {
+            case 'km': return radius * 1000;
+            case 'miles': return radius * 1609.34;
+            case 'meters': return radius;
+            default: return radius * 1000;
+        }
+    };
+
     // Load initial data
     useEffect(() => {
         const loadData = async () => {
@@ -162,16 +177,41 @@ export default function SchoolCatchmentMap({
                         if (school.catchmentZones && Array.isArray(school.catchmentZones)) {
                             school.catchmentZones.forEach(zone => {
                                 if (zone.id && zone.radius && zone.unit && zone.year && zone.color) {
+                                    const radius = typeof zone.radius === 'string' ? parseFloat(zone.radius) : zone.radius;
+                                    const radiusInMeters = convertToMeters(radius, zone.unit);
+                                    
+                                    // Create circle feature for OpenLayers
+                                    const centerPoint = fromLonLat([school.coordinates[1], school.coordinates[0]]);
+                                    const circleGeometry = new Circle(centerPoint, radiusInMeters);
+                                    
+                                    const circleFeature = new Feature({
+                                        geometry: circleGeometry,
+                                        name: `${school.name} - ${radius} ${zone.unit} (${zone.year})`,
+                                        type: 'catchment-circle',
+                                        circleId: zone.id,
+                                    });
+
+                                    circleFeature.setStyle(new Style({
+                                        fill: new Fill({
+                                            color: `${zone.color}55`,
+                                        }),
+                                        stroke: new Stroke({
+                                            color: zone.color,
+                                            width: 3,
+                                        }),
+                                    }));
+
                                     catchmentCircles.push({
                                         id: zone.id,
                                         center: school.coordinates,
-                                        radius: typeof zone.radius === 'string' ? parseFloat(zone.radius) : zone.radius,
+                                        radius: radius,
                                         unit: zone.unit,
                                         schoolName: school.name,
                                         year: zone.year,
                                         color: zone.color,
                                         isVisible: zone.isVisible !== false,
-                                        schoolId: school.id
+                                        schoolId: school.id,
+                                        olFeature: circleFeature
                                     });
                                 }
                             });
@@ -201,20 +241,38 @@ export default function SchoolCatchmentMap({
         loadData();
     }, []);
 
-    // Utility functions
-    const convertToMeters = (radius: number, unit: 'km' | 'miles' | 'meters'): number => {
-        if (isNaN(radius) || radius <= 0) {
-            console.error('Invalid radius for conversion:', radius);
-            return 1000;
-        }
-        
-        switch (unit) {
-            case 'km': return radius * 1000;
-            case 'miles': return radius * 1609.34;
-            case 'meters': return radius;
-            default: return radius * 1000;
-        }
-    };
+    // Ensure all circles have OpenLayers features
+    useEffect(() => {
+        setCircles(prev => prev.map(circle => {
+            if (!circle.olFeature) {
+                const radiusInMeters = convertToMeters(circle.radius, circle.unit);
+                
+                // Create circle feature for OpenLayers
+                const centerPoint = fromLonLat([circle.center[1], circle.center[0]]);
+                const circleGeometry = new Circle(centerPoint, radiusInMeters);
+                
+                const circleFeature = new Feature({
+                    geometry: circleGeometry,
+                    name: `${circle.schoolName} - ${circle.radius} ${circle.unit} (${circle.year})`,
+                    type: 'catchment-circle',
+                    circleId: circle.id,
+                });
+
+                circleFeature.setStyle(new Style({
+                    fill: new Fill({
+                        color: `${circle.color}55`,
+                    }),
+                    stroke: new Stroke({
+                        color: circle.color,
+                        width: 3,
+                    }),
+                }));
+
+                return { ...circle, olFeature: circleFeature };
+            }
+            return circle;
+        }));
+    }, [circles.length]); // Only run when circle count changes to avoid infinite loops
 
     const calculateDistance = (coord1: [number, number], coord2: [number, number]): number => {
         const point1 = fromLonLat([coord1[1], coord1[0]]);
@@ -249,6 +307,38 @@ export default function SchoolCatchmentMap({
         setError('');
 
         try {
+            // Check if the input looks like coordinates (lat, lng format)
+            const coordinatePattern = /^-?\d+\.?\d*,\s*-?\d+\.?\d*$/;
+            const coordinateMatch = formData.address.trim().match(coordinatePattern);
+            
+            if (coordinateMatch) {
+                // Handle direct coordinate input
+                const coords = formData.address.split(',').map(coord => parseFloat(coord.trim()));
+                if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                    const [lat, lng] = coords;
+                    
+                    // Validate coordinate ranges
+                    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                        const coordinates: [number, number] = [lat, lng];
+                        // For coordinate searches, use a moderate zoom level
+                        if (mapRef.current) {
+                            mapRef.current.centerOn(coordinates, 15);
+                        } else {
+                            setMapCenter(coordinates);
+                        }
+                        setError('');
+                        return;
+                    } else {
+                        setError('Invalid coordinates. Latitude must be between -90 and 90, longitude between -180 and 180.');
+                        return;
+                    }
+                } else {
+                    setError('Invalid coordinate format. Please use: latitude, longitude (e.g., 51.4994, -0.1244)');
+                    return;
+                }
+            }
+
+            // Regular address search using Nominatim
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.address)}&limit=1&countrycodes=gb`
             );
@@ -267,7 +357,12 @@ export default function SchoolCatchmentMap({
             const result = data[0];
             const coordinates: [number, number] = [parseFloat(result.lat), parseFloat(result.lon)];
             
-            setMapCenter(coordinates);
+            // For address searches, use a moderate zoom level that's good for viewing the area
+            if (mapRef.current) {
+                mapRef.current.centerOn(coordinates, 15);
+            } else {
+                setMapCenter(coordinates);
+            }
         } catch (err) {
             console.error('Geocoding error:', err);
             setError('Failed to find address. Please try again.');
@@ -516,18 +611,96 @@ export default function SchoolCatchmentMap({
         setCircles(prev => prev.filter(circle => circle.id !== id));
     };
 
+    // Reverse geocoding function to convert coordinates to address
+    const reverseGeocode = async (coordinate: [number, number]) => {
+        try {
+            // Add a small delay to prevent too many rapid requests
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinate[0]}&lon=${coordinate[1]}&countrycodes=gb&addressdetails=1&zoom=18`
+            );
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data && data.display_name) {
+                // Clean up the display name for better readability
+                let address = data.display_name;
+                
+                // If we have structured address data, try to format it nicely
+                if (data.address) {
+                    const addr = data.address;
+                    const parts = [];
+                    
+                    // Add house number and road
+                    if (addr.house_number && addr.road) {
+                        parts.push(`${addr.house_number} ${addr.road}`);
+                    } else if (addr.road) {
+                        parts.push(addr.road);
+                    }
+                    
+                    // Add locality information
+                    if (addr.suburb) parts.push(addr.suburb);
+                    else if (addr.neighbourhood) parts.push(addr.neighbourhood);
+                    else if (addr.hamlet) parts.push(addr.hamlet);
+                    
+                    // Add town/city
+                    if (addr.town) parts.push(addr.town);
+                    else if (addr.city) parts.push(addr.city);
+                    else if (addr.village) parts.push(addr.village);
+                    
+                    // Add postcode
+                    if (addr.postcode) parts.push(addr.postcode);
+                    
+                    if (parts.length > 0) {
+                        address = parts.join(', ');
+                    }
+                }
+                
+                return address;
+            } else {
+                // Fallback to simple coordinate format that search can understand
+                return `${coordinate[0].toFixed(6)}, ${coordinate[1].toFixed(6)}`;
+            }
+        } catch (error) {
+            console.error('Reverse geocoding error:', error);
+            // Fallback to simple coordinate format that search can understand
+            return `${coordinate[0].toFixed(6)}, ${coordinate[1].toFixed(6)}`;
+        }
+    };
+
     // Map event handlers
-    const handleMapClick = (coordinate: [number, number]) => {
+    const handleMapClick = async (coordinate: [number, number]) => {
+        // Always set the custom pin for visual feedback
+        setCustomPin(coordinate);
+        
+        // Show loading state in address field
+        setFormData(prev => ({ ...prev, address: '� Looking up address...' }));
+        setMapCenter(coordinate);
+        
+        // Perform reverse geocoding to get address and update the search field
+        try {
+            const address = await reverseGeocode(coordinate);
+            setFormData(prev => ({ ...prev, address: address }));
+        } catch (error) {
+            console.error('Failed to get address for clicked location:', error);
+            // Fallback: use simple coordinates format that search can handle
+            const coordsString = `${coordinate[0].toFixed(6)}, ${coordinate[1].toFixed(6)}`;
+            setFormData(prev => ({ ...prev, address: coordsString }));
+        }
+
+        // Handle pin placement modes
         if (formData.pinPlacementMode === 'school') {
             const title = formData.schoolName || 'New School Location';
-            setCustomPin(coordinate);
             placePinAtCoordinates(coordinate, 'school', title);
             togglePinPlacementMode('off');
         } else if (formData.pinPlacementMode === 'location') {
             placePinAtCoordinates(coordinate, 'location', 'Custom Location');
             togglePinPlacementMode('off');
-        } else {
-            setCustomPin(coordinate);
         }
     };
 
@@ -564,16 +737,109 @@ export default function SchoolCatchmentMap({
         }
     };
 
-    const toggleCircleVisibility = (id: string) => {
-        setCircles(prev => prev.map(circle => 
-            circle.id === id ? { ...circle, isVisible: !circle.isVisible } : circle
+    const toggleCircleVisibility = async (id: string) => {
+        const circle = circles.find(c => c.id === id);
+        if (!circle) return;
+
+        // Update local state immediately for responsive UI
+        setCircles(prev => prev.map(c => 
+            c.id === id ? { ...c, isVisible: !c.isVisible } : c
         ));
+
+        // Update the corresponding school's catchment zone data
+        const school = favoriteSchools.find(s => s.id === circle.schoolId);
+        if (school) {
+            const updatedZones = school.catchmentZones.map(zone => 
+                zone.id === id ? { ...zone, isVisible: !zone.isVisible } : zone
+            );
+            const updatedSchool = { ...school, catchmentZones: updatedZones };
+
+            try {
+                const saveResult = await favoriteSchoolsService.updateFavoriteSchool(updatedSchool);
+                if (saveResult.success) {
+                    // Update the local school state
+                    setFavoriteSchools(prev => prev.map(s => 
+                        s.id === school.id ? updatedSchool : s
+                    ));
+                } else {
+                    // Revert local state if save failed
+                    setCircles(prev => prev.map(c => 
+                        c.id === id ? { ...c, isVisible: !c.isVisible } : c
+                    ));
+                    setSaveMessage({
+                        type: 'error',
+                        text: 'Failed to save visibility change'
+                    });
+                    setTimeout(() => setSaveMessage(null), 3000);
+                }
+            } catch (error) {
+                console.error('Error updating circle visibility:', error);
+                // Revert local state if save failed
+                setCircles(prev => prev.map(c => 
+                    c.id === id ? { ...c, isVisible: !c.isVisible } : c
+                ));
+                setSaveMessage({
+                    type: 'error',
+                    text: 'Error saving visibility change'
+                });
+                setTimeout(() => setSaveMessage(null), 3000);
+            }
+        }
     };
 
-    const changeCircleColor = (id: string, newColor: string) => {
-        setCircles(prev => prev.map(circle => 
-            circle.id === id ? { ...circle, color: newColor } : circle
+    const changeCircleColor = async (id: string, newColor: string) => {
+        const circle = circles.find(c => c.id === id);
+        if (!circle) return;
+
+        // Update local state immediately for responsive UI
+        setCircles(prev => prev.map(c => 
+            c.id === id ? { ...c, color: newColor } : c
         ));
+
+        // Update the corresponding school's catchment zone data
+        const school = favoriteSchools.find(s => s.id === circle.schoolId);
+        if (school) {
+            const updatedZones = school.catchmentZones.map(zone => 
+                zone.id === id ? { ...zone, color: newColor } : zone
+            );
+            const updatedSchool = { ...school, catchmentZones: updatedZones };
+
+            try {
+                const saveResult = await favoriteSchoolsService.updateFavoriteSchool(updatedSchool);
+                if (saveResult.success) {
+                    // Update the local school state
+                    setFavoriteSchools(prev => prev.map(s => 
+                        s.id === school.id ? updatedSchool : s
+                    ));
+                    setSaveMessage({
+                        type: 'success',
+                        text: 'Color updated successfully!'
+                    });
+                    setTimeout(() => setSaveMessage(null), 2000);
+                } else {
+                    // Revert local state if save failed
+                    setCircles(prev => prev.map(c => 
+                        c.id === id ? { ...c, color: circle.color } : c
+                    ));
+                    setSaveMessage({
+                        type: 'error',
+                        text: 'Failed to save color change'
+                    });
+                    setTimeout(() => setSaveMessage(null), 3000);
+                }
+            } catch (error) {
+                console.error('Error updating circle color:', error);
+                // Revert local state if save failed
+                setCircles(prev => prev.map(c => 
+                    c.id === id ? { ...c, color: circle.color } : c
+                ));
+                setSaveMessage({
+                    type: 'error',
+                    text: 'Error saving color change'
+                });
+                setTimeout(() => setSaveMessage(null), 3000);
+            }
+        }
     };
 
     const applyPaletteToAll = (paletteType: 'schools' | 'years', paletteName: string) => {

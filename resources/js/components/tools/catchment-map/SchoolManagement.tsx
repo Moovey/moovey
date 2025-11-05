@@ -145,7 +145,7 @@ export default function SchoolManagement({
                     <div className="space-y-2">
                         <input
                             type="text"
-                            placeholder="Enter school postcode (e.g., 'SW1A 1AA')"
+                            placeholder="Enter address, postcode, or coordinates (e.g., '51.4994, -0.1244')"
                             value={address}
                             onChange={(e) => setAddress(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && onAddressSearch()}

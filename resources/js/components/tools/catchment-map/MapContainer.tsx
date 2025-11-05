@@ -56,7 +56,7 @@ interface MapContainerProps {
     placedPins: PinInfo[];
     isFullscreen: boolean;
     isResizingMap: boolean;
-    onMapClick: (coordinate: [number, number]) => void;
+    onMapClick: (coordinate: [number, number]) => void | Promise<void>;
     formData: {
         pinPlacementMode: 'off' | 'school' | 'location';
         address: string;
@@ -226,8 +226,10 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
     // Update map center
     useEffect(() => {
         if (mapRef.current && vectorSourceRef.current) {
+            const currentZoom = mapRef.current.getView().getZoom() || 13;
             mapRef.current.getView().setCenter(fromLonLat([mapCenter[1], mapCenter[0]]));
-            mapRef.current.getView().setZoom(13);
+            // Preserve current zoom level instead of forcing to 13
+            mapRef.current.getView().setZoom(currentZoom);
             
             // Remove existing location marker
             const existingMarker = vectorSourceRef.current.getFeatures().find(f => f.get('type') === 'location-marker');
@@ -336,6 +338,37 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
             }
         });
     }, [placedPins]);
+
+    // Handle catchment circles
+    useEffect(() => {
+        if (!mapRef.current || !vectorSourceRef.current) return;
+
+        // Remove existing catchment circles
+        const existingCircles = vectorSourceRef.current.getFeatures().filter(f => 
+            f.get('type') === 'catchment-circle'
+        );
+        existingCircles.forEach(circle => {
+            vectorSourceRef.current!.removeFeature(circle);
+        });
+
+        // Add current visible circles
+        circles.forEach(circle => {
+            if (circle.isVisible && circle.olFeature) {
+                // Update the style based on current visibility and color
+                const style = new Style({
+                    fill: new Fill({
+                        color: `${circle.color}55`, // Add transparency
+                    }),
+                    stroke: new Stroke({
+                        color: circle.color,
+                        width: 3,
+                    }),
+                });
+                circle.olFeature.setStyle(style);
+                vectorSourceRef.current!.addFeature(circle.olFeature);
+            }
+        });
+    }, [circles]);
 
     // Handle map resize for fullscreen
     useEffect(() => {
