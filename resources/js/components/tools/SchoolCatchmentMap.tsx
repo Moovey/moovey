@@ -157,10 +157,24 @@ export default function SchoolCatchmentMap({
         
         switch (unit) {
             case 'km': return radius * 1000;
-            case 'miles': return radius * 1609.34;
+            case 'miles': return radius * 1609.344; // More precise conversion
             case 'meters': return radius;
             default: return radius * 1000;
         }
+    };
+
+    // Create accurate geographic circle using coordinate transformations
+    const createGeographicCircle = (centerCoords: [number, number], radiusInMeters: number) => {
+        // Convert center coordinates to Web Mercator projection
+        const centerPoint = fromLonLat([centerCoords[1], centerCoords[0]]);
+        
+        // For better accuracy, we need to account for the projection distortion
+        // Use the circumference formula to calculate the projected radius
+        const lat = centerCoords[0] * Math.PI / 180; // Convert to radians
+        const projectionScale = Math.cos(lat); // Scale factor for Web Mercator at this latitude
+        const adjustedRadius = radiusInMeters / projectionScale;
+        
+        return new Circle(centerPoint, adjustedRadius);
     };
 
     // Load initial data
@@ -180,9 +194,8 @@ export default function SchoolCatchmentMap({
                                     const radius = typeof zone.radius === 'string' ? parseFloat(zone.radius) : zone.radius;
                                     const radiusInMeters = convertToMeters(radius, zone.unit);
                                     
-                                    // Create circle feature for OpenLayers
-                                    const centerPoint = fromLonLat([school.coordinates[1], school.coordinates[0]]);
-                                    const circleGeometry = new Circle(centerPoint, radiusInMeters);
+                                    // Create circle feature for OpenLayers with accurate geographic projection
+                                    const circleGeometry = createGeographicCircle(school.coordinates, radiusInMeters);
                                     
                                     const circleFeature = new Feature({
                                         geometry: circleGeometry,
@@ -247,9 +260,8 @@ export default function SchoolCatchmentMap({
             if (!circle.olFeature) {
                 const radiusInMeters = convertToMeters(circle.radius, circle.unit);
                 
-                // Create circle feature for OpenLayers
-                const centerPoint = fromLonLat([circle.center[1], circle.center[0]]);
-                const circleGeometry = new Circle(centerPoint, radiusInMeters);
+                // Create circle feature for OpenLayers with accurate geographic projection
+                const circleGeometry = createGeographicCircle(circle.center, radiusInMeters);
                 
                 const circleFeature = new Feature({
                     geometry: circleGeometry,
@@ -520,9 +532,8 @@ export default function SchoolCatchmentMap({
 
         const radiusInMeters = convertToMeters(radius, formData.unit);
         
-        // Create circle feature for OpenLayers
-        const centerPoint = fromLonLat([centerCoords[1], centerCoords[0]]);
-        const circleGeometry = new Circle(centerPoint, radiusInMeters);
+        // Create circle feature for OpenLayers with accurate geographic projection
+        const circleGeometry = createGeographicCircle(centerCoords, radiusInMeters);
         
         const circleFeature = new Feature({
             geometry: circleGeometry,
