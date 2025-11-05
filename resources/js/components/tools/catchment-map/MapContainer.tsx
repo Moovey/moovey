@@ -64,6 +64,7 @@ interface MapContainerProps {
     };
     measurementMode: boolean;
     onMeasurementClick: (coordinate: [number, number]) => void;
+    onCircleClick?: (circleId: string) => void;
 }
 
 export interface MapContainerRef {
@@ -90,7 +91,8 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
     onMapClick,
     formData,
     measurementMode,
-    onMeasurementClick
+    onMeasurementClick,
+    onCircleClick
 }, ref) => {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<Map | null>(null);
@@ -206,11 +208,43 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
             const lonLat = toLonLat(coordinate);
             const clickedPoint: [number, number] = [lonLat[1], lonLat[0]];
             
-            if (measurementMode) {
-                onMeasurementClick(clickedPoint);
-            } else {
-                onMapClick(clickedPoint);
+            // Check if a feature was clicked
+            const featuresAtPixel = map.getFeaturesAtPixel(event.pixel);
+            let circleClicked = false;
+
+            if (featuresAtPixel.length > 0) {
+                // Look for a catchment circle feature
+                const circleFeature = featuresAtPixel.find(feature => 
+                    feature.get('type') === 'catchment-circle'
+                );
+                
+                if (circleFeature && onCircleClick) {
+                    const circleId = circleFeature.get('circleId');
+                    if (circleId) {
+                        onCircleClick(circleId);
+                        circleClicked = true;
+                    }
+                }
             }
+
+            // Only handle regular map click if no circle was clicked
+            if (!circleClicked) {
+                if (measurementMode) {
+                    onMeasurementClick(clickedPoint);
+                } else {
+                    onMapClick(clickedPoint);
+                }
+            }
+        });
+
+        // Add pointer move handler for cursor changes
+        map.on('pointermove', (event) => {
+            const featuresAtPixel = map.getFeaturesAtPixel(event.pixel);
+            const hasCircle = featuresAtPixel.some(feature => 
+                feature.get('type') === 'catchment-circle'
+            );
+            
+            map.getTargetElement().style.cursor = hasCircle ? 'pointer' : '';
         });
 
         mapRef.current = map;

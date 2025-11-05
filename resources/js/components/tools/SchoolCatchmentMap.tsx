@@ -737,6 +737,45 @@ export default function SchoolCatchmentMap({
         }
     };
 
+    const focusOnCircle = (circleId: string) => {
+        const circle = circles.find(c => c.id === circleId);
+        if (!circle) return;
+
+        // Center the map on the circle's center (school location)
+        if (mapRef.current) {
+            // Calculate appropriate zoom level based on circle radius
+            let zoomLevel = 14;
+            const radiusInMeters = convertToMeters(circle.radius, circle.unit);
+            
+            if (radiusInMeters < 500) zoomLevel = 16;
+            else if (radiusInMeters < 1000) zoomLevel = 15;
+            else if (radiusInMeters < 2000) zoomLevel = 14;
+            else if (radiusInMeters < 5000) zoomLevel = 13;
+            else zoomLevel = 12;
+
+            mapRef.current.centerOn(circle.center, zoomLevel);
+        }
+
+        // Update the map center state to show the location marker
+        setMapCenter(circle.center);
+        
+        // Update address field with school info
+        setFormData(prev => ({ 
+            ...prev, 
+            address: `${circle.schoolName} - ${circle.radius} ${circle.unit} catchment (${circle.year})`
+        }));
+
+        // Set custom pin for visual feedback
+        setCustomPin(circle.center);
+
+        // Show success message
+        setSaveMessage({
+            type: 'success',
+            text: `📍 Focused on ${circle.schoolName} catchment zone`
+        });
+        setTimeout(() => setSaveMessage(null), 3000);
+    };
+
     const toggleCircleVisibility = async (id: string) => {
         const circle = circles.find(c => c.id === id);
         if (!circle) return;
@@ -1098,6 +1137,7 @@ export default function SchoolCatchmentMap({
                                 onRemoveCircle={removeCircle}
                                 onChangeCircleColor={changeCircleColor}
                                 onApplyPaletteToAll={applyPaletteToAll}
+                                onFocusOnCircle={focusOnCircle}
                                 selectedColorPalette={selectedColorPalette}
                                 colorPalettes={colorPalettes}
                                 isFullscreen={isFullscreen}
@@ -1139,6 +1179,7 @@ export default function SchoolCatchmentMap({
                         formData={formData}
                         measurementMode={measurementMode}
                         onMeasurementClick={handleMeasurementClick}
+                        onCircleClick={focusOnCircle}
                     />
                 </div>
             </div>

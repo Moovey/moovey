@@ -34,6 +34,7 @@ interface CircleManagementProps {
     onRemoveCircle: (circleId: string) => void;
     onChangeCircleColor: (circleId: string, color: string) => void;
     onApplyPaletteToAll: (paletteType: 'schools' | 'years', paletteName: string) => void;
+    onFocusOnCircle: (circleId: string) => void;
     selectedColorPalette: {type: 'schools' | 'years', name: string};
     colorPalettes: any;
     isFullscreen: boolean;
@@ -50,12 +51,12 @@ export default function CircleManagement({
     onRemoveCircle,
     onChangeCircleColor,
     onApplyPaletteToAll,
+    onFocusOnCircle,
     selectedColorPalette,
     colorPalettes,
     isFullscreen
 }: CircleManagementProps) {
 
-    const [colorControlsOpen, setColorControlsOpen] = useState(false);
     const [showCircleList, setShowCircleList] = useState(false);
 
     const getUniqueYears = () => {
@@ -116,59 +117,6 @@ export default function CircleManagement({
                 </div>
             </div>
 
-            {/* Color Palette Controls */}
-            <div className={`${isFullscreen ? 'mb-4' : 'mb-4 sm:mb-6'}`}>
-                <button
-                    onClick={() => setColorControlsOpen(!colorControlsOpen)}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 text-sm transition-colors"
-                >
-                    <span>🎨 Color Palette Controls</span>
-                    <span className={`transform transition-transform ${colorControlsOpen ? 'rotate-180' : ''}`}>⌄</span>
-                </button>
-
-                {colorControlsOpen && (
-                    <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-3">
-                        <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-2">Color by Schools</label>
-                            <div className="grid grid-cols-2 gap-1">
-                                {Object.keys(colorPalettes.schools).map(paletteName => (
-                                    <button
-                                        key={paletteName}
-                                        onClick={() => onApplyPaletteToAll('schools', paletteName)}
-                                        className={`px-2 py-1 text-xs rounded capitalize transition-colors ${
-                                            selectedColorPalette.type === 'schools' && selectedColorPalette.name === paletteName
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-                                        }`}
-                                    >
-                                        {paletteName}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-2">Color by Years</label>
-                            <div className="grid grid-cols-2 gap-1">
-                                {Object.keys(colorPalettes.years).map(paletteName => (
-                                    <button
-                                        key={paletteName}
-                                        onClick={() => onApplyPaletteToAll('years', paletteName)}
-                                        className={`px-2 py-1 text-xs rounded capitalize transition-colors ${
-                                            selectedColorPalette.type === 'years' && selectedColorPalette.name === paletteName
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-                                        }`}
-                                    >
-                                        {paletteName}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-
             {/* Circle List */}
             {circles.length > 0 && (
                 <div className={`${isFullscreen ? 'mb-4' : 'mb-4 sm:mb-6'}`}>
@@ -182,6 +130,9 @@ export default function CircleManagement({
 
                     {showCircleList && (
                         <div className="mt-3 space-y-2 max-h-60 overflow-y-auto">
+                            <div className="text-xs text-blue-600 mb-2 px-2 py-1 bg-blue-50 rounded">
+                                💡 Tip: Click directly on circles in the map or use the 🎯 button to focus on them
+                            </div>
                             {Object.entries(getCirclesBySchool()).map(([schoolId, schoolCircles]) => {
                                 const school = favoriteSchools.find(s => s.id === schoolId);
                                 return (
@@ -203,6 +154,13 @@ export default function CircleManagement({
                                                             </span>
                                                         </div>
                                                         <div className="flex items-center gap-1">
+                                                            <button
+                                                                onClick={() => onFocusOnCircle(circle.id)}
+                                                                className="px-2 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded font-medium"
+                                                                title="Go to this catchment zone on map"
+                                                            >
+                                                                🎯
+                                                            </button>
                                                             <button
                                                                 onClick={() => onToggleCircleVisibility(circle.id)}
                                                                 className={`px-2 py-1 text-xs rounded font-medium transition-colors ${
