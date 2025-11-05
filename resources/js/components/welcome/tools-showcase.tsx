@@ -227,20 +227,29 @@ const ToolsShowcase = memo(() => {
                                 key={tool.id}
                                 className="w-full flex-shrink-0 px-4 sm:px-8"
                             >
-                                <div 
-                                    className="relative rounded-2xl p-6 sm:p-8 shadow-lg text-center max-w-xl mx-auto overflow-hidden min-h-[300px] flex flex-col justify-center"
-                                    style={getToolImageBackground(tool.icon)}
-                                >
-                                    {/* Lighter overlay for better image visibility */}
-                                    <div className="absolute inset-0 bg-white/40"></div>
+                                <div className="relative rounded-2xl p-6 sm:p-8 shadow-lg text-center max-w-xl mx-auto overflow-hidden min-h-[300px] flex flex-col justify-center bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
+                                    {/* Background Image with Reduced Opacity */}
+                                    <div 
+                                        className="absolute inset-0 opacity-10"
+                                        style={getToolImageBackground(tool.icon)}
+                                    ></div>
                                     
                                     {/* Content */}
                                     <div className="relative z-10">
-                                        <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-${tool.color} rounded-xl flex items-center justify-center mx-auto mb-4`}>
+                                        <div 
+                                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg"
+                                            style={{
+                                                backgroundColor: tool.color === 'blue-500' ? '#3B82F6' :
+                                                               tool.color === 'green-500' ? '#10B981' :
+                                                               tool.color === 'purple-500' ? '#8B5CF6' :
+                                                               tool.color === 'orange-500' ? '#F97316' :
+                                                               tool.color === 'pink-500' ? '#EC4899' : '#17B7C7'
+                                            }}
+                                        >
                                             {renderIcon(tool.icon, "w-6 h-6 sm:w-8 sm:h-8 text-white")}
                                         </div>
-                                        <h4 className="text-xl sm:text-2xl font-bold mb-3 leading-tight drop-shadow-sm" style={{ color: '#17B7C7' }}>{tool.name}</h4>
-                                        <p className="text-gray-800 text-base sm:text-lg leading-relaxed max-w-sm mx-auto font-semibold drop-shadow-sm">{tool.description}</p>
+                                        <h4 className="text-xl sm:text-2xl font-bold mb-4 leading-tight" style={{ color: '#17B7C7' }}>{tool.name}</h4>
+                                        <p className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-sm mx-auto">{tool.description}</p>
                                     </div>
                                 </div>
                             </div>
