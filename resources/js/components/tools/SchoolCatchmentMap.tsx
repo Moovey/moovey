@@ -335,9 +335,9 @@ export default function SchoolCatchmentMap({
                         // For coordinate searches, use a moderate zoom level
                         if (mapRef.current) {
                             mapRef.current.centerOn(coordinates, 15);
-                        } else {
-                            setMapCenter(coordinates);
                         }
+                        // Always update state so the blue location marker renders
+                        setMapCenter(coordinates);
                         setError('');
                         return;
                     } else {
@@ -372,9 +372,9 @@ export default function SchoolCatchmentMap({
             // For address searches, use a moderate zoom level that's good for viewing the area
             if (mapRef.current) {
                 mapRef.current.centerOn(coordinates, 15);
-            } else {
-                setMapCenter(coordinates);
             }
+            // Always update state so the blue location marker renders
+            setMapCenter(coordinates);
         } catch (err) {
             console.error('Geocoding error:', err);
             setError('Failed to find address. Please try again.');
