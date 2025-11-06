@@ -197,20 +197,41 @@ export default function SchoolManagement({
                     <div className="mt-4">
                         <h4 className="text-sm font-medium text-gray-700 mb-2">Favorite Schools:</h4>
                         <div className="space-y-2">
-                            {favoriteSchools.map(school => (
-                                <div key={school.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                                    <div className="flex-1">
-                                        <div className="font-medium text-sm text-gray-900">{school.name}</div>
-                                        <div className="text-xs text-gray-500 truncate">{school.address}</div>
+                            {favoriteSchools.map(school => {
+                                const years = Array.from(new Set((school.catchmentZones || []).map(z => z.year)))
+                                    .filter(y => typeof y === 'number' && !isNaN(y))
+                                    .sort((a, b) => b - a);
+                                return (
+                                    <div key={school.id} className="p-2 bg-gray-50 rounded-lg">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="flex-1">
+                                                <div className="font-medium text-sm text-gray-900">{school.name}</div>
+                                                <div className="text-xs text-gray-500 truncate">{school.address}</div>
+                                            </div>
+                                            <button
+                                                onClick={() => removeSchool(school.id)}
+                                                className="px-2 py-1 text-xs bg-red-100 text-red-600 hover:bg-red-200 rounded font-medium"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                        {years.length > 0 && (
+                                            <div className="mt-2 flex flex-wrap items-center gap-1">
+                                                <span className="text-[11px] text-gray-600 mr-1">Years:</span>
+                                                {years.map((y) => (
+                                                    <span
+                                                        key={y}
+                                                        className="px-2 py-0.5 text-[11px] rounded-full bg-white border border-gray-200 text-gray-800"
+                                                        title={`Catchment circles for ${y}`}
+                                                    >
+                                                        {y}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                    <button
-                                        onClick={() => removeSchool(school.id)}
-                                        className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-600 hover:bg-red-200 rounded font-medium"
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 )}

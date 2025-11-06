@@ -176,6 +176,7 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
 
         const vectorLayer = new VectorLayer({
             source: vectorSource,
+            declutter: true,
         });
         vectorLayerRef.current = vectorLayer;
 
@@ -377,15 +378,21 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
     useEffect(() => {
         if (!mapRef.current || !vectorSourceRef.current) return;
 
-        // Remove existing catchment circles
+        // Remove existing catchment circles and their labels
         const existingCircles = vectorSourceRef.current.getFeatures().filter(f => 
             f.get('type') === 'catchment-circle'
         );
         existingCircles.forEach(circle => {
             vectorSourceRef.current!.removeFeature(circle);
         });
+        const existingLabels = vectorSourceRef.current.getFeatures().filter(f => 
+            f.get('type') === 'catchment-label'
+        );
+        existingLabels.forEach(label => {
+            vectorSourceRef.current!.removeFeature(label);
+        });
 
-        // Add current visible circles
+        // Add current visible circles and separate label features placed on the circle rim
         circles.forEach(circle => {
             if (circle.isVisible && circle.olFeature) {
                 // Update the style based on current visibility and color
@@ -400,6 +407,39 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
                 });
                 circle.olFeature.setStyle(style);
                 vectorSourceRef.current!.addFeature(circle.olFeature);
+
+                // Create a label feature positioned on the circle circumference (east side, angle = 0)
+                const geom = circle.olFeature.getGeometry();
+                if (geom && typeof (geom as any).getCenter === 'function' && typeof (geom as any).getRadius === 'function') {
+                    const center = (geom as any).getCenter(); // in map projection
+                    const radius = (geom as any).getRadius(); // in map projection units
+                    const angle = 0; // radians, 0 = east; change to -Math.PI/2 for north if preferred
+                    const labelX = center[0] + radius * Math.cos(angle);
+                    const labelY = center[1] + radius * Math.sin(angle);
+
+                    const labelFeature = new Feature({
+                        geometry: new Point([labelX, labelY]),
+                        type: 'catchment-label',
+                        circleId: circle.id,
+                        name: `${circle.schoolName} ${circle.year}`,
+                    });
+
+                    labelFeature.setStyle(new Style({
+                        text: new Text({
+                            text: `${circle.year}`,
+                            font: 'bold 12px sans-serif',
+                            fill: new Fill({ color: circle.color }),
+                            stroke: new Stroke({ color: '#ffffff', width: 3 }),
+                            textAlign: 'center',
+                            offsetY: 0,
+                            padding: [2, 4, 2, 4],
+                            backgroundFill: new Fill({ color: 'rgba(255,255,255,0.85)' }),
+                            backgroundStroke: new Stroke({ color: 'rgba(0,0,0,0.15)', width: 1 }),
+                        }),
+                    }));
+
+                    vectorSourceRef.current!.addFeature(labelFeature);
+                }
             }
         });
     }, [circles]);
