@@ -12,29 +12,6 @@ interface SecuritySettings {
     confirmPassword: string;
 }
 
-interface BillingInfo {
-    currentPlan: {
-        name: string;
-        price: string;
-        billing: string;
-        status: string;
-    };
-    paymentMethods: Array<{
-        id: string;
-        type: string;
-        last4: string;
-        expiryDate: string;
-        isDefault: boolean;
-    }>;
-    billingHistory: Array<{
-        id: string;
-        date: string;
-        amount: string;
-        status: string;
-        invoiceUrl: string;
-    }>;
-}
-
 interface NotificationPreferences {
     emailNotifications: boolean;
     smsReminders: boolean;
@@ -72,8 +49,6 @@ export default function ProfileSettings() {
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [expandedSections, setExpandedSections] = useState({
-        paymentMethods: false,
-        billingHistory: false,
         emailPreferences: false
     });
 
@@ -89,54 +64,6 @@ export default function ProfileSettings() {
         current_password: '',
         password: '',
         password_confirmation: '',
-    });
-
-    const [billingInfo] = useState<BillingInfo>({
-        currentPlan: {
-            name: 'Premium Plan',
-            price: '£9.99',
-            billing: 'month',
-            status: 'active'
-        },
-        paymentMethods: [
-            {
-                id: '1',
-                type: 'Visa',
-                last4: '4242',
-                expiryDate: '12/26',
-                isDefault: true
-            },
-            {
-                id: '2',
-                type: 'Mastercard',
-                last4: '8888',
-                expiryDate: '08/25',
-                isDefault: false
-            }
-        ],
-        billingHistory: [
-            {
-                id: '1',
-                date: '2025-08-01',
-                amount: '£9.99',
-                status: 'Paid',
-                invoiceUrl: '#'
-            },
-            {
-                id: '2',
-                date: '2025-07-01',
-                amount: '£9.99',
-                status: 'Paid',
-                invoiceUrl: '#'
-            },
-            {
-                id: '3',
-                date: '2025-06-01',
-                amount: '£9.99',
-                status: 'Paid',
-                invoiceUrl: '#'
-            }
-        ]
     });
 
     const [notifications, setNotifications] = useState<NotificationPreferences>({
@@ -382,7 +309,7 @@ export default function ProfileSettings() {
                 </div>
             )}
 
-            {/* Four-Section Layout */}
+            {/* Three-Section Layout */}
             <div className="grid lg:grid-cols-2 gap-8">
                 {/* Personal Information */}
                 <div className="bg-white rounded-3xl p-8 shadow-lg">
@@ -573,7 +500,7 @@ export default function ProfileSettings() {
                                     className={`w-full px-4 py-3 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent pr-12 ${
                                         (validationErrors.newPassword || pwdErrors.password) ? 'border-red-500' : 'border-gray-300'
                                     }`}
-                                    placeholder="e.g., StrongPass!23"
+                                    placeholder=""
                                 />
                                 <button
                                     type="button"
@@ -632,7 +559,7 @@ export default function ProfileSettings() {
                                     className={`w-full px-4 py-3 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent pr-12 ${
                                         (validationErrors.confirmPassword || pwdErrors.password) ? 'border-red-500' : 'border-gray-300'
                                     }`}
-                                    placeholder="Re-enter your new password"
+                                    placeholder=""
                                 />
                                 <button
                                     type="button"
@@ -654,115 +581,6 @@ export default function ProfileSettings() {
                         >
                             {pwdProcessing ? 'Updating Password...' : 'Update Password'}
                         </button>
-                    </div>
-                </div>
-
-                {/* Billing Information */}
-                <div className="bg-white rounded-3xl p-8 shadow-lg">
-                    <h3 className="text-xl font-bold text-gray-900 mb-6">Billing Information</h3>
-                    
-                    <div className="space-y-6">
-                        {/* Current Plan */}
-                        <div className="bg-gray-50 rounded-2xl p-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-700">Current Plan</span>
-                                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                                    Active
-                                </span>
-                            </div>
-                            <p className="text-lg font-semibold text-gray-900">
-                                {billingInfo.currentPlan.price}/{billingInfo.currentPlan.billing} - Billed monthly
-                            </p>
-                        </div>
-
-                        {/* Payment Methods */}
-                        <div className="border border-gray-200 rounded-2xl">
-                            <button
-                                onClick={() => toggleSection('paymentMethods')}
-                                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-                            >
-                                <span className="font-medium text-gray-900">Payment Methods</span>
-                                <span className={`transform transition-transform ${
-                                    expandedSections.paymentMethods ? 'rotate-180' : ''
-                                }`}>
-                                    ▼
-                                </span>
-                            </button>
-                            {expandedSections.paymentMethods && (
-                                <div className="border-t border-gray-200 p-4 space-y-3">
-                                    {billingInfo.paymentMethods.map((method) => (
-                                        <div key={method.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                            <div className="flex items-center space-x-3">
-                                                <span className="text-2xl">💳</span>
-                                                <div>
-                                                    <p className="font-medium text-gray-900">
-                                                        {method.type} •••• {method.last4}
-                                                    </p>
-                                                    <p className="text-sm text-gray-500">Expires {method.expiryDate}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                                {method.isDefault && (
-                                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
-                                                        Default
-                                                    </span>
-                                                )}
-                                                <button className="text-[#00BCD4] hover:text-[#0097A7] text-sm font-medium">
-                                                    Edit
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <button className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-600 hover:border-[#00BCD4] hover:text-[#00BCD4] transition-colors">
-                                        + Add Payment Method
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Billing History */}
-                        <div className="border border-gray-200 rounded-2xl">
-                            <button
-                                onClick={() => toggleSection('billingHistory')}
-                                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-                            >
-                                <span className="font-medium text-gray-900 flex items-center">
-                                    <span className="mr-2">📄</span>
-                                    Billing History
-                                </span>
-                                <span className={`transform transition-transform ${
-                                    expandedSections.billingHistory ? 'rotate-180' : ''
-                                }`}>
-                                    ▼
-                                </span>
-                            </button>
-                            {expandedSections.billingHistory && (
-                                <div className="border-t border-gray-200 p-4 space-y-3">
-                                    {billingInfo.billingHistory.map((invoice) => (
-                                        <div key={invoice.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                            <div>
-                                                <p className="font-medium text-gray-900">{invoice.amount}</p>
-                                                <p className="text-sm text-gray-500">
-                                                    {new Date(invoice.date).toLocaleDateString()}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                    invoice.status === 'Paid' 
-                                                        ? 'bg-green-100 text-green-800' 
-                                                        : 'bg-red-100 text-red-800'
-                                                }`}>
-                                                    {invoice.status}
-                                                </span>
-                                                <button className="text-[#00BCD4] hover:text-[#0097A7] text-sm font-medium">
-                                                    Download
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
                     </div>
                 </div>
 
