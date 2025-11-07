@@ -610,8 +610,8 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 sm:p-6">
-            <div className="bg-white rounded-xl p-4 sm:p-6 max-w-md w-full max-h-[85vh] overflow-y-auto shadow-2xl mx-auto my-8" style={{ maxWidth: 'calc(100vw - 2rem)' }}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900 pr-4">
                         {isUnknown ? 'Build Link' : isEditable ? 'Update Progress' : 'Contact Link Owner'}
