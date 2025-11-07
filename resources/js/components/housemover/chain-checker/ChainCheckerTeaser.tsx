@@ -28,8 +28,7 @@ const ChainCheckerTeaser: React.FC<ChainCheckerTeaserProps> = ({ onActivate }) =
                 
                 {/* Description */}
                 <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-                    Track your entire moving chain in one place! Monitor progress, get agent updates, 
-                    and manage property interests all while staying connected with every part of your move.
+                    Build your moving chain, link up with others in the chain and check your chain health with our free chain checker tool
                 </p>
                 
                 {/* Features List */}
