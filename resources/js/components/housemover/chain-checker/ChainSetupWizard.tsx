@@ -399,8 +399,8 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl">
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 py-8 px-4 flex justify-center">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl h-fit">
                 {/* Header */}
                 <div className="px-8 py-6 border-b border-gray-200">
                     <div className="flex items-center justify-between">
