@@ -183,6 +183,9 @@ export default function Tools() {
             <Head title="Moovey Tools - Calculate Your Move">
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900" rel="stylesheet" />
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
             </Head>
             
             <div className="min-h-screen bg-white font-['Inter',sans-serif]">
@@ -203,10 +206,11 @@ export default function Tools() {
                     <div className="max-w-7xl mx-auto w-full relative z-10 flex-grow flex flex-col">
                         {/* Text Content at Top Left - Compact Responsive */}
                         <div className="text-left pt-2 xs:pt-3 sm:pt-4 md:pt-6 lg:pt-8">
-                            <div className="inline-block bg-white/30 backdrop-blur-sm rounded-lg px-4 py-2 sm:px-6 sm:py-3">
+                            <div className="inline-block bg-white/30 backdrop-blur-lg rounded-lg px-4 py-2 sm:px-6 sm:py-3">
                                 <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black text-gray-700 mb-1 sm:mb-2 tracking-tight leading-tight" 
                                     style={{ 
-                                        fontFamily: '"Comic Sans MS", cursive, system-ui',
+                                        fontFamily: 'Nunito, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                        fontWeight: '900',
                                         textShadow: '2px 2px 0px rgba(255,255,255,0.3), 4px 4px 0px rgba(255,255,255,0.1)',
                                         transform: 'rotate(-1.5deg)'
                                     }}
