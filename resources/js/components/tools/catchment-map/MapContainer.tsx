@@ -11,6 +11,8 @@ import Circle from 'ol/geom/Circle';
 import LineString from 'ol/geom/LineString';
 import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
 import { fromLonLat, toLonLat } from 'ol/proj';
+import { Modify, Select, Translate } from 'ol/interaction';
+import { click, pointerMove } from 'ol/events/condition';
 import Overlay from 'ol/Overlay';
 import 'ol/ol.css';
 
@@ -65,6 +67,8 @@ interface MapContainerProps {
     measurementMode: boolean;
     onMeasurementClick: (coordinate: [number, number]) => void;
     onCircleClick?: (circleId: string) => void;
+    onPinDrag?: (pinId: string, newCoordinates: [number, number]) => void;
+    onSchoolDrag?: (schoolId: string, newCoordinates: [number, number]) => void;
 }
 
 export interface MapContainerRef {
@@ -92,7 +96,9 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
     formData,
     measurementMode,
     onMeasurementClick,
-    onCircleClick
+    onCircleClick,
+    onPinDrag,
+    onSchoolDrag
 }, ref) => {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<Map | null>(null);
@@ -100,6 +106,8 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
     const vectorLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
     const popupRef = useRef<Overlay | null>(null);
     const popupElementRef = useRef<HTMLDivElement | null>(null);
+    const selectInteractionRef = useRef<Select | null>(null);
+    const translateInteractionRef = useRef<Translate | null>(null);
 
     // Expose methods to parent component
     useImperativeHandle(ref, () => ({
@@ -203,8 +211,17 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
             popupRef.current = popup;
         }
 
+        // Track if we're in the middle of a drag operation
+        let isDragging = false;
+
         // Add click handler
         map.on('click', (event) => {
+            // Don't process clicks if we just finished dragging
+            if (isDragging) {
+                isDragging = false;
+                return;
+            }
+
             const coordinate = event.coordinate;
             const lonLat = toLonLat(coordinate);
             const clickedPoint: [number, number] = [lonLat[1], lonLat[0]];
@@ -238,20 +255,274 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
             }
         });
 
-        // Add pointer move handler for cursor changes
+        // Add pointer move handler for cursor changes and hover effects
         map.on('pointermove', (event) => {
             const featuresAtPixel = map.getFeaturesAtPixel(event.pixel);
             const hasCircle = featuresAtPixel.some(feature => 
                 feature.get('type') === 'catchment-circle'
             );
+            const draggableFeature = featuresAtPixel.find(feature => {
+                const type = feature.get('type');
+                return type === 'school-marker' || 
+                       (type?.includes('-pin') && feature.get('pinId'));
+            });
             
-            map.getTargetElement().style.cursor = hasCircle ? 'pointer' : '';
+            // Reset all hover effects first
+            vectorSource.getFeatures().forEach(feature => {
+                if (feature instanceof Feature) {
+                    const type = feature.get('type');
+                    if (type === 'school-marker') {
+                        // Reset school marker style
+                        feature.setStyle(new Style({
+                            image: new CircleStyle({
+                                radius: 12,
+                                fill: new Fill({ color: '#10B981' }),
+                                stroke: new Stroke({ color: '#ffffff', width: 3 }),
+                            }),
+                            text: new Text({
+                                text: '🏫',
+                                font: '16px sans-serif',
+                                offsetY: -20,
+                            }),
+                        }));
+                    } else if (type?.includes('-pin')) {
+                        // Reset pin styles to their original appearance
+                        const pinType = type.replace('-pin', '');
+                        const color = pinType === 'school' ? '#3B82F6' : pinType === 'location' ? '#EF4444' : '#F59E0B';
+                        const emoji = pinType === 'school' ? '🏫' : pinType === 'location' ? '📍' : '📏';
+                        
+                        feature.setStyle(new Style({
+                            image: new CircleStyle({
+                                radius: 8,
+                                fill: new Fill({ color: color }),
+                                stroke: new Stroke({ color: '#ffffff', width: 2 }),
+                            }),
+                            text: new Text({
+                                text: emoji,
+                                font: '14px sans-serif',
+                                offsetY: -20,
+                            }),
+                        }));
+                    }
+                }
+            });
+            
+            if (draggableFeature) {
+                map.getTargetElement().style.cursor = 'move';
+                
+                // Apply hover effect only if it's a proper Feature
+                if (draggableFeature instanceof Feature) {
+                    const type = draggableFeature.get('type');
+                    if (type === 'school-marker') {
+                        // Enhance school marker on hover
+                        draggableFeature.setStyle(new Style({
+                            image: new CircleStyle({
+                                radius: 14,
+                                fill: new Fill({ color: '#10B981' }),
+                                stroke: new Stroke({ color: '#ffffff', width: 4 }),
+                            }),
+                            text: new Text({
+                                text: '🏫',
+                                font: '18px sans-serif',
+                                offsetY: -22,
+                            }),
+                        }));
+                    } else if (type?.includes('-pin')) {
+                        // Enhance pin on hover
+                        const pinType = type.replace('-pin', '');
+                        const color = pinType === 'school' ? '#3B82F6' : pinType === 'location' ? '#EF4444' : '#F59E0B';
+                        const emoji = pinType === 'school' ? '🏫' : pinType === 'location' ? '📍' : '📏';
+                        
+                        draggableFeature.setStyle(new Style({
+                            image: new CircleStyle({
+                                radius: 10,
+                                fill: new Fill({ color: color }),
+                                stroke: new Stroke({ color: '#ffffff', width: 3 }),
+                            }),
+                            text: new Text({
+                                text: emoji,
+                                font: '16px sans-serif',
+                                offsetY: -22,
+                            }),
+                        }));
+                    }
+                }
+            } else if (hasCircle) {
+                map.getTargetElement().style.cursor = 'pointer';
+            } else {
+                map.getTargetElement().style.cursor = '';
+            }
         });
+
+        // Add drag functionality for pins and school markers
+        const selectInteraction = new Select({
+            condition: click,
+            filter: (feature) => {
+                const type = feature.get('type');
+                return type === 'school-marker' || 
+                       (type?.includes('-pin') && feature.get('pinId'));
+            },
+            style: undefined // Don't change style when selected
+        });
+
+        // Use Translate interaction for better real-time dragging performance
+        const translateInteraction = new Translate({
+            features: selectInteraction.getFeatures(),
+        });
+
+        // Track dragging state
+        let draggedFeature: Feature | null = null;
+        let draggedSchoolId: string | null = null;
+
+        // Handle drag start event
+        translateInteraction.on('translatestart', (event) => {
+            const feature = event.features.getArray()[0];
+            if (feature) {
+                // Add dragging visual feedback
+                map.getTargetElement().style.cursor = 'grabbing';
+                isDragging = true;
+                draggedFeature = feature;
+                
+                // Store the school ID for real-time updates
+                const featureType = feature.get('type');
+                if (featureType === 'school-marker') {
+                    draggedSchoolId = feature.get('schoolId');
+                } else if (featureType?.includes('-pin')) {
+                    const pinId = feature.get('pinId');
+                    const pinData = placedPins.find(p => p.id === pinId);
+                    draggedSchoolId = pinData?.schoolId || null;
+                }
+            }
+        });
+
+        // Throttle real-time updates for better performance
+        let lastUpdateTime = 0;
+        const UPDATE_THROTTLE = 16; // ~60fps
+
+        // Handle real-time dragging (this fires continuously during drag)
+        translateInteraction.on('translating', (event) => {
+            const now = Date.now();
+            if (now - lastUpdateTime < UPDATE_THROTTLE) return;
+            lastUpdateTime = now;
+
+            const feature = event.features.getArray()[0];
+            if (!feature) return;
+
+            const geometry = feature.getGeometry();
+            if (geometry && geometry instanceof Point) {
+                const coordinates = geometry.getCoordinates();
+                const lonLat = toLonLat(coordinates);
+                const newCoordinates: [number, number] = [lonLat[1], lonLat[0]];
+
+                if (draggedSchoolId) {
+                    // Update circles in real-time during drag
+                    updateCirclesRealtime(draggedSchoolId, newCoordinates);
+                }
+            }
+        });
+
+        // Handle drag end event
+        translateInteraction.on('translateend', (event) => {
+            const feature = event.features.getArray()[0];
+            if (!feature) return;
+
+            // Reset cursor and mark that we finished dragging
+            map.getTargetElement().style.cursor = 'move';
+            
+            // Clear drag tracking variables
+            draggedFeature = null;
+            draggedSchoolId = null;
+            
+            // Keep isDragging true briefly to prevent click events
+            setTimeout(() => {
+                isDragging = false;
+            }, 50);
+
+            const geometry = feature.getGeometry();
+            if (geometry && geometry instanceof Point) {
+                const coordinates = geometry.getCoordinates();
+                const lonLat = toLonLat(coordinates);
+                const newCoordinates: [number, number] = [lonLat[1], lonLat[0]];
+
+                const featureType = feature.get('type');
+                
+                if (featureType === 'school-marker') {
+                    const schoolId = feature.get('schoolId');
+                    if (schoolId && onSchoolDrag) {
+                        onSchoolDrag(schoolId, newCoordinates);
+                    }
+                } else if (featureType?.includes('-pin')) {
+                    const pinId = feature.get('pinId');
+                    if (pinId && onPinDrag) {
+                        onPinDrag(pinId, newCoordinates);
+                    }
+                }
+            }
+        });
+
+        // Function to update circles in real-time during drag
+        const updateCirclesRealtime = (schoolId: string, newCoordinates: [number, number]) => {
+            // Find the corresponding circle data to get radius information
+            circles.forEach(circleData => {
+                if (circleData.schoolId === schoolId && circleData.olFeature && circleData.isVisible) {
+                    // Convert radius to meters
+                    let radiusInMeters: number;
+                    switch (circleData.unit) {
+                        case 'km':
+                            radiusInMeters = circleData.radius * 1000;
+                            break;
+                        case 'miles':
+                            radiusInMeters = circleData.radius * 1609.344;
+                            break;
+                        default: // meters
+                            radiusInMeters = circleData.radius;
+                            break;
+                    }
+                    
+                    // Create new circle geometry with updated center using the same method as the main component
+                    const centerPoint = fromLonLat([newCoordinates[1], newCoordinates[0]]);
+                    const lat = newCoordinates[0] * Math.PI / 180; // Convert to radians
+                    const projectionScale = Math.cos(lat); // Scale factor for Web Mercator at this latitude
+                    const adjustedRadius = radiusInMeters / projectionScale;
+                    const newGeometry = new Circle(centerPoint, adjustedRadius);
+                    
+                    // Update the geometry of the existing feature
+                    circleData.olFeature.setGeometry(newGeometry);
+
+                    // Update circle labels in real-time too
+                    const labelFeatures = vectorSource.getFeatures().filter(feature => 
+                        feature.get('type') === 'catchment-label' && 
+                        feature.get('circleId') === circleData.id
+                    );
+
+                    labelFeatures.forEach(labelFeature => {
+                        const angle = 0; // east side
+                        const labelX = centerPoint[0] + adjustedRadius * Math.cos(angle);
+                        const labelY = centerPoint[1] + adjustedRadius * Math.sin(angle);
+                        labelFeature.setGeometry(new Point([labelX, labelY]));
+                    });
+                }
+            });
+        };
+
+        map.addInteraction(selectInteraction);
+        map.addInteraction(translateInteraction);
+        
+        selectInteractionRef.current = selectInteraction;
+        translateInteractionRef.current = translateInteraction;
 
         mapRef.current = map;
 
         return () => {
             if (mapRef.current) {
+                // Clean up interactions
+                if (selectInteractionRef.current) {
+                    mapRef.current.removeInteraction(selectInteractionRef.current);
+                }
+                if (translateInteractionRef.current) {
+                    mapRef.current.removeInteraction(translateInteractionRef.current);
+                }
+                
                 mapRef.current.setTarget(undefined);
                 mapRef.current = null;
             }
@@ -321,36 +592,72 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
     useEffect(() => {
         if (!mapRef.current || !vectorSourceRef.current) return;
 
-        // Remove existing school markers
         const existingSchoolMarkers = vectorSourceRef.current.getFeatures().filter(f => f.get('type') === 'school-marker');
+        
+        // Create a map of existing markers by school ID
+        const existingMarkerMap = new Map();
         existingSchoolMarkers.forEach(marker => {
-            vectorSourceRef.current!.removeFeature(marker);
+            const schoolId = marker.get('schoolId');
+            if (schoolId) {
+                existingMarkerMap.set(schoolId, marker);
+            }
         });
 
-        // Add school markers
+        // Remove markers for schools that no longer exist
+        existingSchoolMarkers.forEach(marker => {
+            const schoolId = marker.get('schoolId');
+            const currentSchool = favoriteSchools.find(s => s.id === schoolId);
+            if (!currentSchool) {
+                vectorSourceRef.current!.removeFeature(marker);
+            }
+        });
+
+        // Add or update school markers
         favoriteSchools.forEach(school => {
-            const schoolFeature = new Feature({
-                geometry: new Point(fromLonLat([school.coordinates[1], school.coordinates[0]])),
-                name: school.name,
-                type: 'school-marker',
-                schoolId: school.id,
-                schoolData: school,
-            });
+            const existingMarker = existingMarkerMap.get(school.id);
+            
+            if (existingMarker) {
+                // Update existing marker position if coordinates changed
+                const currentGeom = existingMarker.getGeometry() as Point;
+                const currentCoords = toLonLat(currentGeom.getCoordinates());
+                const newCoords = [school.coordinates[1], school.coordinates[0]]; // [lng, lat] for fromLonLat
+                
+                // Only update if coordinates actually changed (with small tolerance for floating point)
+                const tolerance = 0.000001;
+                if (Math.abs(currentCoords[0] - newCoords[0]) > tolerance || 
+                    Math.abs(currentCoords[1] - newCoords[1]) > tolerance) {
+                    currentGeom.setCoordinates(fromLonLat(newCoords));
+                }
+                
+                // Update marker name if it changed
+                if (existingMarker.get('name') !== school.name) {
+                    existingMarker.set('name', school.name);
+                }
+            } else {
+                // Create new marker
+                const schoolFeature = new Feature({
+                    geometry: new Point(fromLonLat([school.coordinates[1], school.coordinates[0]])),
+                    name: school.name,
+                    type: 'school-marker',
+                    schoolId: school.id,
+                    schoolData: school,
+                });
 
-            schoolFeature.setStyle(new Style({
-                image: new CircleStyle({
-                    radius: 12,
-                    fill: new Fill({ color: '#10B981' }),
-                    stroke: new Stroke({ color: '#ffffff', width: 3 }),
-                }),
-                text: new Text({
-                    text: '🏫',
-                    font: '16px sans-serif',
-                    offsetY: -20,
-                }),
-            }));
+                schoolFeature.setStyle(new Style({
+                    image: new CircleStyle({
+                        radius: 12,
+                        fill: new Fill({ color: '#10B981' }),
+                        stroke: new Stroke({ color: '#ffffff', width: 3 }),
+                    }),
+                    text: new Text({
+                        text: '🏫',
+                        font: '16px sans-serif',
+                        offsetY: -20,
+                    }),
+                }));
 
-            vectorSourceRef.current!.addFeature(schoolFeature);
+                vectorSourceRef.current!.addFeature(schoolFeature);
+            }
         });
     }, [favoriteSchools]);
 
@@ -378,35 +685,70 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
     useEffect(() => {
         if (!mapRef.current || !vectorSourceRef.current) return;
 
-        // Remove existing catchment circles and their labels
+        // Get existing circles and labels
         const existingCircles = vectorSourceRef.current.getFeatures().filter(f => 
             f.get('type') === 'catchment-circle'
         );
-        existingCircles.forEach(circle => {
-            vectorSourceRef.current!.removeFeature(circle);
-        });
         const existingLabels = vectorSourceRef.current.getFeatures().filter(f => 
             f.get('type') === 'catchment-label'
         );
+
+        // Create a map of existing circles by ID for efficient lookup
+        const existingCircleMap = new Map();
+        existingCircles.forEach(circle => {
+            const circleId = circle.get('circleId');
+            if (circleId) {
+                existingCircleMap.set(circleId, circle);
+            }
+        });
+
+        // Remove circles that are no longer in the current state or not visible
+        existingCircles.forEach(circle => {
+            const circleId = circle.get('circleId');
+            const currentCircle = circles.find(c => c.id === circleId);
+            if (!currentCircle || !currentCircle.isVisible) {
+                vectorSourceRef.current!.removeFeature(circle);
+            }
+        });
+
+        // Remove all labels (we'll recreate them)
         existingLabels.forEach(label => {
             vectorSourceRef.current!.removeFeature(label);
         });
 
-        // Add current visible circles and separate label features placed on the circle rim
+        // Add or update current visible circles
         circles.forEach(circle => {
             if (circle.isVisible && circle.olFeature) {
-                // Update the style based on current visibility and color
-                const style = new Style({
-                    fill: new Fill({
-                        color: `${circle.color}55`, // Add transparency
-                    }),
-                    stroke: new Stroke({
-                        color: circle.color,
-                        width: 3,
-                    }),
-                });
-                circle.olFeature.setStyle(style);
-                vectorSourceRef.current!.addFeature(circle.olFeature);
+                const existingFeature = existingCircleMap.get(circle.id);
+                
+                if (existingFeature) {
+                    // Update existing feature style and geometry
+                    const style = new Style({
+                        fill: new Fill({
+                            color: `${circle.color}55`, // Add transparency
+                        }),
+                        stroke: new Stroke({
+                            color: circle.color,
+                            width: 3,
+                        }),
+                    });
+                    existingFeature.setStyle(style);
+                    // Update geometry if it's different (this happens during drag)
+                    existingFeature.setGeometry(circle.olFeature.getGeometry());
+                } else {
+                    // Add new feature
+                    const style = new Style({
+                        fill: new Fill({
+                            color: `${circle.color}55`, // Add transparency
+                        }),
+                        stroke: new Stroke({
+                            color: circle.color,
+                            width: 3,
+                        }),
+                    });
+                    circle.olFeature.setStyle(style);
+                    vectorSourceRef.current!.addFeature(circle.olFeature);
+                }
 
                 // Create a label feature positioned on the circle circumference (east side, angle = 0)
                 const geom = circle.olFeature.getGeometry();
@@ -507,6 +849,14 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
                     {formData.pinPlacementMode === 'school' && '🏫 Click to place school pin'}
                     {formData.pinPlacementMode === 'location' && '📍 Click to place location pin'}
                     {measurementMode && '📏 Click two points to measure distance'}
+                </div>
+            )}
+
+            {/* Drag Hint */}
+            {(favoriteSchools.length > 0 || placedPins.length > 0) && 
+             formData.pinPlacementMode === 'off' && !measurementMode && (
+                <div className="absolute bottom-4 left-4 bg-gray-800/90 text-white px-3 py-2 rounded-lg shadow-lg text-xs font-medium z-10">
+                    💡 Drag pins and school markers to reposition catchment areas
                 </div>
             )}
         </div>

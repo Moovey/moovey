@@ -163,6 +163,104 @@ export default function SchoolCatchmentMap({
         }
     };
 
+    // Pin and school drag handlers
+    const handlePinDrag = async (pinId: string, newCoordinates: [number, number]) => {
+        // Update the pin's coordinates
+        setPlacedPins(prev => prev.map(pin => {
+            if (pin.id === pinId) {
+                const updatedPin = { ...pin, coordinates: newCoordinates };
+                
+                // Update the feature geometry if it exists
+                if (pin.feature) {
+                    const geometry = pin.feature.getGeometry();
+                    if (geometry instanceof Point) {
+                        geometry.setCoordinates(fromLonLat([newCoordinates[1], newCoordinates[0]]));
+                    }
+                }
+                
+                return updatedPin;
+            }
+            return pin;
+        }));
+
+        // If this pin is assigned to a school, update the school's position and circles
+        const pin = placedPins.find(p => p.id === pinId);
+        if (pin?.schoolId) {
+            await handleSchoolDrag(pin.schoolId, newCoordinates);
+        }
+
+        // Update the address field with the new location
+        try {
+            const address = await reverseGeocode(newCoordinates);
+            setFormData(prev => ({ ...prev, address }));
+        } catch (error) {
+            console.error('Failed to reverse geocode dragged pin:', error);
+        }
+    };
+
+    const handleSchoolDrag = async (schoolId: string, newCoordinates: [number, number]) => {
+        // Update the school's coordinates
+        setFavoriteSchools(prev => prev.map(school => {
+            if (school.id === schoolId) {
+                const updatedSchool = { ...school, coordinates: newCoordinates };
+                
+                // Save to database
+                favoriteSchoolsService.updateFavoriteSchool(updatedSchool).catch(error => {
+                    console.error('Failed to save school position:', error);
+                    setSaveMessage({
+                        type: 'error',
+                        text: 'Failed to save new school position'
+                    });
+                    setTimeout(() => setSaveMessage(null), 3000);
+                });
+                
+                return updatedSchool;
+            }
+            return school;
+        }));
+
+        // Update all circles for this school with the new center
+        setCircles(prev => prev.map(circle => {
+            if (circle.schoolId === schoolId) {
+                const updatedCircle = { ...circle, center: newCoordinates };
+                
+                // Update the OpenLayers feature geometry
+                if (circle.olFeature) {
+                    const radiusInMeters = convertToMeters(circle.radius, circle.unit);
+                    const newGeometry = createGeographicCircle(newCoordinates, radiusInMeters);
+                    circle.olFeature.setGeometry(newGeometry);
+                }
+                
+                return updatedCircle;
+            }
+            return circle;
+        }));
+
+        // Update any pins assigned to this school
+        setPlacedPins(prev => prev.map(pin => {
+            if (pin.schoolId === schoolId) {
+                const updatedPin = { ...pin, coordinates: newCoordinates };
+                
+                // Update the feature geometry if it exists
+                if (pin.feature) {
+                    const geometry = pin.feature.getGeometry();
+                    if (geometry instanceof Point) {
+                        geometry.setCoordinates(fromLonLat([newCoordinates[1], newCoordinates[0]]));
+                    }
+                }
+                
+                return updatedPin;
+            }
+            return pin;
+        }));
+
+        setSaveMessage({
+            type: 'success',
+            text: `📍 School position updated! Catchment circles moved with it.`
+        });
+        setTimeout(() => setSaveMessage(null), 3000);
+    };
+
     // Create accurate geographic circle using coordinate transformations
     const createGeographicCircle = (centerCoords: [number, number], radiusInMeters: number) => {
         // Convert center coordinates to Web Mercator projection
@@ -1191,6 +1289,8 @@ export default function SchoolCatchmentMap({
                         measurementMode={measurementMode}
                         onMeasurementClick={handleMeasurementClick}
                         onCircleClick={focusOnCircle}
+                        onPinDrag={handlePinDrag}
+                        onSchoolDrag={handleSchoolDrag}
                     />
                 </div>
             </div>

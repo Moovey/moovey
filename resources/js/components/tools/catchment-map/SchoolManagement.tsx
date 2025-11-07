@@ -233,6 +233,17 @@ export default function SchoolManagement({
                                 );
                             })}
                         </div>
+                        
+                        {/* Drag Feature Tip */}
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-start gap-2">
+                                <span className="text-blue-600 text-sm">💡</span>
+                                <div className="text-xs text-blue-800">
+                                    <strong>Tip:</strong> You can drag school markers 🏫 and pins 📍 on the map to reposition them. 
+                                    Catchment circles will move automatically with their schools!
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
                 
