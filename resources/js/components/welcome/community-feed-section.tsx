@@ -211,7 +211,12 @@ const CommunityFeedSection = memo(({ stats }: CommunityFeedSectionProps) => {
                             const avatarColor = colors[index % colors.length];
 
                             return (
-                                <div key={post.id} className="bg-white rounded-xl p-6 shadow-lg transition-transform hover:scale-[1.02]">
+                                <div 
+                                    key={post.id} 
+                                    className="bg-white rounded-xl p-6 shadow-lg transition-transform hover:scale-[1.02] cursor-pointer"
+                                    onClick={() => window.location.href = '/community'}
+                                    title="Click to view this post in the community"
+                                >
                                     <div className="flex items-center space-x-3 mb-4">
                                         {post.userAvatar ? (
                                             <img 
