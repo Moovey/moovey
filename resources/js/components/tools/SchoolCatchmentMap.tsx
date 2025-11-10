@@ -6,8 +6,7 @@ import LineString from 'ol/geom/LineString';
 import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import { getDistance } from 'ol/sphere';
-import { toast, ToastContainer } from 'react-toastify';
-import SaveResultsButton from '@/components/SaveResultsButton';
+import { toast } from 'react-toastify';
 import { favoriteSchoolsService } from '@/services/favoriteSchoolsService';
 
 // Import modular components
@@ -18,7 +17,6 @@ import CircleManagement from './catchment-map/CircleManagement';
 import MapContainer, { MapContainerRef } from './catchment-map/MapContainer';
 
 import 'ol/ol.css';
-import 'react-toastify/dist/ReactToastify.css';
 
 // Enhanced data models
 interface School {
@@ -121,7 +119,6 @@ export default function SchoolCatchmentMap({
     const [measurementMode, setMeasurementMode] = useState(false);
     const [measurementPoints, setMeasurementPoints] = useState<[number, number][]>([]);
     const [mobileControlsVisible, setMobileControlsVisible] = useState(false);
-    const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
     // Refs
     const mapRef = useRef<MapContainerRef>(null);
@@ -207,11 +204,7 @@ export default function SchoolCatchmentMap({
                 // Save to database
                 favoriteSchoolsService.updateFavoriteSchool(updatedSchool).catch(error => {
                     console.error('Failed to save school position:', error);
-                    setSaveMessage({
-                        type: 'error',
-                        text: 'Failed to save new school position'
-                    });
-                    setTimeout(() => setSaveMessage(null), 3000);
+                    toast.error('Failed to save new school position');
                 });
                 
                 return updatedSchool;
@@ -254,11 +247,7 @@ export default function SchoolCatchmentMap({
             return pin;
         }));
 
-        setSaveMessage({
-            type: 'success',
-            text: `📍 School position updated! Catchment circles moved with it.`
-        });
-        setTimeout(() => setSaveMessage(null), 3000);
+        toast.success('📍 School position updated! Catchment circles moved with it.');
     };
 
     // Create accurate geographic circle using coordinate transformations
@@ -334,19 +323,11 @@ export default function SchoolCatchmentMap({
                         setCircles(catchmentCircles);
                     }
                     
-                    setSaveMessage({
-                        type: 'success',
-                        text: `✨ Loaded ${favoriteSchoolsFromDB.length} schools with ${catchmentCircles.length} catchment zones`
-                    });
-                    setTimeout(() => setSaveMessage(null), 5000);
+                    toast.success(`✨ Loaded ${favoriteSchoolsFromDB.length} schools with ${catchmentCircles.length} catchment zones`);
                 }
             } catch (error) {
                 console.error('Error loading data:', error);
-                setSaveMessage({
-                    type: 'error',
-                    text: 'Failed to load saved data'
-                });
-                setTimeout(() => setSaveMessage(null), 5000);
+                toast.error('Failed to load saved data');
             }
         };
 
@@ -680,11 +661,7 @@ export default function SchoolCatchmentMap({
         }
         
         setError('');
-        setSaveMessage({
-            type: 'success',
-            text: 'Catchment zone saved successfully!'
-        });
-        setTimeout(() => setSaveMessage(null), 3000);
+        toast.success('Catchment zone saved successfully!');
     };
 
     const removeCircle = async (id: string) => {
@@ -703,19 +680,11 @@ export default function SchoolCatchmentMap({
                         s.id === school.id ? updatedSchool : s
                     ));
                     
-                    setSaveMessage({
-                        type: 'success',
-                        text: 'Catchment zone removed successfully!'
-                    });
-                    setTimeout(() => setSaveMessage(null), 3000);
+                    toast.success('Catchment zone removed successfully!');
                 }
             } catch (error) {
                 console.error('Error removing catchment zone:', error);
-                setSaveMessage({
-                    type: 'error',
-                    text: 'Failed to remove catchment zone'
-                });
-                setTimeout(() => setSaveMessage(null), 3000);
+                toast.error('Failed to remove catchment zone');
                 return;
             }
         }
@@ -881,11 +850,7 @@ export default function SchoolCatchmentMap({
         setCustomPin(circle.center);
 
         // Show success message
-        setSaveMessage({
-            type: 'success',
-            text: `📍 Focused on ${circle.schoolName} catchment zone`
-        });
-        setTimeout(() => setSaveMessage(null), 3000);
+        toast.success(`📍 Focused on ${circle.schoolName} catchment zone`);
     };
 
     const toggleCircleVisibility = async (id: string) => {
@@ -917,11 +882,7 @@ export default function SchoolCatchmentMap({
                     setCircles(prev => prev.map(c => 
                         c.id === id ? { ...c, isVisible: !c.isVisible } : c
                     ));
-                    setSaveMessage({
-                        type: 'error',
-                        text: 'Failed to save visibility change'
-                    });
-                    setTimeout(() => setSaveMessage(null), 3000);
+                    toast.error('Failed to save visibility change');
                 }
             } catch (error) {
                 console.error('Error updating circle visibility:', error);
@@ -929,11 +890,7 @@ export default function SchoolCatchmentMap({
                 setCircles(prev => prev.map(c => 
                     c.id === id ? { ...c, isVisible: !c.isVisible } : c
                 ));
-                setSaveMessage({
-                    type: 'error',
-                    text: 'Error saving visibility change'
-                });
-                setTimeout(() => setSaveMessage(null), 3000);
+                toast.error('Error saving visibility change');
             }
         }
     };
@@ -962,21 +919,13 @@ export default function SchoolCatchmentMap({
                     setFavoriteSchools(prev => prev.map(s => 
                         s.id === school.id ? updatedSchool : s
                     ));
-                    setSaveMessage({
-                        type: 'success',
-                        text: 'Color updated successfully!'
-                    });
-                    setTimeout(() => setSaveMessage(null), 2000);
+                    toast.success('Color updated successfully!');
                 } else {
                     // Revert local state if save failed
                     setCircles(prev => prev.map(c => 
                         c.id === id ? { ...c, color: circle.color } : c
                     ));
-                    setSaveMessage({
-                        type: 'error',
-                        text: 'Failed to save color change'
-                    });
-                    setTimeout(() => setSaveMessage(null), 3000);
+                    toast.error('Failed to save color change');
                 }
             } catch (error) {
                 console.error('Error updating circle color:', error);
@@ -984,11 +933,7 @@ export default function SchoolCatchmentMap({
                 setCircles(prev => prev.map(c => 
                     c.id === id ? { ...c, color: circle.color } : c
                 ));
-                setSaveMessage({
-                    type: 'error',
-                    text: 'Error saving color change'
-                });
-                setTimeout(() => setSaveMessage(null), 3000);
+                toast.error('Error saving color change');
             }
         }
     };
@@ -1037,7 +982,6 @@ export default function SchoolCatchmentMap({
         setCustomPin(null);
         setPlacedPins([]);
         setError('');
-        setSaveMessage(null);
     };
 
     const canSaveData = () => {
@@ -1066,31 +1010,12 @@ export default function SchoolCatchmentMap({
         setError('');
     };
 
-    const getCalculationResults = () => {
-        return {
-            searchedAddress: formData.address || '',
-            mapCenter: mapCenter,
-            schools: schools,
-            favoriteSchools: favoriteSchools,
-            circles: circles,
-            customPin: customPin,
-            placedPins: placedPins,
-            statistics: {
-                totalCircles: circles.length,
-                totalSchools: schools.length,
-                totalFavoriteSchools: favoriteSchools.length,
-                totalPins: placedPins.length,
-            }
-        };
-    };
-
     return (
         <div className={`bg-white transition-all duration-300 ${
             isFullscreen 
                 ? 'fixed inset-0 z-50 flex flex-col h-screen w-screen' 
                 : 'rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 md:p-6 lg:p-8'
         }`}>
-            <ToastContainer />
             
             {/* Fullscreen Branding Bar */}
             {isFullscreen && (
@@ -1189,7 +1114,13 @@ export default function SchoolCatchmentMap({
                                 setIsLoading={setIsLoading}
                                 error={error}
                                 setError={setError}
-                                onSaveMessage={(message) => setSaveMessage(message)}
+                                onSaveMessage={(message) => {
+                                    if (message.type === 'success') {
+                                        toast.success(message.text);
+                                    } else {
+                                        toast.error(message.text);
+                                    }
+                                }}
                                 onAddressSearch={searchAddress}
                                 pinPlacementMode={formData.pinPlacementMode}
                                 onTogglePinPlacement={togglePinPlacementMode}
@@ -1255,20 +1186,6 @@ export default function SchoolCatchmentMap({
                                 isFullscreen={isFullscreen}
                             />
                         </div>
-
-                        {/* Save Results Button */}
-                        <div className="mt-6 pt-4 border-t border-gray-200">
-                            <SaveResultsButton
-                                toolType="school-catchment"
-                                results={getCalculationResults()}
-                                formData={formData}
-                                onSaveComplete={(success, message) => setSaveMessage({
-                                    type: success ? 'success' : 'error',
-                                    text: message
-                                })}
-                                className="w-full"
-                            />
-                        </div>
                     </div>
                 </div>
 
@@ -1298,16 +1215,7 @@ export default function SchoolCatchmentMap({
                 </div>
             </div>
 
-            {/* Save Message */}
-            {saveMessage && (
-                <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg max-w-sm ${
-                    saveMessage.type === 'success' 
-                        ? 'bg-green-100 text-green-800 border border-green-200'
-                        : 'bg-red-100 text-red-800 border border-red-200'
-                }`}>
-                    <div className="text-sm font-medium">{saveMessage.text}</div>
-                </div>
-            )}
+
         </div>
     );
 }

@@ -4,7 +4,11 @@ import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
 import MortgageCalculator from '@/components/tools/MortgageCalculator';
 
-export default function MortgageCalculatorPage() {
+interface Props {
+    savedResults?: any[];
+}
+
+export default function MortgageCalculatorPage({ savedResults = [] }: Props) {
     return (
         <>
             <Head title="Mortgage Calculator - Moovey Tools">
@@ -47,7 +51,7 @@ export default function MortgageCalculatorPage() {
                 <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
                     <div className="max-w-6xl mx-auto">
                         {/* Tool Component */}
-                        <MortgageCalculator />
+                        <MortgageCalculator initialSavedResults={savedResults} />
                     </div>
                 </section>
 

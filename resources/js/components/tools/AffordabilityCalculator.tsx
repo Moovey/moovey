@@ -1,5 +1,11 @@
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 import SaveResultsButton from '@/components/SaveResultsButton';
+import SavedResultsSidebar from '@/components/tools/SavedResultsSidebar';
+
+interface AffordabilityCalculatorProps {
+    initialSavedResults?: any[];
+}
 
 interface AffordabilityFormData {
     grossAnnualIncome: string;
@@ -22,7 +28,7 @@ interface AffordabilityResults {
     recommendations: string[];
 }
 
-export default function AffordabilityCalculator() {
+export default function AffordabilityCalculator({ initialSavedResults }: AffordabilityCalculatorProps) {
     const [formData, setFormData] = useState<AffordabilityFormData>({
         grossAnnualIncome: '',
         monthlyDebtPayments: '',
@@ -36,7 +42,6 @@ export default function AffordabilityCalculator() {
     
     const [results, setResults] = useState<AffordabilityResults | null>(null);
     const [errors, setErrors] = useState<{[key: string]: string}>({});
-    const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
     const handleInputChange = (field: keyof AffordabilityFormData, value: string) => {
         // Clear any existing errors for this field
@@ -155,24 +160,30 @@ export default function AffordabilityCalculator() {
         });
         setResults(null);
         setErrors({});
-        setSaveMessage(null);
     };
 
     const handleSaveComplete = (success: boolean, message: string) => {
-        setSaveMessage({
-            type: success ? 'success' : 'error',
-            text: message
-        });
-        
-        // Clear message after 3 seconds
-        setTimeout(() => setSaveMessage(null), 3000);
+        if (success) {
+            toast.success(message);
+        } else {
+            toast.error(message);
+        }
     };
 
     return (
-        <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden font-sans">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-                {/* Left Column - Input Fields */}
-                <div className="p-8 space-y-6 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                {/* Saved Results Sidebar */}
+                <div className="xl:col-span-1">
+                    <SavedResultsSidebar toolType="affordability" initialSavedResults={initialSavedResults} />
+                </div>
+                
+                {/* Main Calculator */}
+                <div className="xl:col-span-3">
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden font-sans">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+                            {/* Left Column - Input Fields */}
+                            <div className="p-8 space-y-6 bg-gray-50">
                     {/* Annual Income */}
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -316,10 +327,11 @@ export default function AffordabilityCalculator() {
                     </div>
                 </div>
 
-                {/* Right Column - Results */}
-                <div className="p-8 bg-white flex flex-col justify-center">
+                {/* Right Column - Current Results */}
+                <div className="p-8 bg-white flex flex-col">
+                    {/* Current Results */}
                     <div className="flex items-center gap-3 mb-6">
-                        <h3 className="text-2xl font-bold text-gray-700">Results</h3>
+                        <h3 className="text-2xl font-bold text-gray-700">Current Results</h3>
                         <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
                             <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -432,17 +444,9 @@ export default function AffordabilityCalculator() {
                 >
                     Calculate
                 </button>
-
-                {/* Save Message */}
-                {saveMessage && (
-                    <div className={`mt-4 p-3 rounded-lg text-sm text-center ${
-                        saveMessage.type === 'success' 
-                            ? 'bg-green-100 text-green-700 border border-green-200' 
-                            : 'bg-red-100 text-red-700 border border-red-200'
-                    }`}>
-                        {saveMessage.text}
+            </div>
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );

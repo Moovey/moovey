@@ -4,7 +4,11 @@ import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
 import AffordabilityCalculator from '@/components/tools/AffordabilityCalculator';
 
-export default function AffordabilityCalculatorPage() {
+interface Props {
+    savedResults?: any[];
+}
+
+export default function AffordabilityCalculatorPage({ savedResults = [] }: Props) {
     return (
         <>
             <Head title="Affordability Calculator - Moovey Tools">
@@ -47,7 +51,7 @@ export default function AffordabilityCalculatorPage() {
                 <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
                     <div className="max-w-6xl mx-auto">
                         {/* Tool Component */}
-                        <AffordabilityCalculator />
+                        <AffordabilityCalculator initialSavedResults={savedResults} />
                     </div>
                 </section>
 

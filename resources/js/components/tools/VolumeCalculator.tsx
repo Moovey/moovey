@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 import SaveResultsButton from '@/components/SaveResultsButton';
+import SavedResultsSidebar from '@/components/tools/SavedResultsSidebar';
 
 interface FurnitureItem {
     id: string;
@@ -33,7 +35,11 @@ interface RoomSelectionModal {
     selectedItem: FurnitureItem | null;
 }
 
-export default function VolumeCalculator() {
+interface VolumeCalculatorProps {
+    initialSavedResults?: any[];
+}
+
+export default function VolumeCalculator({ initialSavedResults }: VolumeCalculatorProps) {
     // Comprehensive furniture database with specific items
     const furnitureDatabase: FurnitureItem[] = [
         // Living Room - Seating
@@ -190,7 +196,6 @@ export default function VolumeCalculator() {
         width: '',
         height: ''
     });
-    const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
     
     // New state for unassigned items and modal
     const [unassignedItems, setUnassignedItems] = useState<UnassignedItem[]>([]);
@@ -364,18 +369,15 @@ export default function VolumeCalculator() {
         ]);
         setCustomItems([]);
         setUnassignedItems([]);
-        setSaveMessage(null);
         closeRoomSelectionModal();
     };
 
     const handleSaveComplete = (success: boolean, message: string) => {
-        setSaveMessage({
-            type: success ? 'success' : 'error',
-            text: message
-        });
-        
-        // Clear message after 3 seconds
-        setTimeout(() => setSaveMessage(null), 3000);
+        if (success) {
+            toast.success(message);
+        } else {
+            toast.error(message);
+        }
     };
 
     // Get calculation results for saving
@@ -424,9 +426,18 @@ export default function VolumeCalculator() {
         : [...furnitureDatabase, ...customItems].filter(item => item.category === selectedCategory);
 
     return (
-        <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden font-sans">
-            {/* Header */}
-            <div className="p-6 bg-gray-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                {/* Saved Results Sidebar */}
+                <div className="xl:col-span-1">
+                    <SavedResultsSidebar toolType="volume" initialSavedResults={initialSavedResults} />
+                </div>
+                
+                {/* Main Calculator */}
+                <div className="xl:col-span-3">
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden font-sans">
+                        {/* Header */}
+                        <div className="p-6 bg-gray-50 border-b border-gray-200">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-3">
                         <h3 className="text-2xl font-bold text-gray-700">Volume Calculator</h3>
@@ -454,17 +465,6 @@ export default function VolumeCalculator() {
                         </button>
                     </div>
                 </div>
-                
-                {/* Save Message */}
-                {saveMessage && (
-                    <div className={`mt-4 p-3 rounded-lg text-sm ${
-                        saveMessage.type === 'success' 
-                            ? 'bg-green-100 text-green-700 border border-green-200' 
-                            : 'bg-red-100 text-red-700 border border-red-200'
-                    }`}>
-                        {saveMessage.text}
-                    </div>
-                )}
             </div>
 
             {/* Summary Cards */}
@@ -843,6 +843,9 @@ export default function VolumeCalculator() {
                     </div>
                 </div>
             )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

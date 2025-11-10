@@ -4,7 +4,11 @@ import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
 import VolumeCalculator from '@/components/tools/VolumeCalculator';
 
-export default function VolumeCalculatorPage() {
+interface Props {
+    savedResults?: any[];
+}
+
+export default function VolumeCalculatorPage({ savedResults = [] }: Props) {
     return (
         <>
             <Head title="Volume Calculator - Moovey Tools">
@@ -47,7 +51,7 @@ export default function VolumeCalculatorPage() {
                 <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
                     <div className="max-w-6xl mx-auto">
                         {/* Tool Component */}
-                        <VolumeCalculator />
+                        <VolumeCalculator initialSavedResults={savedResults} />
                     </div>
                 </section>
 

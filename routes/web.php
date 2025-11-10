@@ -217,6 +217,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/saved-results/{savedToolResult}', [\App\Http\Controllers\SavedToolResultController::class, 'show'])->name('saved-results.show');
     Route::delete('/saved-results/{savedToolResult}', [\App\Http\Controllers\SavedToolResultController::class, 'destroy'])->name('saved-results.destroy');
     Route::get('/api/saved-results', [\App\Http\Controllers\SavedToolResultController::class, 'api'])->name('api.saved-results');
+    Route::delete('/api/saved-results/{savedToolResult}', [\App\Http\Controllers\SavedToolResultController::class, 'apiDestroy'])->name('api.saved-results.destroy');
     
     // Favorite Schools Routes
     Route::get('/api/favorite-schools', [\App\Http\Controllers\FavoriteSchoolController::class, 'index'])->name('api.favorite-schools.index');

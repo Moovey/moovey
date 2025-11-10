@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lesson;
+use App\Models\SavedToolResult;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -140,7 +141,19 @@ class PublicController extends Controller
      */
     public function mortgageCalculator(): Response
     {
-        return Inertia::render('tools/mortgage-calculator');
+        $savedResults = [];
+        
+        // Get saved results for authenticated users
+        if (Auth::check()) {
+            $savedResults = SavedToolResult::where('user_id', Auth::id())
+                ->where('tool_type', 'mortgage')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+        
+        return Inertia::render('tools/mortgage-calculator', [
+            'savedResults' => $savedResults
+        ]);
     }
 
     /**
@@ -148,7 +161,19 @@ class PublicController extends Controller
      */
     public function affordabilityCalculator(): Response
     {
-        return Inertia::render('tools/affordability-calculator');
+        $savedResults = [];
+        
+        // Get saved results for authenticated users
+        if (Auth::check()) {
+            $savedResults = SavedToolResult::where('user_id', Auth::id())
+                ->where('tool_type', 'affordability')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+        
+        return Inertia::render('tools/affordability-calculator', [
+            'savedResults' => $savedResults
+        ]);
     }
 
     /**
@@ -164,7 +189,19 @@ class PublicController extends Controller
      */
     public function volumeCalculator(): Response
     {
-        return Inertia::render('tools/volume-calculator');
+        $savedResults = [];
+        
+        // Get saved results for authenticated users
+        if (Auth::check()) {
+            $savedResults = SavedToolResult::where('user_id', Auth::id())
+                ->where('tool_type', 'volume')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+        
+        return Inertia::render('tools/volume-calculator', [
+            'savedResults' => $savedResults
+        ]);
     }
 
     /**

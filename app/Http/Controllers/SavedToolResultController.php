@@ -70,12 +70,38 @@ class SavedToolResultController extends Controller
         return back()->with('success', 'Saved result deleted successfully!');
     }
 
-    public function api(): JsonResponse
+    public function api(Request $request): JsonResponse
     {
-        $savedResults = SavedToolResult::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = SavedToolResult::where('user_id', Auth::id());
+        
+        // Filter by tool type if provided
+        if ($request->has('tool_type')) {
+            $query->where('tool_type', $request->get('tool_type'));
+        }
+        
+        $savedResults = $query->orderBy('created_at', 'desc')->get();
 
-        return response()->json($savedResults);
+        return response()->json([
+            'success' => true,
+            'data' => $savedResults
+        ]);
+    }
+
+    public function apiDestroy(SavedToolResult $savedToolResult): JsonResponse
+    {
+        // Ensure the user can only delete their own saved results
+        if ($savedToolResult->user_id !== Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $savedToolResult->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Saved result deleted successfully!'
+        ]);
     }
 }
