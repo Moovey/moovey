@@ -264,8 +264,10 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
             const draggableFeature = featuresAtPixel.find(feature => {
                 const type = feature.get('type');
                 return type === 'school-marker' || 
+                       type === 'catchment-circle' ||
                        (type?.includes('-pin') && feature.get('pinId'));
             });
+            const hoveredCircleFeatures = featuresAtPixel.filter(feature => feature.get('type') === 'catchment-circle');
             
             // Reset all hover effects first
             vectorSource.getFeatures().forEach(feature => {
@@ -302,6 +304,15 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
                                 font: '14px sans-serif',
                                 offsetY: -20,
                             }),
+                        }));
+                    } else if (type === 'catchment-circle') {
+                        // Reset circle style to base stroke width
+                        const style = feature.getStyle() as Style | undefined;
+                        const strokeColor = style?.getStroke()?.getColor() || '#3B82F6';
+                        const fillColor = style?.getFill()?.getColor() || 'rgba(59,130,246,0.33)';
+                        feature.setStyle(new Style({
+                            fill: new Fill({ color: fillColor as any }),
+                            stroke: new Stroke({ color: strokeColor as any, width: 3 }),
                         }));
                     }
                 }
@@ -345,10 +356,33 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
                                 offsetY: -22,
                             }),
                         }));
+                    } else if (type === 'catchment-circle') {
+                        // Bump circle stroke width on hover for better affordance
+                        const style = draggableFeature.getStyle() as Style | undefined;
+                        const strokeColor = style?.getStroke()?.getColor() || '#3B82F6';
+                        const fillColor = style?.getFill()?.getColor() || 'rgba(59,130,246,0.33)';
+                        draggableFeature.setStyle(new Style({
+                            fill: new Fill({ color: fillColor as any }),
+                            stroke: new Stroke({ color: strokeColor as any, width: 5 }),
+                        }));
                     }
                 }
+            } else if (hoveredCircleFeatures.length > 0) {
+                // If not considered draggableFeature due to filter, still bump circles under cursor
+                hoveredCircleFeatures.forEach(feature => {
+                    if (feature instanceof Feature) {
+                        const style = feature.getStyle() as Style | undefined;
+                        const strokeColor = style?.getStroke()?.getColor() || '#3B82F6';
+                        const fillColor = style?.getFill()?.getColor() || 'rgba(59,130,246,0.33)';
+                        feature.setStyle(new Style({
+                            fill: new Fill({ color: fillColor as any }),
+                            stroke: new Stroke({ color: strokeColor as any, width: 5 }),
+                        }));
+                    }
+                });
             } else if (hasCircle) {
-                map.getTargetElement().style.cursor = 'pointer';
+                // circles are draggable, show move cursor
+                map.getTargetElement().style.cursor = 'move';
             } else {
                 map.getTargetElement().style.cursor = '';
             }
@@ -360,6 +394,7 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
             filter: (feature) => {
                 const type = feature.get('type');
                 return type === 'school-marker' || 
+                       type === 'catchment-circle' ||
                        (type?.includes('-pin') && feature.get('pinId'));
             },
             style: undefined // Don't change style when selected
@@ -387,6 +422,8 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
                 const featureType = feature.get('type');
                 if (featureType === 'school-marker') {
                     draggedSchoolId = feature.get('schoolId');
+                } else if (featureType === 'catchment-circle') {
+                    draggedSchoolId = feature.get('schoolId') || null;
                 } else if (featureType?.includes('-pin')) {
                     const pinId = feature.get('pinId');
                     const pinData = placedPins.find(p => p.id === pinId);
@@ -409,14 +446,24 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
             if (!feature) return;
 
             const geometry = feature.getGeometry();
-            if (geometry && geometry instanceof Point) {
+            if (!geometry) return;
+
+            // If dragging a school marker or pin (Point)
+            if (geometry instanceof Point) {
                 const coordinates = geometry.getCoordinates();
                 const lonLat = toLonLat(coordinates);
                 const newCoordinates: [number, number] = [lonLat[1], lonLat[0]];
-
                 if (draggedSchoolId) {
-                    // Update circles in real-time during drag
                     updateCirclesRealtime(draggedSchoolId, newCoordinates);
+                }
+            } else if ((geometry as any).getCenter && (geometry as any).getRadius) {
+                // Dragging a circle: compute center's lon/lat from current circle geometry
+                const center = (geometry as any).getCenter();
+                const lonLat = toLonLat(center);
+                const newCoordinates: [number, number] = [lonLat[1], lonLat[0]];
+                const schoolId = draggedSchoolId || feature.get('schoolId');
+                if (schoolId) {
+                    updateCirclesRealtime(schoolId, newCoordinates);
                 }
             }
         });
@@ -439,13 +486,16 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
             }, 50);
 
             const geometry = feature.getGeometry();
-            if (geometry && geometry instanceof Point) {
+            if (!geometry) return;
+
+            const featureType = feature.get('type');
+
+            // End drag for points (school marker or pin)
+            if (geometry instanceof Point) {
                 const coordinates = geometry.getCoordinates();
                 const lonLat = toLonLat(coordinates);
                 const newCoordinates: [number, number] = [lonLat[1], lonLat[0]];
 
-                const featureType = feature.get('type');
-                
                 if (featureType === 'school-marker') {
                     const schoolId = feature.get('schoolId');
                     if (schoolId && onSchoolDrag) {
@@ -456,6 +506,15 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(({
                     if (pinId && onPinDrag) {
                         onPinDrag(pinId, newCoordinates);
                     }
+                }
+            } else if ((geometry as any).getCenter && featureType === 'catchment-circle') {
+                // End drag for circle: compute new center and move the associated school
+                const center = (geometry as any).getCenter();
+                const lonLat = toLonLat(center);
+                const newCoordinates: [number, number] = [lonLat[1], lonLat[0]];
+                const schoolId = feature.get('schoolId');
+                if (schoolId && onSchoolDrag) {
+                    onSchoolDrag(schoolId, newCoordinates);
                 }
             }
         });

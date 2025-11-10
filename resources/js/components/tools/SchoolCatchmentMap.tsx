@@ -300,6 +300,7 @@ export default function SchoolCatchmentMap({
                                         name: `${school.name} - ${radius} ${zone.unit} (${zone.year})`,
                                         type: 'catchment-circle',
                                         circleId: zone.id,
+                                        schoolId: school.id, // store for drag operations
                                     });
 
                                     circleFeature.setStyle(new Style({
@@ -366,6 +367,7 @@ export default function SchoolCatchmentMap({
                     name: `${circle.schoolName} - ${circle.radius} ${circle.unit} (${circle.year})`,
                     type: 'catchment-circle',
                     circleId: circle.id,
+                    schoolId: circle.schoolId, // preserve school reference
                 });
 
                 circleFeature.setStyle(new Style({
@@ -638,6 +640,7 @@ export default function SchoolCatchmentMap({
             name: `${selectedSchool.name} - ${radius} ${formData.unit} (${formData.selectedYear})`,
             type: 'catchment-circle',
             circleId: newZone.id,
+            schoolId: selectedSchool.id, // enable dragging by referencing school
         });
 
         circleFeature.setStyle(new Style({
