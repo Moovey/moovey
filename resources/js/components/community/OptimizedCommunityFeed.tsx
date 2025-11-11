@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, memo } from 'react';
 import { CommunityPost, User } from '@/types/community';
 import { router, Link } from '@inertiajs/react';
 import { toast } from 'react-toastify';
@@ -9,6 +9,18 @@ import UserAvatar from './shared/UserAvatar';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { postCache } from '@/hooks/useCache';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
+
+// Memoized components to prevent unnecessary re-renders
+const MemoizedPostCard = memo(OptimizedPostCard);
+const MemoizedCommunitySidebar = memo(CommunitySidebar);
+const MemoizedPostCreationForm = memo(PostCreationForm);
+
+// Extract sorting function outside component to avoid recreation
+const sortPostsByDate = (posts: CommunityPost[]) => {
+    return posts.slice().sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+};
 
 interface PaginationInfo {
     hasMore: boolean;
@@ -37,18 +49,31 @@ export default function OptimizedCommunityFeed({
     // Performance monitoring
     const { recordCacheHit, recordCacheMiss, markLoadStart, markLoadEnd } = usePerformanceMonitor('CommunityFeed');
 
-    // Memoize heavy computations
+    // Optimize sorting with better memoization - use external function
     const sortedPosts = useMemo(() => {
-        return [...posts].sort((a, b) => 
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
+        return sortPostsByDate(posts);
     }, [posts]);
 
-    // Cache posts data
+    // Move cache operations to separate effect to avoid render blocking
     useEffect(() => {
-        if (posts.length > 0) {
-            postCache.set('community-posts', posts);
-            postCache.set('community-pagination', pagination);
+        // Use requestIdleCallback for non-critical cache operations
+        const idleCallback = (deadline: IdleDeadline) => {
+            if (deadline.timeRemaining() > 0 && posts.length > 0) {
+                postCache.set('community-posts', posts);
+                postCache.set('community-pagination', pagination);
+            }
+        };
+        
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(idleCallback);
+        } else {
+            // Fallback for browsers without requestIdleCallback
+            setTimeout(() => {
+                if (posts.length > 0) {
+                    postCache.set('community-posts', posts);
+                    postCache.set('community-pagination', pagination);
+                }
+            }, 0);
         }
     }, [posts, pagination]);
 
@@ -72,15 +97,20 @@ export default function OptimizedCommunityFeed({
             total: pagination.total + 1
         });
         
-        // Invalidate cache
-        postCache.invalidatePattern('posts-page-.*');
-        postCache.set('community-posts', newPosts);
+        // Defer cache operations to avoid blocking render
+        setTimeout(() => {
+            postCache.invalidatePattern('posts-page-.*');
+            postCache.set('community-posts', newPosts);
+        }, 0);
     }, [posts, pagination, onPostsChange, onPaginationChange]);
 
     const loadMorePosts = useCallback(async () => {
-        if (!pagination.hasMore) return;
+        if (!pagination.hasMore) {
+            return;
+        }
 
-        const cacheKey = `posts-page-${pagination.currentPage + 1}`;
+        const nextPage = pagination.currentPage + 1;
+        const cacheKey = `posts-page-${nextPage}`;
         const cachedPage = postCache.get<{ posts: CommunityPost[]; pagination: PaginationInfo }>(cacheKey);
         
         if (cachedPage) {
@@ -94,7 +124,7 @@ export default function OptimizedCommunityFeed({
         markLoadStart();
 
         try {
-            const response = await fetch(`/api/community/posts?page=${pagination.currentPage + 1}`, {
+            const response = await fetch(`/api/community/posts?page=${nextPage}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -103,16 +133,29 @@ export default function OptimizedCommunityFeed({
                 credentials: 'same-origin',
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
             
-            if (data.success) {
+            if (data.success && data.posts) {
                 const newPosts = [...posts, ...data.posts];
+                
                 onPostsChange(newPosts);
                 onPaginationChange(data.pagination);
                 
                 // Cache this page
                 postCache.set(cacheKey, { posts: data.posts, pagination: data.pagination });
                 markLoadEnd();
+                
+                // Show success message if posts were loaded (only in production to avoid spam during development)
+                if (data.posts.length > 0 && process.env.NODE_ENV === 'production') {
+                    toast.success(`Loaded ${data.posts.length} more posts!`, {
+                        position: 'bottom-right',
+                        autoClose: 2000,
+                    });
+                }
             } else {
                 throw new Error(data.message || 'Failed to load posts');
             }
@@ -120,20 +163,53 @@ export default function OptimizedCommunityFeed({
             console.error('Error loading more posts:', error);
             toast.error('Failed to load more posts. Please try again.', {
                 position: 'top-right',
-                autoClose: 3000,
+                autoClose: 5000,
             });
             throw error;
         }
-    }, [posts, pagination, onPostsChange, onPaginationChange]);
+    }, [posts, pagination, onPostsChange, onPaginationChange, recordCacheHit, recordCacheMiss, markLoadStart, markLoadEnd]);
 
-    // Use infinite scroll hook
+    // Use infinite scroll hook with a smaller threshold
     const { isLoading: isLoadingMore } = useInfiniteScroll(
         loadMorePosts,
         pagination.hasMore,
-        { threshold: 1000 }
+        { threshold: 500 } // Reduced threshold for more sensitive detection
     );
 
-    // Prefetch next page when user is near the end
+    // Debounce utility function
+    const debounceScrollHandler = useMemo(() => {
+        let timeout: NodeJS.Timeout;
+        return (func: Function) => {
+            return (...args: any[]) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func(...args), 300);
+            };
+        };
+    }, []);
+
+    // Additional scroll detection as backup
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!pagination.hasMore || isLoadingMore) return;
+            
+            const scrollPosition = window.scrollY + window.innerHeight;
+            const documentHeight = document.documentElement.offsetHeight;
+            
+            // Trigger when 80% through the page
+            if (scrollPosition >= documentHeight * 0.8) {
+                loadMorePosts();
+            }
+        };
+
+        const debouncedHandleScroll = debounceScrollHandler(handleScroll);
+        window.addEventListener('scroll', debouncedHandleScroll, { passive: true });
+        
+        return () => {
+            window.removeEventListener('scroll', debouncedHandleScroll);
+        };
+    }, [pagination.hasMore, isLoadingMore, loadMorePosts, debounceScrollHandler]);
+
+    // Optimize prefetch with better timing and idle callback
     useEffect(() => {
         const prefetchNextPage = async () => {
             if (pagination.hasMore && posts.length > 5) {
@@ -153,22 +229,55 @@ export default function OptimizedCommunityFeed({
                         }
                     } catch (error) {
                         // Silently fail prefetch
-                        console.debug('Prefetch failed:', error);
                     }
                 }
             }
         };
 
-        const timer = setTimeout(prefetchNextPage, 2000);
+        // Use requestIdleCallback for prefetch to avoid blocking main thread
+        const idleCallback = () => {
+            prefetchNextPage();
+        };
+
+        const timer = setTimeout(() => {
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(idleCallback);
+            } else {
+                idleCallback();
+            }
+        }, 2000);
+
         return () => clearTimeout(timer);
     }, [posts.length, pagination]);
+
+    // Memoize heavy UI computations
+    const shouldShowLoadMoreButton = useMemo(() => {
+        return pagination.hasMore && !isLoadingMore;
+    }, [pagination.hasMore, isLoadingMore]);
+
+    const postProgressText = useMemo(() => {
+        return `Showing ${posts.length} of ${pagination.total} posts`;
+    }, [posts.length, pagination.total]);
+
+    // Memoize post change handler to prevent recreation
+    const handlePostChange = useCallback((updatedPost: CommunityPost) => {
+        const newPosts = posts.map(p => 
+            String(p.id) === String(updatedPost.id) ? updatedPost : p
+        );
+        onPostsChange(newPosts);
+        
+        // Defer cache update
+        setTimeout(() => {
+            postCache.set('community-posts', newPosts);
+        }, 0);
+    }, [posts, onPostsChange]);
 
     return (
         <section className="py-8 sm:py-12 lg:py-16 px-3 sm:px-6 lg:px-8 bg-gray-50">
             <div className="max-w-7xl mx-auto">
                 <div className="lg:flex lg:gap-6 xl:gap-8 lg:items-start">
                     {/* Sidebar */}
-                    <CommunitySidebar />
+                    <MemoizedCommunitySidebar />
                     
                     {/* Main Content Area */}
                     <div className="flex-1 w-full lg:max-w-none">
@@ -212,7 +321,7 @@ export default function OptimizedCommunityFeed({
                             </div>
                             
                             {/* Post Creation Form */}
-                            <PostCreationForm
+                            <MemoizedPostCreationForm
                                 onPostCreated={handlePostCreated}
                                 isAuthenticated={isAuthenticated}
                                 className="mb-6 sm:mb-8"
@@ -220,20 +329,30 @@ export default function OptimizedCommunityFeed({
                             
                             {/* Community Posts */}
                             <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-                                {sortedPosts.map((post) => (
-                                    <OptimizedPostCard
-                                        key={`${post.id}-${post.timestamp}`}
-                                        post={post}
-                                        isAuthenticated={isAuthenticated}
-                                        onPostChange={(updatedPost: CommunityPost) => {
-                                            const newPosts = posts.map(p => 
-                                                String(p.id) === String(updatedPost.id) ? updatedPost : p
-                                            );
-                                            onPostsChange(newPosts);
-                                            postCache.set('community-posts', newPosts);
-                                        }}
-                                    />
-                                ))}
+                                {sortedPosts.length > 0 ? (
+                                    sortedPosts.map((post) => (
+                                        <MemoizedPostCard
+                                            key={`${post.id}-${post.timestamp}`}
+                                            post={post}
+                                            isAuthenticated={isAuthenticated}
+                                            onPostChange={handlePostChange}
+                                        />
+                                    ))
+                                ) : (
+                                    /* Empty state */
+                                    <div className="text-center py-12">
+                                        <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                                            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-2M3 4h6l4 4v8a2 2 0 01-2 2H7l-4 4V8a2 2 0 012-2z" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
+                                        <p className="text-gray-500 mb-4">Be the first to share your moving journey!</p>
+                                        {isAuthenticated && (
+                                            <p className="text-sm text-gray-400">Use the form above to create your first post.</p>
+                                        )}
+                                    </div>
+                                )}
                                 
                                 {/* Loading skeleton */}
                                 {isLoadingMore && (
@@ -259,6 +378,33 @@ export default function OptimizedCommunityFeed({
                                     </div>
                                 )}
                             </div>
+
+                            {/* Manual Load More Button - Always show when there are more posts */}
+                            {shouldShowLoadMoreButton && (
+                                <div className="text-center mt-6 sm:mt-8 py-4 sm:py-6">
+                                    <button
+                                        onClick={loadMorePosts}
+                                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#1A237E] to-[#17B7C7] text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                                    >
+                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                        </svg>
+                                        Load More Posts
+                                    </button>
+                                    <p className="text-xs sm:text-sm text-gray-500 mt-2">
+                                        {postProgressText}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Debug: Show when button should be visible */}
+                            {process.env.NODE_ENV === 'development' && (
+                                <div className="text-center mt-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                                    <p>Button visibility: hasMore={pagination.hasMore ? 'true' : 'false'}, 
+                                    isLoading={isLoadingMore ? 'true' : 'false'}, 
+                                    postsLength={posts.length}</p>
+                                </div>
+                            )}
 
                             {/* End of posts message */}
                             {!pagination.hasMore && posts.length > 0 && (
