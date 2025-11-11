@@ -114,9 +114,9 @@ export default function PostInteractions({
             >
                 <span className="text-base sm:text-lg">💬</span>
                 <span className="font-medium hidden sm:inline">
-                    {comments === 0 ? '0 comment' : `${comments} comments`}
+                    {(comments || 0) === 0 ? '0 Comments' : `${comments || 0} Comments`}
                 </span>
-                <span className="font-medium sm:hidden">{comments}</span>
+                <span className="font-medium sm:hidden">{comments || 0}</span>
             </button>
             <button 
                 onClick={handleSharePost}

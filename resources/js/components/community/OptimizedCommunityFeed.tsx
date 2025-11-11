@@ -53,7 +53,17 @@ export default function OptimizedCommunityFeed({
     }, [posts, pagination]);
 
     const handlePostCreated = useCallback((newPost: CommunityPost) => {
-        const newPosts = [newPost, ...posts];
+        // Ensure the new post has proper default values
+        const sanitizedPost: CommunityPost = {
+            ...newPost,
+            likes: newPost.likes ?? 0,
+            comments: newPost.comments ?? 0,
+            shares: newPost.shares ?? 0,
+            liked: newPost.liked ?? false,
+            post_type: newPost.post_type ?? 'original',
+        };
+        
+        const newPosts = [sanitizedPost, ...posts];
         onPostsChange(newPosts);
         
         // Update pagination

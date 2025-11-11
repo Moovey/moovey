@@ -12,8 +12,8 @@ export interface CommunityPost {
     likes: number;
     comments: number;
     shares: number;
-    liked?: boolean;
-    post_type?: 'original' | 'shared';
+    liked: boolean;
+    post_type: 'original' | 'shared';
     original_post?: {
         id: string | number;
         user_id: string | number;

@@ -30,6 +30,17 @@ class CommunityPost extends Model
     protected $casts = [
         'is_pinned' => 'boolean',
         'images' => 'array',
+        'likes_count' => 'integer',
+        'comments_count' => 'integer',
+        'shares_count' => 'integer',
+    ];
+
+    protected $attributes = [
+        'likes_count' => 0,
+        'comments_count' => 0,
+        'shares_count' => 0,
+        'is_pinned' => false,
+        'post_type' => 'original',
     ];
 
     public function user(): BelongsTo

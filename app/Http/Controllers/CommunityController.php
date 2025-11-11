@@ -206,10 +206,11 @@ class CommunityController extends Controller
                 'images' => $post->images ? array_map(fn($img) => Storage::url($img), $post->images) : [],
                 'video' => $post->video ? Storage::url($post->video) : null,
                 'media_type' => $post->media_type,
-                'likes' => $post->likes_count,
-                'comments' => $post->comments_count,
-                'shares' => $post->shares_count,
+                'likes' => $post->likes_count ?? 0,
+                'comments' => $post->comments_count ?? 0,
+                'shares' => $post->shares_count ?? 0,
                 'liked' => false,
+                'post_type' => $post->post_type ?? 'original',
             ];
 
             return response()->json([
