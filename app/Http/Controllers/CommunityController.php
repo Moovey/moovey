@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Exception;
+use App\Models\DeclutterItem;
 
 class CommunityController extends Controller
 {
@@ -360,6 +361,33 @@ class CommunityController extends Controller
         return response()->json([
             'success' => true,
             'comments' => $comments,
+        ]);
+    }
+
+    /**
+     * Get community-wide stats for sidebar widgets (API endpoint)
+     */
+    public function getStats()
+    {
+        // Active members: distinct users who created posts in the last 30 days
+        $activeMembers = CommunityPost::where('created_at', '>=', now()->subDays(30))
+            ->distinct('user_id')
+            ->count('user_id');
+
+        // Posts today
+        $postsToday = CommunityPost::whereDate('created_at', now()->toDateString())
+            ->count();
+
+        // Items listed for sale in marketplace
+        $itemsListed = DeclutterItem::forSale()->count();
+
+        return response()->json([
+            'success' => true,
+            'stats' => [
+                'activeMembers' => $activeMembers,
+                'postsToday' => $postsToday,
+                'itemsListed' => $itemsListed,
+            ],
         ]);
     }
 

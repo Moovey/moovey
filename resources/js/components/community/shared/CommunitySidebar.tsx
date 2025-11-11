@@ -1,4 +1,11 @@
 import { Link } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+
+interface CommunityStats {
+    activeMembers: number;
+    postsToday: number;
+    itemsListed: number;
+}
 
 interface CommunitySidebarProps {
     userStats?: {
@@ -6,13 +13,44 @@ interface CommunitySidebarProps {
         friendCount?: number;
         memberSince?: number;
     };
+    communityStats?: CommunityStats;
     showCommunityLink?: boolean;
 }
 
 export default function CommunitySidebar({ 
-    userStats, 
+    userStats,
+    communityStats,
     showCommunityLink = false 
 }: CommunitySidebarProps) {
+    const [loadedStats, setLoadedStats] = useState<CommunityStats | null>(communityStats ?? null);
+    const [loading, setLoading] = useState<boolean>(false);
+
+    // Fetch community stats if not provided and not in user stats mode
+    useEffect(() => {
+        if (!userStats && !communityStats && !loadedStats && !loading) {
+            setLoading(true);
+            fetch('/api/community/stats', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+            })
+                .then(async (res) => {
+                    const data = await res.json();
+                    if (data?.success && data?.stats) {
+                        setLoadedStats(data.stats as CommunityStats);
+                    }
+                })
+                .catch(() => {
+                    // leave as null; UI will show placeholders
+                })
+                .finally(() => setLoading(false));
+        }
+    }, [userStats, communityStats, loadedStats, loading]);
+
+    const statsToShow = loadedStats ?? communityStats ?? null;
+
     return (
         <>
             {/* Mobile sidebar - shown as horizontal cards on mobile/tablet */}
@@ -42,20 +80,28 @@ export default function CommunitySidebar({
                     <div className="grid grid-cols-2 gap-2 sm:gap-3">
                         <div className="text-center">
                             <div className="font-semibold text-[#17B7C7] text-sm sm:text-base">
-                                {userStats ? userStats.postCount || 0 : '1,247+'}
+                                {userStats ? (userStats.postCount || 0) : (statsToShow?.activeMembers ?? (loading ? '...' : '—'))}
                             </div>
                             <div className="text-xs text-gray-600">
-                                {userStats ? 'Posts' : 'Members'}
+                                {userStats ? 'Posts' : 'Active Members'}
                             </div>
                         </div>
                         <div className="text-center">
                             <div className="font-semibold text-[#17B7C7] text-sm sm:text-base">
-                                {userStats ? userStats.friendCount || 0 : '42'}
+                                {userStats ? (userStats.friendCount || 0) : (statsToShow?.postsToday ?? (loading ? '...' : '—'))}
                             </div>
                             <div className="text-xs text-gray-600">
-                                {userStats ? 'Friends' : 'Today'}
+                                {userStats ? 'Friends' : 'Posts Today'}
                             </div>
                         </div>
+                        {!userStats && (
+                            <div className="text-center col-span-2">
+                                <div className="font-semibold text-[#17B7C7] text-sm sm:text-base">
+                                    {statsToShow?.itemsListed ?? (loading ? '...' : '—')}
+                                </div>
+                                <div className="text-xs text-gray-600">Items Listed</div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -106,15 +152,15 @@ export default function CommunitySidebar({
                             <>
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-600 text-sm">Active Members</span>
-                                    <span className="font-semibold text-[#17B7C7]">1,247+</span>
+                                    <span className="font-semibold text-[#17B7C7]">{statsToShow?.activeMembers ?? (loading ? '...' : '—')}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-600 text-sm">Posts Today</span>
-                                    <span className="font-semibold text-[#17B7C7]">42</span>
+                                    <span className="font-semibold text-[#17B7C7]">{statsToShow?.postsToday ?? (loading ? '...' : '—')}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-600 text-sm">Items Listed</span>
-                                    <span className="font-semibold text-[#17B7C7]">156</span>
+                                    <span className="font-semibold text-[#17B7C7]">{statsToShow?.itemsListed ?? (loading ? '...' : '—')}</span>
                                 </div>
                             </>
                         )}

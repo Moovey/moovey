@@ -66,6 +66,7 @@ Route::get('/business-profile/{id}', [\App\Http\Controllers\BusinessSearchContro
 // Community API Routes (public access)
 Route::get('/api/community/posts', [\App\Http\Controllers\CommunityController::class, 'getPosts'])->name('api.community.posts');
 Route::get('/api/community/posts/{post}/comments', [\App\Http\Controllers\CommunityController::class, 'getComments'])->name('api.community.posts.comments');
+Route::get('/api/community/stats', [\App\Http\Controllers\CommunityController::class, 'getStats'])->name('api.community.stats');
 
 // Marketplace API Routes (public access)
 Route::get('/api/marketplace/items', [\App\Http\Controllers\DeclutterItemController::class, 'marketplace'])->name('api.marketplace.items');
