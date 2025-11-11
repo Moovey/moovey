@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { CommunityPost } from '@/types/community';
 import { toast } from 'react-toastify';
+import LocationAutocomplete from './LocationAutocomplete';
 
 interface PostCreationFormProps {
     onPostCreated: (post: CommunityPost) => void;
@@ -218,25 +219,13 @@ export default function PostCreationForm({
 
                     {showLocationInput && showLocationField && (
                         <div className="mt-2">
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={newPostLocation}
-                                    onChange={(e) => setNewPostLocation(e.target.value)}
-                                    placeholder="📍 Add location (optional)"
-                                    className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 text-sm sm:text-base"
-                                    disabled={isSubmitting}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowLocationField(false)}
-                                    className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm"
-                                    title="Hide location"
-                                    aria-label="Hide location"
-                                >
-                                    ×
-                                </button>
-                            </div>
+                            <LocationAutocomplete
+                                value={newPostLocation}
+                                onChange={setNewPostLocation}
+                                placeholder="📍 Add location (optional)"
+                                disabled={isSubmitting}
+                                onHide={() => setShowLocationField(false)}
+                            />
                         </div>
                     )}
                         

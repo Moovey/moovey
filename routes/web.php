@@ -63,6 +63,9 @@ Route::get('/community', [\App\Http\Controllers\CommunityController::class, 'ind
 Route::get('/api/business/search', [\App\Http\Controllers\BusinessSearchController::class, 'search'])->name('api.business.search');
 Route::get('/business-profile/{id}', [\App\Http\Controllers\BusinessSearchController::class, 'show'])->name('business.profile.show');
 
+// Location Search API (public access)
+Route::get('/api/locations/search', [\App\Http\Controllers\LocationController::class, 'search'])->name('api.locations.search');
+
 // Community API Routes (public access)
 Route::get('/api/community/posts', [\App\Http\Controllers\CommunityController::class, 'getPosts'])->name('api.community.posts');
 Route::get('/api/community/posts/{post}/comments', [\App\Http\Controllers\CommunityController::class, 'getComments'])->name('api.community.posts.comments');
