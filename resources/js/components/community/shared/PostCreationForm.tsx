@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { CommunityPost } from '@/types/community';
 import { toast } from 'react-toastify';
 
@@ -23,6 +23,16 @@ export default function PostCreationForm({
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showLocationField, setShowLocationField] = useState(false);
+
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    // Make sure the primary text input is the first interactive element
+    useEffect(() => {
+        if (isAuthenticated) {
+            textareaRef.current?.focus();
+        }
+    }, [isAuthenticated]);
 
     const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -196,23 +206,38 @@ export default function PostCreationForm({
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
                 <div className="p-4 sm:p-6">
                     <textarea
+                        ref={textareaRef}
                         value={newPostContent}
                         onChange={(e) => setNewPostContent(e.target.value)}
                         placeholder={placeholder}
                         className="w-full p-3 border-none resize-none focus:outline-none text-gray-900 text-sm sm:text-base lg:text-lg placeholder-gray-500"
                         rows={3}
                         disabled={isSubmitting}
+                        aria-label="What's on your mind?"
                     />
-                    
-                    {showLocationInput && (
-                        <input
-                            type="text"
-                            value={newPostLocation}
-                            onChange={(e) => setNewPostLocation(e.target.value)}
-                            placeholder="📍 Add location (optional)"
-                            className="w-full p-3 mt-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 text-sm sm:text-base"
-                            disabled={isSubmitting}
-                        />
+
+                    {showLocationInput && showLocationField && (
+                        <div className="mt-2">
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={newPostLocation}
+                                    onChange={(e) => setNewPostLocation(e.target.value)}
+                                    placeholder="📍 Add location (optional)"
+                                    className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 text-sm sm:text-base"
+                                    disabled={isSubmitting}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowLocationField(false)}
+                                    className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm"
+                                    title="Hide location"
+                                    aria-label="Hide location"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        </div>
                     )}
                         
                         {/* Media Preview */}
@@ -308,6 +333,22 @@ export default function PostCreationForm({
                                 />
                             </label>
                             
+                            {showLocationInput && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowLocationField((v) => !v)}
+                                    className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                                    disabled={isSubmitting}
+                                    aria-expanded={showLocationField}
+                                    aria-controls="post-location-input"
+                                >
+                                    <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                    </svg>
+                                    <span className="text-sm font-medium">{showLocationField ? 'Hide location' : 'Add location'}</span>
+                                </button>
+                            )}
+
                             <button
                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                 className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
