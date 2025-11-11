@@ -5,6 +5,7 @@ import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
 import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
 import CompleteMovingJourney from '@/components/housemover/CompleteMovingJourney';
 import PropertyBasket from '@/components/housemover/chain-checker/PropertyBasket';
+import LocationAutocomplete from '@/components/community/shared/LocationAutocomplete';
 import { toast } from 'react-toastify';
 
 type TaskCategory = 'pre-move' | 'in-move' | 'post-move';
@@ -448,7 +449,12 @@ export default function MoveDetails({ auth, moveDetails, taskData }: MoveDetails
                                         <>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">Current Address</label>
-                                                <input type="text" value={personalDetails.currentAddress} onChange={e => updatePersonalDetail('currentAddress', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-[#1A237E] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:border-[#00BCD4]" placeholder="Enter your current address" />
+                                                <LocationAutocomplete
+                                                    value={personalDetails.currentAddress}
+                                                    onChange={(value) => updatePersonalDetail('currentAddress', value)}
+                                                    placeholder="Enter your current address"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-[#1A237E] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:border-[#00BCD4]"
+                                                />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">Target Move Date</label>
