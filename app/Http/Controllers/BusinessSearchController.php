@@ -46,8 +46,13 @@ class BusinessSearchController extends Controller
             });
         }
 
-        // For now, we'll skip location and rating filtering since we don't have that data yet
-        // These can be implemented when we add location and rating fields to the business profiles
+        // Filter by location (if implemented in the future)
+        if (!empty($validated['location'])) {
+            // TODO: Implement location filtering when location field is added to business_profiles
+        }
+
+        // For now, we'll filter by rating in the results transformation since we're using mock ratings
+        $ratingFilter = $validated['rating'] ?? null;
 
         $limit = $validated['limit'] ?? 10;
         $offset = $validated['offset'] ?? 0;
@@ -59,7 +64,10 @@ class BusinessSearchController extends Controller
         $businesses = $query->skip($offset)->take($limit)->get();
 
         // Transform the data to include logo URLs
-        $results = $businesses->map(function ($business) {
+        $results = $businesses->map(function ($business) use ($ratingFilter) {
+            // Generate a consistent mock rating based on business ID for demo purposes
+            $mockRating = (($business->id % 3) + 3); // Will generate 3, 4, or 5 based on ID
+            
             return [
                 'id' => $business->id,
                 'name' => $business->name,
@@ -68,22 +76,37 @@ class BusinessSearchController extends Controller
                 'logo_url' => $business->logo_path ? Storage::url($business->logo_path) : null,
                 'plan' => $business->plan ?? 'basic',
                 'user_name' => $business->user->name ?? 'Business Owner',
-                'rating' => rand(3, 5), // Mock rating for now
+                'rating' => $mockRating,
                 'verified' => rand(0, 1) === 1, // Mock verification status
                 'response_time' => 'Usually responds within ' . rand(1, 4) . ' hours',
                 'availability' => 'Available: ' . (rand(0, 1) ? 'Weekdays and Weekends' : 'Weekdays only'),
             ];
         });
 
+        // Apply rating filter to the results (exact rating match only)
+        if ($ratingFilter) {
+            $results = $results->filter(function ($business) use ($ratingFilter) {
+                // Show only businesses with the exact rating selected
+                return $business['rating'] == $ratingFilter;
+            });
+            // Reset collection keys after filtering
+            $results = $results->values();
+        }
+
         return response()->json([
             'success' => true,
             'results' => $results,
-            'total' => $totalCount,
+            'total' => $results->count(), // Use filtered count
             'returned' => $results->count(),
             'limit' => $limit,
             'offset' => $offset,
-            'has_more' => ($offset + $limit) < $totalCount,
+            'has_more' => false, // Simplified for filtered results
             'query' => $validated,
+            'filters_applied' => [
+                'rating' => $ratingFilter,
+                'location' => $validated['location'] ?? null,
+                'service' => $validated['service'] ?? null,
+            ],
         ]);
     }
 

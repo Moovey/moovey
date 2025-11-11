@@ -80,11 +80,11 @@ export default function OptimizedHeroSearchSection({
     // Memoize search parameters to prevent unnecessary re-renders
     const searchParams = useMemo(() => ({
         query: searchQuery,
-        location: selectedLocation !== 'Your Location' ? selectedLocation : '',
+        location: selectedRegion !== 'Location...' ? selectedRegion : '',
         service: selectedService !== "I'm looking for a..." ? selectedService : '',
         rating: ratingFilter,
         keywords: keywordsInput.trim(),
-    }), [searchQuery, selectedLocation, selectedService, ratingFilter, keywordsInput]);
+    }), [searchQuery, selectedRegion, selectedService, ratingFilter, keywordsInput]);
 
     const handleSearch = useCallback(() => {
         onSearch(searchParams);
@@ -96,29 +96,65 @@ export default function OptimizedHeroSearchSection({
         }
     }, [handleSearch]);
 
+    // Auto-search when location filter changes
+    const handleLocationChange = useCallback((location: string) => {
+        setSelectedRegion(location);
+        if (location !== 'Location...') {
+            // Trigger search with new location after a short delay
+            setTimeout(() => {
+                onSearch({
+                    query: searchQuery,
+                    location: location,
+                    service: selectedService !== "I'm looking for a..." ? selectedService : '',
+                    rating: ratingFilter,
+                    keywords: keywordsInput.trim(),
+                });
+            }, 300);
+        }
+    }, [searchQuery, selectedService, ratingFilter, keywordsInput, onSearch, setSelectedRegion]);
+
+    // Auto-search when rating filter changes
+    const handleRatingChange = useCallback((rating: string) => {
+        setRatingFilter(rating);
+        if (rating !== '') {
+            // Trigger search with new rating after a short delay
+            setTimeout(() => {
+                onSearch({
+                    query: searchQuery,
+                    location: selectedRegion !== 'Location...' ? selectedRegion : '',
+                    service: selectedService !== "I'm looking for a..." ? selectedService : '',
+                    rating: rating,
+                    keywords: keywordsInput.trim(),
+                });
+            }, 300);
+        }
+    }, [searchQuery, selectedRegion, selectedService, keywordsInput, onSearch, setRatingFilter]);
+
     // Optimized popular service click handler
     const handlePopularServiceClick = useCallback((service: string) => {
         setSelectedService(service);
         
+        // Create updated search params with the selected service
+        const updatedSearchParams = {
+            query: searchQuery,
+            location: selectedRegion !== 'Location...' ? selectedRegion : '',
+            service: service,
+            rating: ratingFilter,
+            keywords: keywordsInput.trim(),
+        };
+        
         // Use cached data if available for instant results
         const cachedData = tradeDirectoryCache.get(`search-${service.toLowerCase()}`);
         if (cachedData) {
-            // Trigger search with cached data
-            onSearch({
-                ...searchParams,
-                service: service
-            });
+            // Trigger search with cached data and current filters
+            onSearch(updatedSearchParams);
         } else {
-            // Fallback to regular search
-            setSelectedService(service);
+            // Fallback to regular search with current filters
             setTimeout(() => {
-                onSearch({
-                    ...searchParams,
-                    service: service
-                });
+                onSearch(updatedSearchParams);
             }, 0);
         }
-    }, [searchParams, onSearch, setSelectedService]);
+    }, [searchQuery, selectedRegion, ratingFilter, keywordsInput, onSearch, setSelectedService]);
 
     // Memoize popular service buttons
     const popularServiceButtons = useMemo(() => 
@@ -211,17 +247,6 @@ export default function OptimizedHeroSearchSection({
                                     disabled={isSearching}
                                     className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-900 placeholder-gray-500 border-2 border-gray-300 rounded-lg sm:rounded-l-xl sm:rounded-r-none focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
                                 />
-                                <select
-                                    value={selectedLocation}
-                                    onChange={(e) => setSelectedLocation(e.target.value)}
-                                    disabled={isSearching}
-                                    className="px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-900 border-2 border-gray-300 sm:border-l-0 rounded-lg sm:rounded-none focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
-                                >
-                                    <option className="text-gray-900">Your Location</option>
-                                    {locations.map((location) => (
-                                        <option key={location} value={location} className="text-gray-900">{location}</option>
-                                    ))}
-                                </select>
                                 <button 
                                     onClick={handleSearch}
                                     disabled={isSearching}
@@ -261,9 +286,13 @@ export default function OptimizedHeroSearchSection({
                             
                             <select
                                 value={selectedRegion}
-                                onChange={(e) => setSelectedRegion(e.target.value)}
+                                onChange={(e) => handleLocationChange(e.target.value)}
                                 disabled={isSearching}
-                                className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-900 border-2 border-gray-300 rounded-lg focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
+                                className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-900 border-2 rounded-lg focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50 transition-colors ${
+                                    selectedRegion !== 'Location...' 
+                                        ? 'border-[#17B7C7] bg-blue-50 font-medium' 
+                                        : 'border-gray-300'
+                                }`}
                             >
                                 <option className="text-gray-900">Location...</option>
                                 {locations.map((location) => (
@@ -273,14 +302,18 @@ export default function OptimizedHeroSearchSection({
                             
                             <select
                                 value={ratingFilter}
-                                onChange={(e) => setRatingFilter(e.target.value)}
+                                onChange={(e) => handleRatingChange(e.target.value)}
                                 disabled={isSearching}
-                                className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-900 border-2 border-gray-300 rounded-lg focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
+                                className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-900 border-2 rounded-lg focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50 transition-colors ${
+                                    ratingFilter !== '' 
+                                        ? 'border-[#17B7C7] bg-blue-50 font-medium' 
+                                        : 'border-gray-300'
+                                }`}
                             >
-                                <option value="" className="text-gray-900">Ratings</option>
-                                <option value="5" className="text-gray-900">5 Stars</option>
-                                <option value="4" className="text-gray-900">4+ Stars</option>
-                                <option value="3" className="text-gray-900">3+ Stars</option>
+                                <option value="" className="text-gray-900">All Ratings</option>
+                                <option value="5" className="text-gray-900">⭐⭐⭐⭐⭐ 5 Stars Only</option>
+                                <option value="4" className="text-gray-900">⭐⭐⭐⭐ 4 Stars Only</option>
+                                <option value="3" className="text-gray-900">⭐⭐⭐ 3 Stars Only</option>
                             </select>
                             
                             <input
@@ -293,6 +326,7 @@ export default function OptimizedHeroSearchSection({
                                 className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-900 placeholder-gray-500 border-2 border-gray-300 rounded-lg focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
                             />
                         </div>
+                        
                         
                         {/* Service Filters Explanation */}
                         <div className="mt-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-2">
