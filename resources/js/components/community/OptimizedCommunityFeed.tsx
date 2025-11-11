@@ -272,6 +272,24 @@ export default function OptimizedCommunityFeed({
         }, 0);
     }, [posts, onPostsChange]);
 
+    // Handle post deletion
+    const handlePostDelete = useCallback((deletedPostId: string | number) => {
+        const newPosts = posts.filter(p => String(p.id) !== String(deletedPostId));
+        onPostsChange(newPosts);
+        
+        // Update pagination count
+        onPaginationChange({
+            ...pagination,
+            total: Math.max(0, pagination.total - 1)
+        });
+        
+        // Defer cache update
+        setTimeout(() => {
+            postCache.set('community-posts', newPosts);
+            postCache.invalidatePattern('posts-page-.*');
+        }, 0);
+    }, [posts, pagination, onPostsChange, onPaginationChange]);
+
     return (
         <section className="py-8 sm:py-12 lg:py-16 px-3 sm:px-6 lg:px-8 bg-gray-50">
             <div className="max-w-7xl mx-auto">
@@ -336,6 +354,8 @@ export default function OptimizedCommunityFeed({
                                             post={post}
                                             isAuthenticated={isAuthenticated}
                                             onPostChange={handlePostChange}
+                                            onPostDelete={handlePostDelete}
+                                            currentUserId={currentUser?.id}
                                         />
                                     ))
                                 ) : (

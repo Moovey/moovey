@@ -1,13 +1,16 @@
-import { useState, useCallback, memo, useMemo } from 'react';
+import { useState, useCallback, memo, useMemo, useEffect } from 'react';
 import { CommunityPost } from '@/types/community';
 import UserAvatar from './UserAvatar';
 import PostInteractions from './PostInteractions';
 import CommentSection from './CommentSection';
+import { toast } from 'react-toastify';
 
 interface PostCardProps {
     post: CommunityPost;
     isAuthenticated?: boolean;
     onPostChange: (updatedPost: CommunityPost) => void;
+    onPostDelete?: (postId: string | number) => void;
+    currentUserId?: string | number;
 }
 
 // Memoized image component to prevent unnecessary re-renders
@@ -82,14 +85,43 @@ const PostVideo = memo(({ video }: { video: string }) => (
 
 PostVideo.displayName = 'PostVideo';
 
-const OptimizedPostCard = memo(({ 
+const OptimizedPostCard = memo(function OptimizedPostCard({ 
     post, 
     isAuthenticated = false, 
-    onPostChange 
-}: PostCardProps) => {
+    onPostChange,
+    onPostDelete,
+    currentUserId 
+}: PostCardProps) {
     const [showComments, setShowComments] = useState(false);
     const [comments, setComments] = useState<any[]>([]);
     const [commentsLoaded, setCommentsLoaded] = useState(false);
+    const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            // Don't close if clicking on the button or dropdown itself
+            if (target.closest('.options-menu-container')) {
+                return;
+            }
+            if (showOptionsMenu) {
+                setShowOptionsMenu(false);
+            }
+        };
+
+        if (showOptionsMenu) {
+            // Add a small delay to prevent immediate closing
+            setTimeout(() => {
+                document.addEventListener('click', handleClickOutside);
+            }, 100);
+        }
+
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [showOptionsMenu]);
 
     // Memoize computed values
     const isSharedPost = useMemo(() => post.post_type === 'shared' && post.original_post, [post]);
@@ -162,8 +194,8 @@ const OptimizedPostCard = memo(({
                     setComments(data.comments || []);
                     setCommentsLoaded(true);
                 }
-            } catch (error) {
-                console.error('Failed to load comments:', error);
+                } catch (error) {
+                // Silently handle error
             }
         }
     }, [showComments, commentsLoaded, isSharedPost, post]);
@@ -188,6 +220,57 @@ const OptimizedPostCard = memo(({
         };
         onPostChange(updatedPost);
     }, [post, isSharedPost, onPostChange]);
+
+    // Check if current user can delete this post
+    const canDeletePost = useMemo(() => {
+        return isAuthenticated && 
+               currentUserId && 
+               (currentUserId.toString() === post.user_id.toString());
+    }, [isAuthenticated, currentUserId, post.user_id]);
+
+    const handleDeletePost = useCallback(async () => {
+        if (!canDeletePost || isDeleting) return;
+
+        const confirmDelete = window.confirm('Are you sure you want to delete this post? This action cannot be undone.');
+        if (!confirmDelete) return;
+
+        setIsDeleting(true);
+        
+        try {
+            const response = await fetch(`/api/community/posts/${post.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                credentials: 'same-origin',
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                toast.success('Post deleted successfully!', {
+                    position: 'top-right',
+                    autoClose: 3000,
+                });
+                
+                // Call the onPostDelete callback to remove from parent state
+                if (onPostDelete) {
+                    onPostDelete(post.id);
+                }
+            } else {
+                throw new Error(data.message || 'Failed to delete post');
+            }
+        } catch (error) {
+            toast.error('Failed to delete post. Please try again.', {
+                position: 'top-right',
+                autoClose: 5000,
+            });
+        } finally {
+            setIsDeleting(false);
+            setShowOptionsMenu(false);
+        }
+    }, [post.id, canDeletePost, isDeleting, onPostDelete]);
 
     return (
         <div className="border-b border-gray-100 pb-4 sm:pb-6 lg:pb-8 last:border-b-0">
@@ -221,20 +304,80 @@ const OptimizedPostCard = memo(({
                     
                     {/* Original post content */}
                     <div className={isSharedPost ? "bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4" : ""}>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-1 sm:space-y-0 sm:space-x-3 mb-2 sm:mb-3">
-                            <button 
-                                onClick={() => window.location.href = `/user/${displayUserId}`}
-                                className="font-semibold text-sm sm:text-base text-[#1A237E] hover:text-[#17B7C7] transition-colors cursor-pointer"
-                            >
-                                {displayUserName}
-                            </button>
-                            <span className="text-xs sm:text-sm text-gray-500">
-                                {isSharedPost ? displayPost.timestamp : post.timestamp}
-                            </span>
-                            {displayLocation && (
-                                <span className="text-xs bg-[#E0F7FA] text-[#1A237E] px-2 py-1 rounded-full mt-1 sm:mt-0">
-                                    📍 {displayLocation}
+                        <div className="flex items-start justify-between mb-2 sm:mb-3">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-1 sm:space-y-0 sm:space-x-3 flex-1">
+                                <button 
+                                    onClick={() => window.location.href = `/user/${displayUserId}`}
+                                    className="font-semibold text-sm sm:text-base text-[#1A237E] hover:text-[#17B7C7] transition-colors cursor-pointer"
+                                >
+                                    {displayUserName}
+                                </button>
+                                <span className="text-xs sm:text-sm text-gray-500">
+                                    {isSharedPost ? displayPost.timestamp : post.timestamp}
                                 </span>
+                                {displayLocation && (
+                                    <span className="text-xs bg-[#E0F7FA] text-[#1A237E] px-2 py-1 rounded-full mt-1 sm:mt-0">
+                                        📍 {displayLocation}
+                                    </span>
+                                )}
+                            </div>
+                            
+                            {/* Post Options Menu */}
+                            {canDeletePost && (
+                                <div className="relative ml-2 options-menu-container">
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setShowOptionsMenu(!showOptionsMenu);
+                                        }}
+                                        className={`p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer ${
+                                            showOptionsMenu ? 'bg-gray-100' : ''
+                                        }`}
+                                        aria-label="Post options"
+                                        type="button"
+                                    >
+                                        <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                        </svg>
+                                    </button>
+                                    
+                                    {/* Dropdown Menu */}
+                                    {showOptionsMenu && (
+                                        <div 
+                                            className="absolute right-0 top-10 bg-white border border-gray-200 rounded-lg shadow-xl z-50 min-w-[140px] py-1"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    handleDeletePost();
+                                                }}
+                                                disabled={isDeleting}
+                                                className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                                                type="button"
+                                            >
+                                                {isDeleting ? (
+                                                    <span className="flex items-center">
+                                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                        </svg>
+                                                        Deleting...
+                                                    </span>
+                                                ) : (
+                                                    <>
+                                                        <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                        Delete Post
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
                         <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4 leading-relaxed">{displayContent}</p>
