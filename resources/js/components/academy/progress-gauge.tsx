@@ -47,17 +47,24 @@ export default function ProgressGauge({ totalLessons, completedLessons, isAuthen
     }, [completedLessons, totalLessons]);
 
     return (
-        <div className="inline-flex flex-col items-center bg-white rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 py-6 sm:py-8 shadow-lg border border-gray-200 mb-6 sm:mb-8 w-full max-w-sm mx-auto">
+        <div className="inline-flex flex-col items-center">
             {/* Gauge */}
             <div className="relative mb-3 sm:mb-4">
-                <svg viewBox="0 0 200 120" className="w-40 h-20 xs:w-44 xs:h-22 sm:w-52 sm:h-28 md:w-60 md:h-32 lg:w-64 lg:h-34" shapeRendering="geometricPrecision">
+                <svg viewBox="0 0 200 120" className="w-48 h-24 xs:w-52 xs:h-26 sm:w-60 sm:h-32 md:w-72 md:h-38 lg:w-80 lg:h-42" shapeRendering="geometricPrecision">
+                    <defs>
+                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#00BCD4" />
+                            <stop offset="50%" stopColor="#00D4AA" />
+                            <stop offset="100%" stopColor="#10B981" />
+                        </linearGradient>
+                    </defs>
                     {/* Background Arc */}
                     <path
                         d="M 20 100 A 80 80 0 0 1 180 100"
                         fill="none"
                         stroke="#E5E7EB"
-                        strokeWidth="20"
-                        strokeLinecap="round"
+                        strokeWidth="40"
+                        strokeLinecap="butt"
                     />
 
                     {/* Progress Arc - Dynamic based on animated progress */}
@@ -65,9 +72,9 @@ export default function ProgressGauge({ totalLessons, completedLessons, isAuthen
                         <path
                             d="M 20 100 A 80 80 0 0 1 180 100"
                             fill="none"
-                            stroke="#00BCD4"
-                            strokeWidth="16"
-                            strokeLinecap="round"
+                            stroke="url(#progressGradient)"
+                            strokeWidth="40"
+                            strokeLinecap="butt"
                             pathLength={100}
                             strokeDasharray="100"
                             strokeDashoffset={100 - animatedProgress * 100}
@@ -81,37 +88,21 @@ export default function ProgressGauge({ totalLessons, completedLessons, isAuthen
                     {totalLessons > 0 && (
                         <g>
                             {/* Needle shadow for depth */}
-                            <line
-                                x1="100"
-                                y1="100"
-                                x2={100 + 70 * Math.cos(Math.PI * animatedProgress - Math.PI) + 1}
-                                y2={100 + 70 * Math.sin(Math.PI * animatedProgress - Math.PI) + 1}
+                            <polygon
+                                points={`100,100 ${100 + 90 * Math.cos(Math.PI * animatedProgress - Math.PI) + 1},${100 + 90 * Math.sin(Math.PI * animatedProgress - Math.PI) + 1} ${100 + 100 * Math.cos(Math.PI * animatedProgress - Math.PI) + 1},${100 + 100 * Math.sin(Math.PI * animatedProgress - Math.PI) + 1}`}
+                                fill="rgba(0, 0, 0, 0.2)"
                                 stroke="rgba(0, 0, 0, 0.2)"
-                                strokeWidth="6"
-                                strokeLinecap="round"
+                                strokeWidth="12"
+                                strokeLinejoin="round"
                             />
                             
                             {/* Main needle */}
-                            <line
-                                x1="100"
-                                y1="100"
-                                x2={100 + 70 * Math.cos(Math.PI * animatedProgress - Math.PI)}
-                                y2={100 + 70 * Math.sin(Math.PI * animatedProgress - Math.PI)}
+                            <polygon
+                                points={`100,100 ${100 + 90 * Math.cos(Math.PI * animatedProgress - Math.PI)},${100 + 90 * Math.sin(Math.PI * animatedProgress - Math.PI)} ${100 + 100 * Math.cos(Math.PI * animatedProgress - Math.PI)},${100 + 100 * Math.sin(Math.PI * animatedProgress - Math.PI)}`}
+                                fill="#1F2937"
                                 stroke="#1F2937"
-                                strokeWidth="6"
-                                strokeLinecap="round"
-                                style={{
-                                    transition: 'none', // Remove transition since we're animating manually
-                                    filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))'
-                                }}
-                            />
-                            
-                            {/* Needle tip indicator */}
-                            <circle 
-                                cx={100 + 70 * Math.cos(Math.PI * animatedProgress - Math.PI)}
-                                cy={100 + 70 * Math.sin(Math.PI * animatedProgress - Math.PI)}
-                                r="4" 
-                                fill="#00BCD4"
+                                strokeWidth="12"
+                                strokeLinejoin="round"
                                 style={{
                                     transition: 'none', // Remove transition since we're animating manually
                                     filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))'
@@ -143,7 +134,7 @@ export default function ProgressGauge({ totalLessons, completedLessons, isAuthen
                 <div className="text-2xl xs:text-3xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                     {completedLessons} <span className="text-gray-500 text-lg xs:text-xl sm:text-2xl md:text-3xl">of</span> {totalLessons}
                 </div>
-                <div className="bg-gray-600 text-white text-xs xs:text-sm sm:text-sm md:text-base px-3 xs:px-4 py-1 sm:py-1.5 rounded-full font-medium">
+                <div className="text-white text-xs xs:text-sm sm:text-sm md:text-base px-3 py-1.5 rounded-full font-medium inline-block" style={{backgroundColor: '#8C9099'}}>
                     Lessons Completed
                 </div>
                 {!isAuthenticated && (
