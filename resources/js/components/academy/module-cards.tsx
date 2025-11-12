@@ -240,28 +240,26 @@ export default function ModuleCards({
                                                                     !lesson.is_accessible
                                                                         ? 'bg-white bg-opacity-10' 
                                                                         : lesson.is_completed
-                                                                        ? 'bg-white bg-opacity-20' 
+                                                                        ? 'bg-green-500' 
                                                                         : lesson.is_accessible && !lesson.is_completed
                                                                         ? 'bg-white' 
                                                                         : 'bg-white bg-opacity-10'
                                                                 }`}>
-                                                                    <span className={`text-xs ${
-                                                                        !lesson.is_accessible
-                                                                            ? 'opacity-50' 
-                                                                            : lesson.is_completed
-                                                                            ? 'text-white' 
-                                                                            : lesson.is_accessible && !lesson.is_completed
-                                                                            ? 'text-[#00BCD4]' 
-                                                                            : 'text-white opacity-50'
-                                                                    }`}>
-                                                                        {!lesson.is_accessible
-                                                                            ? '🔒' 
-                                                                            : lesson.is_completed
-                                                                            ? '✓' 
-                                                                            : lesson.is_accessible && !lesson.is_completed
-                                                                            ? '→' 
-                                                                            : '◦'}
-                                                                    </span>
+                                                                    {!lesson.is_accessible ? (
+                                                                        <svg className="w-3 h-3 text-white opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                    ) : lesson.is_completed ? (
+                                                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                        </svg>
+                                                                    ) : lesson.is_accessible && !lesson.is_completed ? (
+                                                                        <svg className="w-4 h-4 text-[#00BCD4]" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <div className="w-2 h-2 rounded-full bg-white opacity-50"></div>
+                                                                    )}
                                                                 </div>
                                                                 <button 
                                                                     onClick={() => lesson.is_accessible && handleBeginProgress(stageName, metadata.badge)}
