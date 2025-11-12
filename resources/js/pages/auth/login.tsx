@@ -32,10 +32,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         post(route('login'), {
-            onSuccess: () => {
-                // Redirect to home page after successful login
-                window.location.href = route('home');
-            },
             onFinish: () => reset('password'),
         });
     };
