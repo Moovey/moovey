@@ -34,7 +34,7 @@ class LessonImageController extends Controller
         Log::info('Admin check passed, validating image...');
 
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp,bmp,tiff,ico|max:5120',
         ]);
 
         Log::info('Image validation passed');
@@ -55,73 +55,41 @@ class LessonImageController extends Controller
             
             // Store in storage/app/public/lesson_images using the public disk
             $path = $image->storeAs('lesson_images', $imageName, 'public');
-            Log::info('Image store attempt', [
-                'path' => $path, 
-                'full_path' => Storage::disk('public')->path($path),
-                'storage_exists' => Storage::disk('public')->exists($path)
-            ]);
+            Log::info('Image store attempt', ['path' => $path]);
             
             if (!$path) {
                 Log::error('Failed to store image - storeAs returned false');
                 throw new \Exception('Failed to store image file');
             }
             
-            $imagePath = Storage::disk('public')->path($path);
-            $fileExists = file_exists($imagePath);
-            $fileSize = $fileExists ? filesize($imagePath) : 0;
-            
-            Log::info('File existence check', [
-                'image_path' => $imagePath,
-                'file_exists' => $fileExists,
-                'file_size' => $fileSize
-            ]);
-            
-            if (!$fileExists) {
-                Log::error('Image file not found after storage attempt', [
-                    'expected_path' => $imagePath,
-                    'storage_result' => $path
-                ]);
-                
-                // Try alternative approach - move uploaded file directly
-                $targetPath = Storage::disk('public')->path('lesson_images/' . $imageName);
-                Log::info('Attempting manual file move', [
-                    'source' => $image->getPathname(),
-                    'target' => $targetPath,
-                    'source_exists' => file_exists($image->getPathname()),
-                    'target_dir_exists' => is_dir(dirname($targetPath)),
-                    'target_dir_writable' => is_writable(dirname($targetPath))
-                ]);
-                
-                if (!is_dir(dirname($targetPath))) {
-                    mkdir(dirname($targetPath), 0755, true);
-                    Log::info('Created target directory', ['dir' => dirname($targetPath)]);
-                }
-                
-                if (move_uploaded_file($image->getPathname(), $targetPath)) {
-                    Log::info('Alternative file move succeeded', ['path' => $targetPath]);
-                    $fileExists = true;
-                    $fileSize = filesize($targetPath);
-                    $imagePath = $targetPath;
-                    $path = 'lesson_images/' . $imageName; // Update path for URL generation
-                } else {
-                    Log::error('Manual file move failed', [
-                        'source' => $image->getPathname(),
-                        'target' => $targetPath,
-                        'last_error' => error_get_last()
-                    ]);
-                    throw new \Exception('Failed to save image file using alternative method');
-                }
+            // Check if file was stored successfully using Laravel Storage
+            if (!Storage::disk('public')->exists($path)) {
+                Log::error('Image not found in storage after upload', ['path' => $path]);
+                throw new \Exception('Image was not saved to storage');
             }
             
-            // Generate the image URL using our direct serving route
-            $imageUrl = route('lesson.image', ['filename' => $imageName]);
+            // Generate the image URL - try multiple methods for compatibility
+            $imageUrl = null;
+            
+            // Try to generate URL using asset() helper (works if storage symlink exists)
+            $assetUrl = asset("storage/lesson_images/{$imageName}");
+            
+            // Check if we can access the file via the public path
+            $publicPath = public_path("storage/lesson_images/{$imageName}");
+            if (file_exists($publicPath)) {
+                $imageUrl = $assetUrl;
+                Log::info('Using asset URL - symlink exists', ['url' => $imageUrl]);
+            } else {
+                // Fallback to custom route for serving images
+                $imageUrl = route('lesson.image', ['filename' => $imageName]);
+                Log::info('Using custom route - symlink may not exist', ['url' => $imageUrl]);
+            }
             
             Log::info('Image uploaded successfully', [
                 'filename' => $imageName,
-                'path' => $imagePath,
+                'path' => $path,
                 'url' => $imageUrl,
-                'file_exists' => $fileExists,
-                'file_size' => $fileSize
+                'storage_exists' => Storage::disk('public')->exists($path)
             ]);
 
             return response()->json([
@@ -129,12 +97,11 @@ class LessonImageController extends Controller
                 'url' => $imageUrl,
                 'filename' => $imageName,
                 'debug' => [
-                    'direct_route_url' => $imageUrl,
+                    'path' => $path,
                     'asset_url' => asset("storage/lesson_images/{$imageName}"),
-                    'storage_url' => Storage::url("lesson_images/{$imageName}"),
-                    'file_path' => $imagePath,
-                    'file_exists' => file_exists($imagePath),
-                    'file_size' => file_exists($imagePath) ? filesize($imagePath) : 0,
+                    'route_url' => route('lesson.image', ['filename' => $imageName]),
+                    'storage_exists' => Storage::disk('public')->exists($path),
+                    'storage_size' => Storage::disk('public')->size($path),
                 ]
             ]);
         } catch (\Exception $e) {

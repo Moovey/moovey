@@ -194,7 +194,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
     const handleImageUpload = () => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'image/*,.webp';
+        input.accept = 'image/*';
         input.onchange = async (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (file) {
@@ -228,6 +228,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
                     const result = await response.json();
                     
                     if (result.success) {
+                        console.log('Image upload successful:', result);
                         
                         // Insert the image with selected size
                         if (editor && !editor.isDestroyed) {
@@ -247,12 +248,17 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
                                     style: inlineStyle
                                 }).run();
                             }
+                            
+                            // Show success message
+                            alert('Image uploaded successfully!');
                         }
                     } else {
-                        alert('Failed to upload image: ' + result.message);
+                        console.error('Image upload failed:', result);
+                        alert('Failed to upload image: ' + (result.message || 'Unknown error'));
                     }
                 } catch (error) {
-                    alert('Error uploading image. Please try again.');
+                    console.error('Image upload error:', error);
+                    alert('Error uploading image. Please check your connection and try again.\n\nError: ' + (error instanceof Error ? error.message : 'Unknown error'));
                 }
             }
         };

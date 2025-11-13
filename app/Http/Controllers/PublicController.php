@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -239,16 +240,48 @@ class PublicController extends Controller
     /**
      * Serve lesson images directly.
      */
-    public function lessonImage(string $filename): BinaryFileResponse
+    public function lessonImage(string $filename)
     {
-        $imagePath = public_path("storage/lesson_images/{$filename}");
-        
-        if (!file_exists($imagePath)) {
-            abort(404, 'Image not found');
+        // Security check: only allow safe filenames
+        if (!preg_match('/^[a-zA-Z0-9_\-\.]+$/', $filename)) {
+            abort(404, 'Invalid filename');
         }
         
-        $mimeType = mime_content_type($imagePath);
-        return response()->file($imagePath, ['Content-Type' => $mimeType]);
+        // Try public symlink path first
+        $publicPath = public_path("storage/lesson_images/{$filename}");
+        
+        if (file_exists($publicPath)) {
+            $mimeType = mime_content_type($publicPath);
+            return response()->file($publicPath, ['Content-Type' => $mimeType]);
+        }
+        
+        // Fallback to direct storage path (if symlink doesn't exist)
+        $storagePath = storage_path("app/public/lesson_images/{$filename}");
+        
+        if (file_exists($storagePath)) {
+            $mimeType = mime_content_type($storagePath);
+            return response()->file($storagePath, ['Content-Type' => $mimeType]);
+        }
+        
+        // Final fallback: try using Storage facade
+        if (Storage::disk('public')->exists("lesson_images/{$filename}")) {
+            $content = Storage::disk('public')->get("lesson_images/{$filename}");
+            
+            // Determine MIME type based on file extension
+            $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+            $mimeTypes = [
+                'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+                'png' => 'image/png', 'gif' => 'image/gif',
+                'webp' => 'image/webp', 'svg' => 'image/svg+xml',
+                'bmp' => 'image/bmp', 'tiff' => 'image/tiff',
+                'ico' => 'image/x-icon'
+            ];
+            $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
+            
+            return response($content, 200)->header('Content-Type', $mimeType);
+        }
+        
+        abort(404, 'Image not found');
     }
 
     /**
