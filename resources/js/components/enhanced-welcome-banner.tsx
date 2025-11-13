@@ -36,6 +36,7 @@ interface MoveSection {
 interface EnhancedWelcomeBannerProps {
     userName?: string;
     subtitle?: string;
+    showProgress?: boolean; // Whether to show the progress section
     taskData?: {
         recommendedTaskStates?: Record<string, Record<string, { completed: boolean; completedDate?: string }>>;
         customTasks?: Record<string, Array<SectionTask>>;
@@ -45,6 +46,7 @@ interface EnhancedWelcomeBannerProps {
 export default function EnhancedWelcomeBanner({ 
     userName = "Olivia", 
     subtitle,
+    showProgress = true, // Default to showing progress
     taskData 
 }: EnhancedWelcomeBannerProps) {
     // Get authenticated user from shared Inertia props
@@ -270,11 +272,13 @@ export default function EnhancedWelcomeBanner({
                     </div>
 
                     {/* Quick Stats */}
-                    <div className="bg-white bg-opacity-20 rounded-2xl p-4 backdrop-blur-sm">
-                        <div className="text-sm text-gray-700 mb-1">Your Progress</div>
-                        <div className="text-3xl font-bold text-gray-800 mb-2">{overallProgress}%</div>
-                        <div className="text-sm text-gray-600">Move Journey Complete</div>
-                    </div>
+                    {showProgress && (
+                        <div className="bg-white bg-opacity-20 rounded-2xl p-4 backdrop-blur-sm">
+                            <div className="text-sm text-gray-700 mb-1">Your Progress</div>
+                            <div className="text-3xl font-bold text-gray-800 mb-2">{overallProgress}%</div>
+                            <div className="text-sm text-gray-600">Move Journey Complete</div>
+                        </div>
+                    )}
                 </div>
             </div>
 

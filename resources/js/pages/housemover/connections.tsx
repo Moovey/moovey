@@ -4,6 +4,7 @@ import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
 import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
+import { useMoveProgress } from '@/hooks/useMoveProgress';
 
 interface CommunityMember {
     id: string;
@@ -74,6 +75,7 @@ interface SavedProvider {
 }
 
 export default function Connections() {
+    const { taskData } = useMoveProgress();
     const [networkFilter, setNetworkFilter] = useState<'all' | 'community' | 'business' | 'suggestions'>('all');
 
     const [communityMembers] = useState<CommunityMember[]>([
@@ -418,7 +420,7 @@ export default function Connections() {
         <DashboardLayout>
             <Head title="Connections" />
             
-            <EnhancedWelcomeBanner subtitle="Connect with others to earn community coins!" />
+            <EnhancedWelcomeBanner subtitle="Connect with others to earn community coins!" showProgress={true} taskData={taskData || undefined} />
 
             {/* Sub-Navigation Tabs */}
             <SubNavigationTabs

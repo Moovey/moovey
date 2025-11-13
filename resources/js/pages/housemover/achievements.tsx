@@ -4,6 +4,7 @@ import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
 import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
+import { useMoveProgress } from '@/hooks/useMoveProgress';
 import { 
     AchievementCelebrationModal, 
     AchievementCard, 
@@ -16,6 +17,7 @@ import {
 import type { Achievement } from '@/types/achievement';
 
 export default function Achievements() {
+    const { taskData } = useMoveProgress();
     const [filter, setFilter] = useState<'all' | 'earned' | 'in-progress' | 'locked'>('all');
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState('');
@@ -552,7 +554,7 @@ export default function Achievements() {
                 onClose={() => setShowCelebration(false)}
             />
             
-            <EnhancedWelcomeBanner subtitle="Unlock achievements to earn more coins!" />
+            <EnhancedWelcomeBanner subtitle="Unlock achievements to earn more coins!" showProgress={true} taskData={taskData || undefined} />
 
             {/* Sub-Navigation Tabs */}
             <SubNavigationTabs

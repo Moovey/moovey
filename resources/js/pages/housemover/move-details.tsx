@@ -387,7 +387,7 @@ export default function MoveDetails({ auth, moveDetails, taskData }: MoveDetails
             <Head title="My Move" />
 
             <div className="mb-8">
-                <EnhancedWelcomeBanner userName={auth.user.name} taskData={taskData} />
+                <EnhancedWelcomeBanner userName={auth.user.name} showProgress={true} taskData={taskData} />
             </div>
 
             <div>

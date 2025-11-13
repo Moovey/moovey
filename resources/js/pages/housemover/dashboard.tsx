@@ -959,7 +959,18 @@ export default function Dashboard({
             
             {/* Header Section - Enhanced Welcome Banner */}
             <div className="mb-8">
-                <EnhancedWelcomeBanner userName={auth.user.name} />
+                <EnhancedWelcomeBanner 
+                    userName={auth.user.name} 
+                    showProgress={true}
+                    taskData={{
+                        customTasks: Object.fromEntries(
+                            Object.entries(sectionTasks).map(([key, tasks]) => [
+                                key, 
+                                tasks.filter(task => task.isCustom)
+                            ])
+                        )
+                    }}
+                />
             </div>
 
             {/* Main Dashboard Container with Moovey Theme */}

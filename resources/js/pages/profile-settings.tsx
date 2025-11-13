@@ -5,6 +5,7 @@ import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
 import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
 import { toast } from 'react-toastify';
 import { getAvatarUrl, getFallbackAvatarUrl } from '@/utils/fileUtils';
+import { useMoveProgress } from '@/hooks/useMoveProgress';
 
 interface SecuritySettings {
     currentPassword: string;
@@ -25,6 +26,7 @@ interface NotificationPreferences {
 export default function ProfileSettings() {
     // Get authenticated user from shared Inertia props
     const { auth } = usePage().props as any;
+    const { taskData } = useMoveProgress();
 
     const emailVerified = useMemo(() => Boolean(auth?.user?.email_verified_at), [auth]);
 
@@ -281,7 +283,7 @@ export default function ProfileSettings() {
         <DashboardLayout>
             <Head title="Profile Settings" />
             
-            <EnhancedWelcomeBanner subtitle="Complete your profile to earn bonus coins!" />
+            <EnhancedWelcomeBanner subtitle="Complete your profile to earn bonus coins!" showProgress={true} taskData={taskData || undefined} />
 
             {/* Sub-Navigation Tabs */}
             <SubNavigationTabs
