@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import BusinessNavTabs from '@/components/business/BusinessNavTabs';
+import BusinessHeader from '@/components/business/BusinessHeader';
 
 export default function BusinessOverview() {
   return (
@@ -8,17 +9,11 @@ export default function BusinessOverview() {
       <Head title="Business Dashboard" />
 
       {/* Business Header */}
-      <div className="bg-gradient-to-r from-[#1A237E] to-[#3F51B5] text-white rounded-xl p-8 mb-8 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Welcome back!</h1>
-            <p className="text-lg opacity-90">Your Business Overview</p>
-          </div>
-          <div className="text-6xl">
-            <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-4xl">🏢</div>
-          </div>
-        </div>
-      </div>
+      <BusinessHeader 
+        title="Welcome back"
+        subtitle="Your Business Overview"
+        showAvatar={true}
+      />
 
       <BusinessNavTabs active="overview" />
 

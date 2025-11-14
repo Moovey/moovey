@@ -2,6 +2,7 @@ import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import BusinessNavTabs from '@/components/business/BusinessNavTabs';
+import BusinessHeader from '@/components/business/BusinessHeader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -200,15 +201,11 @@ export default function BusinessServices() {
       <Head title="Business Services" />
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#1A237E] to-[#3F51B5] text-white rounded-xl p-8 mb-8 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">My Services</h1>
-            <p className="text-lg opacity-90">Set up your Free Basic Listing</p>
-          </div>
-          <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-4xl">🛠️</div>
-        </div>
-      </div>
+      <BusinessHeader 
+        title="My Services"
+        subtitle="Set up your Free Basic Listing"
+        showAvatar={true}
+      />
 
       <BusinessNavTabs active="services" />
 

@@ -2,6 +2,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { useRef, FormEventHandler, useState, useMemo } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import BusinessNavTabs from '@/components/business/BusinessNavTabs';
+import BusinessHeader from '@/components/business/BusinessHeader';
 import { toast } from 'react-toastify';
 import { getAvatarUrl, getFallbackAvatarUrl } from '@/utils/fileUtils';
 
@@ -354,15 +355,11 @@ export default function BusinessSettings() {
         <DashboardLayout>
             <Head title="Business Settings" />
             
-            <div className="bg-gradient-to-r from-[#1A237E] to-[#3F51B5] text-white rounded-xl p-8 mb-8 shadow-lg">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold mb-2">Business Settings</h1>
-                        <p className="text-lg opacity-90">Manage your business account and preferences</p>
-                    </div>
-                    <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-4xl">⚙️</div>
-                </div>
-            </div>
+            <BusinessHeader 
+                title="Business Settings"
+                subtitle="Manage your business account and preferences"
+                showAvatar={true}
+            />
 
             <BusinessNavTabs active="settings" />
 
