@@ -11,7 +11,6 @@ export default function WelcomeFooter() {
                     <div className="space-y-4">
                         <div className="flex items-center space-x-2">
                             <AppLogo />
-                            <span className="text-xl font-bold">Moovey</span>
                         </div>
                         <p className="text-gray-400 text-sm leading-relaxed">
                             A portal of tools for every house move
@@ -22,8 +21,8 @@ export default function WelcomeFooter() {
                     <div>
                         <h3 className="text-lg font-semibold mb-4">Resources</h3>
                         <ul className="space-y-2">
-                            <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">My Moovey</a></li>
-                            <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">Moovey Academy</a></li>
+                            <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">My Dashboard</a></li>
+                            <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">Academy</a></li>
                             <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">Moving Guides</a></li>
                             <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">Press Enquiry</a></li>
                         </ul>
@@ -55,7 +54,7 @@ export default function WelcomeFooter() {
                 <div className="border-t border-gray-800 mt-12 pt-8">
                     <div className="flex flex-col md:flex-row justify-between items-center">
                         <div className="text-gray-400 text-sm mb-4 md:mb-0">
-                            © 2025 · Moovey · All rights reserved
+                            © 2025 · All rights reserved
                         </div>
                         <div className="flex space-x-6">
                             <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">
