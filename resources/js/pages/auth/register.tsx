@@ -80,10 +80,7 @@ export default function Register() {
                         >
                             <div className="text-center">
                                 <div className="mb-6">
-                                    <div className="w-48 h-48 mx-auto bg-[#E0F7FA] rounded-full flex items-center justify-center text-6xl">
-                                        🏠
-                                    </div>
-                                    {/* Replace with: <img src="/images/housemover-mascot.png" alt="Housemover Mascot" className="w-48 h-48 mx-auto object-contain" /> */}
+                                    <img src="/images/register_housemover.webp" alt="Housemover Registration" className="w-48 h-48 mx-auto object-contain" />
                                 </div>
                                 <h3 className="text-3xl font-bold text-gray-800 mb-4">
                                     Housemover
@@ -104,10 +101,7 @@ export default function Register() {
                         >
                             <div className="text-center">
                                 <div className="mb-6">
-                                    <div className="w-48 h-48 mx-auto bg-[#F5F5F5] rounded-full flex items-center justify-center text-6xl">
-                                        🏢
-                                    </div>
-                                    {/* Replace with: <img src="/images/business-mascot.png" alt="Business Mascot" className="w-48 h-48 mx-auto object-contain" /> */}
+                                    <img src="/images/register_business.webp" alt="Business Registration" className="w-48 h-48 mx-auto object-contain" />
                                 </div>
                                 <h3 className="text-3xl font-bold text-gray-800 mb-4">
                                     Business
