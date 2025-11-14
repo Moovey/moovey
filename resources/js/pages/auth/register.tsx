@@ -44,6 +44,9 @@ export default function Register() {
 
         post(route('register'), {
             onSuccess: () => {
+                // Show success message about welcome email
+                alert(`🎉 Welcome to Moovey! Your account has been created successfully.\n\n📧 Check your email (${data.email}) for a welcome message with next steps and important information about your ${selectedRole} account.`);
+                
                 // Redirect based on role using Laravel routes
                 if (data.role === 'business') {
                     window.location.href = route('business.dashboard');
