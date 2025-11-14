@@ -21,10 +21,10 @@ export default function WelcomeFooter() {
                     <div>
                         <h3 className="text-lg font-semibold mb-4">Resources</h3>
                         <ul className="space-y-2">
-                            <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">My Dashboard</a></li>
-                            <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">Academy</a></li>
-                            <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">Moving Guides</a></li>
-                            <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">Press Enquiry</a></li>
+                            <li><a href="/academy" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">Academy</a></li>
+                            <li><a href="/tools" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">Tools</a></li>
+                            <li><a href="/community" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">Community</a></li>
+                            <li><a href="/trade-directory" className="text-gray-400 hover:text-white transition-colors duration-200 text-sm">Trade Directory</a></li>
                         </ul>
                     </div>
 
