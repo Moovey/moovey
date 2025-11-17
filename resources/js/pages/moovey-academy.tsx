@@ -8,6 +8,7 @@ import LearningJourneyProgress from '@/components/academy/learning-journey-progr
 import ModuleCards from '@/components/academy/module-cards';
 import ArticlesSection from '@/components/academy/articles-section';
 import CtaSection from '@/components/academy/cta-section';
+import Breadcrumb from '@/components/Breadcrumb';
 
 interface Lesson {
     id: number;
@@ -130,6 +131,49 @@ export default function MooveyAcademy({
     return (
         <>
             <Head title="Moovey Academy - Your Learning Journey">
+                {/* SEO Meta Tags */}
+                <meta name="description" content="Master moving with our structured learning modules at Moovey Academy. Free e-learning courses, expert guidance, and comprehensive moving education to make your relocation journey smooth and stress-free." />
+                <meta name="keywords" content="moving academy, moving courses, relocation education, moving tips, house moving guide, moving school, free moving courses, UK moving education" />
+                <meta name="robots" content="index, follow" />
+                
+                {/* Open Graph Meta Tags */}
+                <meta property="og:title" content="Moovey Academy - Your Learning Journey" />
+                <meta property="og:description" content="Master moving with our structured learning modules at Moovey Academy. Free e-learning courses and expert guidance for your relocation journey." />
+                <meta property="og:image" content="/images/moovey-crest.webp" />
+                <meta property="og:url" content="https://moovey.com/academy" />
+                <meta property="og:type" content="website" />
+                
+                {/* Twitter Card */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content="Moovey Academy - Your Learning Journey" />
+                <meta name="twitter:description" content="Master moving with our structured learning modules at Moovey Academy." />
+                <meta name="twitter:image" content="/images/moovey-crest.webp" />
+                
+                {/* Canonical URL */}
+                <link rel="canonical" href="https://moovey.com/academy" />
+                
+                {/* Structured Data - Course */}
+                <script type="application/ld+json">
+                    {JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "Course",
+                        "name": "Moovey Academy - Moving Mastery Course",
+                        "description": "Comprehensive moving education covering all aspects of house relocation, from planning to settling in.",
+                        "provider": {
+                            "@type": "Organization",
+                            "name": "Moovey",
+                            "url": "https://moovey.com"
+                        },
+                        "educationalLevel": "Beginner to Advanced",
+                        "teaches": ["Moving Planning", "Logistics Management", "Property Research", "Moving Budgeting"],
+                        "courseMode": "online",
+                        "isAccessibleForFree": true,
+                        "inLanguage": "en-GB",
+                        "availableLanguage": "English"
+                    })}
+                </script>
+                
+                {/* Font Loading */}
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link rel="dns-prefetch" href="https://fonts.bunny.net" />
                 <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900&display=swap" rel="stylesheet" />
@@ -162,18 +206,31 @@ export default function MooveyAcademy({
             <div className="min-h-screen bg-white font-['Inter',sans-serif]">
                 <GlobalHeader currentPage="academy" />
 
-                {/* Hero Section with Moovey Crest */}
-                <section className="py-8 sm:py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
+                {/* Breadcrumb */}
+                <div className="bg-gray-50 py-3">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <Breadcrumb items={[
+                            { name: 'Home', href: '/' },
+                            { name: 'Academy', current: true }
+                        ]} />
+                    </div>
+                </div>
+
+                <main role="main" itemScope itemType="https://schema.org/EducationalOrganization">
+                    {/* Hero Section with Moovey Crest */}
+                    <section className="py-8 sm:py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
                     <div className="max-w-4xl mx-auto text-center">
                         {/* Moovey Crest Logo */}
                         <div className="mb-4 sm:mb-5 md:mb-6">
                             <div className="mx-auto">
                                 <img 
                                     src="/images/moovey-crest.webp" 
-                                    alt="Moovey Crest" 
+                                    alt="Moovey Academy Crest - Official logo of Moovey School of Moovology" 
                                     width="208"
                                     height="208"
                                     className="w-32 h-32 xs:w-36 xs:h-36 sm:w-40 sm:h-40 md:w-44 md:h-44 lg:w-48 lg:h-48 xl:w-52 xl:h-52 mx-auto object-contain"
+                                    loading="eager"
+                                    fetchPriority="high"
                                 />
                             </div>
                         </div>
@@ -221,8 +278,9 @@ export default function MooveyAcademy({
                 {/* What to Read Next */}
                 <ArticlesSection />
 
-                {/* Final CTA Section */}
-                <CtaSection />
+                    {/* Final CTA Section */}
+                    <CtaSection />
+                </main>
 
                 {/* Welcome Footer */}
                 <WelcomeFooter />

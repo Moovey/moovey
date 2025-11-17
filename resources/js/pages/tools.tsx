@@ -4,6 +4,7 @@ import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
 import { useToolPreloader } from '@/hooks/use-tool-preloader';
 import { usePerformanceMonitoring } from '@/hooks/use-performance-monitoring';
+import Breadcrumb from '@/components/Breadcrumb';
 
 // Memoized tool button component for better performance
 const ToolButton = memo(({ 
@@ -181,6 +182,53 @@ export default function Tools() {
     return (
         <>
             <Head title="Moovey Tools - Calculate Your Move">
+                {/* SEO Meta Tags */}
+                <meta name="description" content="Free moving calculators and tools to plan your perfect move. Calculate mortgage affordability, moving costs, volume requirements, and explore school catchment areas. Professional-grade tools for UK house movers." />
+                <meta name="keywords" content="moving calculator, mortgage calculator, affordability calculator, volume calculator, school catchment map, declutter list, moving tools, UK moving, house moving calculator, free moving tools" />
+                <meta name="robots" content="index, follow" />
+                
+                {/* Open Graph Meta Tags */}
+                <meta property="og:title" content="Moovey Tools - Calculate Your Move" />
+                <meta property="og:description" content="Free moving calculators and tools to plan your perfect move. Calculate costs, volume, and explore school catchments." />
+                <meta property="og:image" content="/images/tools-banner.webp" />
+                <meta property="og:url" content="https://moovey.com/tools" />
+                <meta property="og:type" content="website" />
+                
+                {/* Twitter Card */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content="Moovey Tools - Calculate Your Move" />
+                <meta name="twitter:description" content="Free moving calculators and tools to plan your perfect move." />
+                <meta name="twitter:image" content="/images/tools-banner.webp" />
+                
+                {/* Canonical URL */}
+                <link rel="canonical" href="https://moovey.com/tools" />
+                
+                {/* Structured Data - WebApplication */}
+                <script type="application/ld+json">
+                    {JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "WebApplication",
+                        "name": "Moovey Moving Tools",
+                        "description": "Suite of professional moving calculators and planning tools",
+                        "url": "https://moovey.com/tools",
+                        "applicationCategory": "UtilityApplication",
+                        "operatingSystem": "Web Browser",
+                        "offers": {
+                            "@type": "Offer",
+                            "price": "0",
+                            "priceCurrency": "GBP"
+                        },
+                        "featureList": [
+                            "Mortgage Calculator",
+                            "Affordability Calculator", 
+                            "School Catchment Map",
+                            "Volume Calculator",
+                            "Declutter List"
+                        ]
+                    })}
+                </script>
+                
+                {/* Font Loading */}
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900&display=swap" rel="stylesheet" />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -191,7 +239,18 @@ export default function Tools() {
             <div className="min-h-screen bg-white font-['Inter',sans-serif]">
                 <GlobalHeader currentPage="tools" />
 
-                {/* Small Header Banner - Fully Responsive */}
+                {/* Breadcrumb */}
+                <div className="bg-gray-50 py-3">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <Breadcrumb items={[
+                            { name: 'Home', href: '/' },
+                            { name: 'Tools', current: true }
+                        ]} />
+                    </div>
+                </div>
+
+                <main role="main" itemScope itemType="https://schema.org/WebApplication">
+                    {/* Small Header Banner - Fully Responsive */}
                 <section 
                     className="pt-4 px-3 xs:pt-6 xs:px-4 sm:pt-8 sm:px-6 md:px-8 lg:px-12 xl:px-16 relative bg-cover bg-center bg-no-repeat min-h-[360px] flex flex-col"
                     style={{
@@ -247,8 +306,8 @@ export default function Tools() {
                     </div>
                 </section>
 
-                {/* Tools Cards Section */}
-                <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+                    {/* Tools Cards Section */}
+                    <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
                     <div className="max-w-6xl mx-auto">
                         <div className="space-y-8">
                             {tools.map((tool, index) => (
@@ -357,9 +416,8 @@ export default function Tools() {
                             ))}
                         </div>
                     </div>
-                </section>
-
-
+                    </section>
+                </main>
 
                 {/* Welcome Footer */}
                 <WelcomeFooter />

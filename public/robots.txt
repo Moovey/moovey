@@ -1,2 +1,22 @@
 User-agent: *
-Disallow:
+Allow: /
+
+# Sitemap
+Sitemap: https://moovey.com/sitemap.xml
+
+# Disallow private areas
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /storage/
+Disallow: /vendor/
+
+# Allow important pages
+Allow: /
+Allow: /academy
+Allow: /tools
+Allow: /community
+Allow: /trade-directory
+
+# Crawl-delay for courtesy
+Crawl-delay: 1
