@@ -8,7 +8,6 @@ import LearningJourneyProgress from '@/components/academy/learning-journey-progr
 import ModuleCards from '@/components/academy/module-cards';
 import ArticlesSection from '@/components/academy/articles-section';
 import CtaSection from '@/components/academy/cta-section';
-import Breadcrumb from '@/components/Breadcrumb';
 
 interface Lesson {
     id: number;
@@ -205,16 +204,6 @@ export default function MooveyAcademy({
             
             <div className="min-h-screen bg-white font-['Inter',sans-serif]">
                 <GlobalHeader currentPage="academy" />
-
-                {/* Breadcrumb */}
-                <div className="bg-gray-50 py-3">
-                    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <Breadcrumb items={[
-                            { name: 'Home', href: '/' },
-                            { name: 'Academy', current: true }
-                        ]} />
-                    </div>
-                </div>
 
                 <main role="main" itemScope itemType="https://schema.org/EducationalOrganization">
                     {/* Hero Section with Moovey Crest */}

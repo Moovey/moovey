@@ -4,7 +4,6 @@ import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
 import { useToolPreloader } from '@/hooks/use-tool-preloader';
 import { usePerformanceMonitoring } from '@/hooks/use-performance-monitoring';
-import Breadcrumb from '@/components/Breadcrumb';
 
 // Memoized tool button component for better performance
 const ToolButton = memo(({ 
@@ -238,16 +237,6 @@ export default function Tools() {
             
             <div className="min-h-screen bg-white font-['Inter',sans-serif]">
                 <GlobalHeader currentPage="tools" />
-
-                {/* Breadcrumb */}
-                <div className="bg-gray-50 py-3">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <Breadcrumb items={[
-                            { name: 'Home', href: '/' },
-                            { name: 'Tools', current: true }
-                        ]} />
-                    </div>
-                </div>
 
                 <main role="main" itemScope itemType="https://schema.org/WebApplication">
                     {/* Small Header Banner - Fully Responsive */}
