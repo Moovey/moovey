@@ -29,6 +29,10 @@ const ValuePropCard: React.FC<{ prop: any }> = ({ prop }) => {
                     <img 
                         src="/images/moovey-crest.webp" 
                         alt="Moovey Crest" 
+                        width="40"
+                        height="40"
+                        loading="lazy"
+                        decoding="async"
                         className="w-8 h-8 md:w-10 md:h-10 object-contain"
                     />
                 );
@@ -37,6 +41,10 @@ const ValuePropCard: React.FC<{ prop: any }> = ({ prop }) => {
                     <img 
                         src="/images/trade-directory-logo.webp" 
                         alt="Trade Directory Logo" 
+                        width="40"
+                        height="40"
+                        loading="lazy"
+                        decoding="async"
                         className="w-8 h-8 md:w-10 md:h-10 object-contain"
                     />
                 );
@@ -45,6 +53,10 @@ const ValuePropCard: React.FC<{ prop: any }> = ({ prop }) => {
                     <img 
                         src="/images/community-logo.webp" 
                         alt="Community Logo" 
+                        width="40"
+                        height="40"
+                        loading="lazy"
+                        decoding="async"
                         className="w-8 h-8 md:w-10 md:h-10 object-contain"
                     />
                 );

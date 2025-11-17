@@ -40,7 +40,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                     <div className="flex items-center">
                         <Link href="/" className="flex items-center">
                             <img 
-                                src="/images/moovey-logo.png" 
+                                src="/images/moovey-logo.webp" 
                                 alt="Moovey" 
                                 className="h-14 sm:h-16 md:h-18 lg:h-20 xl:h-24 2xl:h-28 w-auto"
                                 onError={(e) => {
@@ -222,7 +222,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                     {/* Mobile Menu Header */}
                     <div className="flex items-center justify-between p-6 border-b border-gray-200">
                         <img 
-                            src="/images/moovey-logo.png" 
+                            src="/images/moovey-logo.webp" 
                             alt="Moovey" 
                             className="h-10 sm:h-12 w-auto"
                             onError={(e) => {

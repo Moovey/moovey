@@ -29,10 +29,22 @@ export default defineConfig({
                     // Separate CSS-heavy dependencies into their own chunks
                     'leaflet': ['leaflet'],
                     'react-toastify': ['react-toastify'],
+                    // Separate React-related chunks for better caching
+                    'react-vendor': ['react', 'react-dom'],
+                    'inertia': ['@inertiajs/react'],
                 },
             },
         },
         // Optimize CSS loading
         cssCodeSplit: true,
+        // Optimize asset handling
+        assetsInlineLimit: 4096,
+        // Optimize chunk size
+        chunkSizeWarningLimit: 500,
+    },
+    // Add performance optimizations
+    optimizeDeps: {
+        include: ['react', 'react-dom', '@inertiajs/react'],
+        exclude: ['@vite/client', '@vite/env'],
     },
 });

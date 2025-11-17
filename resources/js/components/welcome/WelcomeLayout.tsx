@@ -6,10 +6,22 @@ import HeroBanner from '@/components/welcome/sections/HeroBanner';
 import ValuePropsSection from '@/components/welcome/sections/ValuePropsSection';
 import SectionSkeleton from '@/components/welcome/sections/SectionSkeleton';
 
-// Lazy load components for better performance
-const CommunityFeedSection = React.lazy(() => import('@/components/welcome/community-feed-section'));
-const ToolsShowcase = React.lazy(() => import('@/components/welcome/tools-showcase'));
-const TestimonialsSection = React.lazy(() => import('@/components/welcome/testimonials-section'));
+// Lazy load components for better performance with optimized loading
+const CommunityFeedSection = React.lazy(() => 
+    import('@/components/welcome/community-feed-section').then(module => ({ 
+        default: module.default 
+    }))
+);
+const ToolsShowcase = React.lazy(() => 
+    import('@/components/welcome/tools-showcase').then(module => ({ 
+        default: module.default 
+    }))
+);
+const TestimonialsSection = React.lazy(() => 
+    import('@/components/welcome/testimonials-section').then(module => ({ 
+        default: module.default 
+    }))
+);
 
 // Hooks and constants
 import { useWelcomeStats } from '@/hooks/welcome/useWelcomeStats';
@@ -20,7 +32,7 @@ import { HERO_DATA_ARRAY, VALUE_PROPS } from '@/constants/welcome';
 const CommunityFeedSkeleton = () => (
     <div className="py-12 md:py-20 bg-gray-100">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-            <SectionSkeleton height="h-64 md:h-80" />
+            <div className="h-64 md:h-80 bg-gray-200 rounded-2xl" />
         </div>
     </div>
 );
@@ -28,15 +40,11 @@ const CommunityFeedSkeleton = () => (
 const ToolsShowcaseSkeleton = () => (
     <div className="py-12 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-            <div className="h-64 md:h-80 bg-gray-100 animate-pulse rounded-2xl">
+            <div className="h-64 md:h-80 bg-gray-100 rounded-2xl">
                 <div className="p-8 space-y-4">
                     <div className="h-8 md:h-12 bg-gray-300 rounded w-3/4 mx-auto"></div>
                     <div className="h-4 md:h-6 bg-gray-300 rounded w-1/2 mx-auto"></div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {[...Array(4)].map((_, i) => (
-                            <div key={i} className="h-24 md:h-32 bg-gray-300 rounded"></div>
-                        ))}
-                    </div>
+                    <div className="h-32 bg-gray-300 rounded mx-auto w-80"></div>
                 </div>
             </div>
         </div>
@@ -46,19 +54,7 @@ const ToolsShowcaseSkeleton = () => (
 const TestimonialsSkeleton = () => (
     <div className="py-12 md:py-20 bg-gradient-to-br from-[#E0F7FA] via-white to-[#F3E5F5]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-            <div className="h-64 md:h-80 bg-white/50 animate-pulse rounded-2xl">
-                <div className="p-8 space-y-4">
-                    <div className="h-8 md:h-12 bg-gray-300 rounded w-3/4 mx-auto"></div>
-                    <div className="h-4 md:h-6 bg-gray-300 rounded w-1/2 mx-auto"></div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div className="space-y-3">
-                            <div className="h-20 md:h-24 bg-gray-300 rounded"></div>
-                            <div className="h-20 md:h-24 bg-gray-300 rounded"></div>
-                        </div>
-                        <div className="h-44 md:h-52 bg-gray-300 rounded"></div>
-                    </div>
-                </div>
-            </div>
+            <div className="h-64 md:h-80 bg-white/50 rounded-2xl" />
         </div>
     </div>
 );
@@ -67,16 +63,21 @@ export default function WelcomeLayout() {
     const { cachedStats } = useWelcomeStats();
     const { heroBanners, currentImageIndex, setCurrentImageIndex } = useHeroBanner();
 
+
+
     return (
         <>
             <Head title="Welcome to Moovey - Your Moving Journey Starts Here">
                 <link rel="preconnect" href="https://fonts.bunny.net" />
-                <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700" rel="stylesheet" />
+                <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
                 {/* Preload critical resources */}
                 <link rel="preload" href="/images/hero-banner2.webp" as="image" />
                 <link rel="preload" href="/images/hero-banner3.webp" as="image" />
                 <link rel="preload" href="/images/hero-banner4.webp" as="image" />
+                <link rel="dns-prefetch" href="https://fonts.bunny.net" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 <meta name="description" content="Moovey empowers you with free e-learning, tools, trade connections, and a community for a seamless moving journey." />
+                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
             </Head>
             
             <div className="bg-gradient-to-br from-[#f0f9ff] via-white to-[#f9f5f0] min-h-screen font-sans">

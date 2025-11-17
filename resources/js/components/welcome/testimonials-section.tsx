@@ -124,7 +124,7 @@ const TestimonialsSection = memo(({ stats }: TestimonialsSectionProps) => {
                         {/* Left Moovey Logo */}
                         <div className="hidden md:block">
                             <img 
-                                src="/images/moovey-logo.png" 
+                                src="/images/moovey-logo.webp" 
                                 alt="Moovey Logo" 
                                 className="h-16 w-auto opacity-70"
                             />

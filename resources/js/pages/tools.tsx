@@ -182,7 +182,7 @@ export default function Tools() {
         <>
             <Head title="Moovey Tools - Calculate Your Move">
                 <link rel="preconnect" href="https://fonts.bunny.net" />
-                <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900" rel="stylesheet" />
+                <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900&display=swap" rel="stylesheet" />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
@@ -195,7 +195,7 @@ export default function Tools() {
                 <section 
                     className="pt-4 px-3 xs:pt-6 xs:px-4 sm:pt-8 sm:px-6 md:px-8 lg:px-12 xl:px-16 relative bg-cover bg-center bg-no-repeat min-h-[360px] flex flex-col"
                     style={{
-                        background: `linear-gradient(135deg, #8ae2eb 0%, #eafffe 100%), url('/images/tools-background.png')`,
+                        background: `linear-gradient(135deg, #8ae2eb 0%, #eafffe 100%), url('/images/tools-background.webp')`,
                         backgroundSize: 'cover, cover',
                         backgroundPosition: 'center, center',
                         backgroundRepeat: 'no-repeat, no-repeat',
@@ -263,6 +263,10 @@ export default function Tools() {
                                                 <img 
                                                     src="/images/Mortgage-Calculator.webp" 
                                                     alt="Mortgage Calculator" 
+                                                    width="320"
+                                                    height="240"
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     className="w-full h-auto object-contain max-w-xs"
                                                 />
                                             )}
@@ -270,6 +274,10 @@ export default function Tools() {
                                                 <img 
                                                     src="/images/Affordability-Calculator.webp" 
                                                     alt="Affordability Calculator" 
+                                                    width="320"
+                                                    height="240"
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     className="w-full h-auto object-contain max-w-xs"
                                                 />
                                             )}
@@ -277,6 +285,10 @@ export default function Tools() {
                                                 <img 
                                                     src="/images/School-Catchment-Map.webp" 
                                                     alt="School Catchment Map" 
+                                                    width="320"
+                                                    height="240"
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     className="w-full h-auto object-contain max-w-xs"
                                                 />
                                             )}
@@ -284,6 +296,10 @@ export default function Tools() {
                                                 <img 
                                                     src="/images/Volume-Calculator.webp" 
                                                     alt="Volume Calculator" 
+                                                    width="320"
+                                                    height="240"
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     className="w-full h-auto object-contain max-w-xs"
                                                 />
                                             )}
@@ -291,6 +307,10 @@ export default function Tools() {
                                                 <img 
                                                     src="/images/Declutter-List.webp" 
                                                     alt="Declutter List" 
+                                                    width="320"
+                                                    height="240"
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     className="w-full h-auto object-contain max-w-xs"
                                                 />
                                             )}
