@@ -261,35 +261,35 @@ export default function Tools() {
                                         <div className="lg:w-1/3 p-4 flex items-center justify-center bg-white">
                                             {tool.icon === 'mortgage' && (
                                                 <img 
-                                                    src="/images/Mortgage-Calculator.png" 
+                                                    src="/images/Mortgage-Calculator.webp" 
                                                     alt="Mortgage Calculator" 
                                                     className="w-full h-auto object-contain max-w-xs"
                                                 />
                                             )}
                                             {tool.icon === 'affordability' && (
                                                 <img 
-                                                    src="/images/Affordability-Calculator.png" 
+                                                    src="/images/Affordability-Calculator.webp" 
                                                     alt="Affordability Calculator" 
                                                     className="w-full h-auto object-contain max-w-xs"
                                                 />
                                             )}
                                             {tool.icon === 'school' && (
                                                 <img 
-                                                    src="/images/School-Catchment-Map.png" 
+                                                    src="/images/School-Catchment-Map.webp" 
                                                     alt="School Catchment Map" 
                                                     className="w-full h-auto object-contain max-w-xs"
                                                 />
                                             )}
                                             {tool.icon === 'volume' && (
                                                 <img 
-                                                    src="/images/Volume-Calculator.png" 
+                                                    src="/images/Volume-Calculator.webp" 
                                                     alt="Volume Calculator" 
                                                     className="w-full h-auto object-contain max-w-xs"
                                                 />
                                             )}
                                             {tool.icon === 'declutter' && (
                                                 <img 
-                                                    src="/images/Declutter-List.png" 
+                                                    src="/images/Declutter-List.webp" 
                                                     alt="Declutter List" 
                                                     className="w-full h-auto object-contain max-w-xs"
                                                 />

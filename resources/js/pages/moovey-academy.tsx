@@ -169,7 +169,7 @@ export default function MooveyAcademy({
                         <div className="mb-4 sm:mb-5 md:mb-6">
                             <div className="mx-auto">
                                 <img 
-                                    src="/images/moovey-crest.png" 
+                                    src="/images/moovey-crest.webp" 
                                     alt="Moovey Crest" 
                                     className="w-32 h-32 xs:w-36 xs:h-36 sm:w-40 sm:h-40 md:w-44 md:h-44 lg:w-48 lg:h-48 xl:w-52 xl:h-52 mx-auto object-contain"
                                 />

@@ -95,14 +95,14 @@ const ToolsShowcase = memo(() => {
 
     const getToolImageBackground = (iconType: string) => {
         const imageMap: { [key: string]: string } = {
-            'home': '/images/Mortgage-Calculator.png',
-            'calculator': '/images/Affordability-Calculator.png',
-            'map': '/images/School-Catchment-Map.png',
-            'box': '/images/Volume-Calculator.png',
-            'trash': '/images/Declutter-List.png'
+            'home': '/images/Mortgage-Calculator.webp',
+            'calculator': '/images/Affordability-Calculator.webp',
+            'map': '/images/School-Catchment-Map.webp',
+            'box': '/images/Volume-Calculator.webp',
+            'trash': '/images/Declutter-List.webp'
         };
 
-        const imageSrc = imageMap[iconType] || '/images/Mortgage-Calculator.png';
+        const imageSrc = imageMap[iconType] || '/images/Mortgage-Calculator.webp';
         
         return {
             backgroundImage: `url('${imageSrc}')`,

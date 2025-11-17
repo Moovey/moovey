@@ -27,7 +27,7 @@ const ValuePropCard: React.FC<{ prop: any }> = ({ prop }) => {
             case 'moovey-crest':
                 return (
                     <img 
-                        src="/images/moovey-crest.png" 
+                        src="/images/moovey-crest.webp" 
                         alt="Moovey Crest" 
                         className="w-8 h-8 md:w-10 md:h-10 object-contain"
                     />
@@ -35,7 +35,7 @@ const ValuePropCard: React.FC<{ prop: any }> = ({ prop }) => {
             case 'professionals':
                 return (
                     <img 
-                        src="/images/trade-directory-logo.png" 
+                        src="/images/trade-directory-logo.webp" 
                         alt="Trade Directory Logo" 
                         className="w-8 h-8 md:w-10 md:h-10 object-contain"
                     />
@@ -43,7 +43,7 @@ const ValuePropCard: React.FC<{ prop: any }> = ({ prop }) => {
             case 'tasks':
                 return (
                     <img 
-                        src="/images/community-logo.png" 
+                        src="/images/community-logo.webp" 
                         alt="Community Logo" 
                         className="w-8 h-8 md:w-10 md:h-10 object-contain"
                     />
