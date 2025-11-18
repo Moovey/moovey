@@ -42,7 +42,8 @@ export default function ContentHeader({ filteredItemsCount, filters, onFiltersCh
                 </p>
             </div>
             
-            <div className="flex items-center gap-3">
+            {/* Hide sort/view controls on mobile to keep only search visible */}
+            <div className="hidden sm:flex items-center gap-3">
                 <div className="relative" ref={dropdownRef}>
                     <button
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}

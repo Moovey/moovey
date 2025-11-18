@@ -20,8 +20,8 @@ export default function MarketplaceSidebar({
 }: MarketplaceSidebarProps) {
     return (
         <div className={`lg:w-80 flex-shrink-0 space-y-6 ${isVisible ? 'block' : 'hidden lg:block'}`}>
-            {/* Navigation Menu */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            {/* Navigation Menu (hide on mobile) */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 hidden md:block">
                 <div className="p-6">
                     <div className="flex items-center gap-2 mb-4">
                         <div className="w-8 h-8 bg-[#17B7C7] rounded-lg flex items-center justify-center">
@@ -44,38 +44,8 @@ export default function MarketplaceSidebar({
                             </div>
                         </button>
                         
-                        <button className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-6h6v6z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <div className="font-medium">Notifications</div>
-                                <div className="text-sm text-gray-500">Activity updates</div>
-                            </div>
-                            <div className="ml-auto">
-                                <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">2</span>
-                            </div>
-                        </button>
-                        
-                        <button className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <div className="font-medium">Inbox</div>
-                                <div className="text-sm text-gray-500">Your messages</div>
-                            </div>
-                            <div className="ml-auto">
-                                <span className="bg-green-500 text-white text-xs rounded-full px-2 py-1">3</span>
-                            </div>
-                        </button>
-                        
                         <Link 
-                            href="/tools?tool=4"
+                            href="/tools/declutter-list"
                             className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                         >
                             <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -92,7 +62,7 @@ export default function MarketplaceSidebar({
                 </div>
             </div>
 
-            {/* Search Bar */}
+            {/* Search Bar (show on all viewports) */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="relative">
                     <input
@@ -101,6 +71,7 @@ export default function MarketplaceSidebar({
                         value={filters.searchTerm}
                         onChange={(e) => onFiltersChange({ searchTerm: e.target.value })}
                         className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900 placeholder-gray-500"
+                        aria-label="Search marketplace"
                     />
                     <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -108,8 +79,8 @@ export default function MarketplaceSidebar({
                 </div>
             </div>
 
-            {/* Location Filter */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            {/* Location Filter (hide on mobile) */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hidden md:block">
                 <h4 className="text-md font-medium text-gray-900 mb-4">Location</h4>
                 <div className="space-y-3">
                     <div className="relative">
@@ -143,8 +114,8 @@ export default function MarketplaceSidebar({
                 </div>
             </div>
 
-            {/* Category Filter */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            {/* Category Filter (hide on mobile) */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hidden md:block">
                 <h4 className="text-md font-medium text-gray-900 mb-4">Categories</h4>
                 <div className="space-y-2">
                     <button
@@ -173,8 +144,8 @@ export default function MarketplaceSidebar({
                 </div>
             </div>
 
-            {/* Price Range Filter */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            {/* Price Range Filter (hide on mobile) */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hidden md:block">
                 <h4 className="text-md font-medium text-gray-900 mb-4">Price Range</h4>
                 <div className="space-y-4">
                     <div className="flex gap-3">
@@ -224,8 +195,8 @@ export default function MarketplaceSidebar({
                 </div>
             </div>
 
-            {/* Condition Filter */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            {/* Condition Filter (hide on mobile) */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hidden md:block">
                 <h4 className="text-md font-medium text-gray-900 mb-4">Condition</h4>
                 <div className="space-y-2">
                     <button
@@ -260,34 +231,10 @@ export default function MarketplaceSidebar({
                 </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h4 className="text-md font-medium text-gray-900 mb-4">Marketplace Stats</h4>
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Total Items</span>
-                        <span className="font-semibold text-gray-900">{items.length}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Filtered Results</span>
-                        <span className="font-semibold text-[#17B7C7]">{filteredItems.length}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Average Price</span>
-                        <span className="font-semibold text-gray-900">
-                            £{filteredItems.length > 0 ? Math.round(filteredItems.reduce((sum, item) => sum + item.estimated_value, 0) / filteredItems.length) : 0}
-                        </span>
-                    </div>
-                    <div className="pt-3 border-t border-gray-100">
-                        <div className="text-xs text-gray-500 text-center">
-                            Updated {new Date().toLocaleDateString()}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {/* Quick Stats removed per request */}
 
-            {/* Helpful Tips */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
+            {/* Helpful Tips (hide on mobile) */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6 hidden md:block">
                 <div className="flex items-center gap-2 mb-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                         <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

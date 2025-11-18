@@ -252,22 +252,39 @@ export default function Marketplace() {
                 {/* Main Content */}
                 <section className="py-8 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
-                        <MobileFiltersToggle 
-                            sidebarOpen={sidebarOpen}
-                            onToggle={() => setSidebarOpen(!sidebarOpen)}
-                        />
+                        {/* Mobile: show only a full-width search bar; no filters toggle */}
+                        <div className="lg:hidden mb-6">
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Search marketplace..."
+                                        value={filters.searchTerm}
+                                        onChange={(e) => handleFiltersChange({ searchTerm: e.target.value })}
+                                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17B7C7] focus:border-transparent text-gray-900 placeholder-gray-500"
+                                        aria-label="Search marketplace"
+                                    />
+                                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
 
                         <div className="flex flex-col lg:flex-row gap-8">
-                            <Suspense fallback={<SidebarSkeleton isVisible={sidebarOpen} />}>
-                                <LazyMarketplaceSidebar
-                                    filters={filters}
-                                    onFiltersChange={handleFiltersChange}
-                                    categories={categories}
-                                    items={items}
-                                    filteredItems={filteredItems}
-                                    isVisible={sidebarOpen}
-                                />
-                            </Suspense>
+                            {/* Hide the full filter sidebar on mobile; keep it for md+ */}
+                            <div className="hidden md:block">
+                                <Suspense fallback={<SidebarSkeleton isVisible={sidebarOpen} />}>
+                                    <LazyMarketplaceSidebar
+                                        filters={filters}
+                                        onFiltersChange={handleFiltersChange}
+                                        categories={categories}
+                                        items={items}
+                                        filteredItems={filteredItems}
+                                        isVisible={sidebarOpen}
+                                    />
+                                </Suspense>
+                            </div>
 
                             {/* Right Content Area - Items Grid */}
                             <div className="flex-1">
@@ -277,6 +294,7 @@ export default function Marketplace() {
                                     onFiltersChange={handleFiltersChange}
                                 />
 
+                                {/* Show active filter chips on all viewports */}
                                 <ActiveFilters 
                                     filters={filters}
                                     onRemoveFilter={handleRemoveFilter}
