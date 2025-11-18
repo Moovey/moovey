@@ -1,10 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import GlobalHeader from '@/components/global-header';
-import WelcomeFooter from '@/components/welcome/welcome-footer';
 import {
     MarketplaceHero,
-    MarketplaceSidebar,
     MarketplaceItemsGrid,
     ActiveFilters,
     MobileFiltersToggle,
@@ -13,7 +11,34 @@ import {
     type Filters,
     type MarketplaceStats
 } from '@/components/marketplace';
-import ItemDetailModal from '@/components/marketplace/ItemDetailModal';
+// Lazy-load below-the-fold components
+const WelcomeFooter = lazy(() => import('@/components/welcome/welcome-footer'));
+const ItemDetailModal = lazy(() => import('@/components/marketplace/ItemDetailModal'));
+const LazyMarketplaceSidebar = lazy(() => import('@/components/marketplace/MarketplaceSidebar'));
+
+// Hoisted constants to avoid re-creation on each render
+const INITIAL_FILTERS = {
+    category: 'all' as const,
+    condition: 'all' as const,
+    priceMin: 0,
+    priceMax: 1000,
+    location: '',
+    searchTerm: '',
+    sortBy: 'newest' as const
+};
+
+const CATEGORIES = [
+    'Furniture',
+    'Electronics',
+    'Clothing',
+    'Books',
+    'Kitchen Items',
+    'Home Decor',
+    'Toys',
+    'Sports Equipment',
+    'Garden Items',
+    'Other'
+];
 
 export default function Marketplace() {
     const [items, setItems] = useState<MarketplaceItem[]>([]);
@@ -57,15 +82,7 @@ export default function Marketplace() {
         }
     };
 
-    const [filters, setFilters] = useState<Filters>({
-        category: 'all',
-        condition: 'all',
-        priceMin: 0,
-        priceMax: 1000,
-        location: '',
-        searchTerm: '',
-        sortBy: 'newest'
-    });
+    const [filters, setFilters] = useState<Filters>({ ...INITIAL_FILTERS });
 
     // Load marketplace items from API
     useEffect(() => {
@@ -74,7 +91,6 @@ export default function Marketplace() {
             try {
                 const response = await fetch('/api/marketplace/items');
                 const data = await response.json();
-                console.log('Marketplace API response:', data); // Debug log
                 if (data.success && data.items) {
                     setItems(data.items);
                     setFilteredItems(data.items);
@@ -146,19 +162,8 @@ export default function Marketplace() {
         setFilters(prev => ({ ...prev, ...newFilters }));
     };
 
-    // Define categories
-    const categories = [
-        'Furniture',
-        'Electronics',
-        'Clothing',
-        'Books',
-        'Kitchen Items',
-        'Home Decor',
-        'Toys',
-        'Sports Equipment',
-        'Garden Items',
-        'Other'
-    ];
+    // Categories (hoisted)
+    const categories = CATEGORIES;
 
     // Prepare marketplace stats
     const marketplaceStats: MarketplaceStats = {
@@ -190,15 +195,7 @@ export default function Marketplace() {
 
     // Clear all filters
     const clearAllFilters = () => {
-        setFilters({
-            category: 'all',
-            condition: 'all',
-            priceMin: 0,
-            priceMax: 1000,
-            location: '',
-            searchTerm: '',
-            sortBy: 'newest'
-        });
+        setFilters({ ...INITIAL_FILTERS });
     };
 
     // Handle item click to open modal
@@ -212,6 +209,22 @@ export default function Marketplace() {
         setIsModalOpen(false);
         setSelectedItem(null);
     };
+
+    // Idle prefetch for lazies
+    useEffect(() => {
+        const idle = (cb: () => void) => {
+            if ('requestIdleCallback' in window) {
+                (window as any).requestIdleCallback(cb);
+            } else {
+                setTimeout(cb, 500);
+            }
+        };
+        idle(() => {
+            import('@/components/welcome/welcome-footer');
+            import('@/components/marketplace/ItemDetailModal');
+            import('@/components/marketplace/MarketplaceSidebar');
+        });
+    }, []);
 
     return (
         <>
@@ -234,14 +247,16 @@ export default function Marketplace() {
                         />
 
                         <div className="flex flex-col lg:flex-row gap-8">
-                            <MarketplaceSidebar
-                                filters={filters}
-                                onFiltersChange={handleFiltersChange}
-                                categories={categories}
-                                items={items}
-                                filteredItems={filteredItems}
-                                isVisible={sidebarOpen}
-                            />
+                            <Suspense fallback={<SidebarSkeleton isVisible={sidebarOpen} />}>
+                                <LazyMarketplaceSidebar
+                                    filters={filters}
+                                    onFiltersChange={handleFiltersChange}
+                                    categories={categories}
+                                    items={items}
+                                    filteredItems={filteredItems}
+                                    isVisible={sidebarOpen}
+                                />
+                            </Suspense>
 
                             {/* Right Content Area - Items Grid */}
                             <div className="flex-1">
@@ -269,19 +284,62 @@ export default function Marketplace() {
                     </div>
                 </section>
 
-                <WelcomeFooter />
+                <Suspense fallback={<div className="py-10" aria-hidden="true"></div>}>
+                    <WelcomeFooter />
+                </Suspense>
             </div>
 
             {/* Item Detail Modal */}
             {selectedItem && (
-                <ItemDetailModal
-                    item={selectedItem}
-                    isOpen={isModalOpen}
-                    onClose={handleModalClose}
-                    getImageUrl={getImageUrl}
-                    handleImageError={handleImageError}
-                />
+                <Suspense fallback={null}>
+                    <ItemDetailModal
+                        item={selectedItem}
+                        isOpen={isModalOpen}
+                        onClose={handleModalClose}
+                        getImageUrl={getImageUrl}
+                        handleImageError={handleImageError}
+                    />
+                </Suspense>
             )}
         </>
+    );
+}
+
+function SidebarSkeleton({ isVisible }: { isVisible: boolean }) {
+    return (
+        <div className={`lg:w-80 flex-shrink-0 space-y-6 ${isVisible ? 'block' : 'hidden lg:block'}`} aria-hidden="true">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="h-6 w-32 bg-gray-200 rounded mb-4 animate-pulse"></div>
+                <div className="space-y-3">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="h-10 w-full bg-gray-100 rounded-lg animate-pulse"></div>
+                    ))}
+                </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="h-10 w-full bg-gray-100 rounded-lg animate-pulse"></div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="h-5 w-28 bg-gray-200 rounded mb-4 animate-pulse"></div>
+                <div className="space-y-2">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="h-8 w-full bg-gray-100 rounded-lg animate-pulse"></div>
+                    ))}
+                </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="h-5 w-28 bg-gray-200 rounded mb-4 animate-pulse"></div>
+                <div className="h-8 w-full bg-gray-100 rounded-lg animate-pulse mb-3"></div>
+                <div className="h-8 w-full bg-gray-100 rounded-lg animate-pulse"></div>
+            </div>
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
+                <div className="h-5 w-24 bg-blue-100 rounded mb-3 animate-pulse"></div>
+                <div className="space-y-2">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="h-3 w-full bg-blue-100 rounded animate-pulse"></div>
+                    ))}
+                </div>
+            </div>
+        </div>
     );
 }

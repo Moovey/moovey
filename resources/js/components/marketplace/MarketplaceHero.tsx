@@ -38,26 +38,22 @@ export default function MarketplaceHero({ stats }: MarketplaceHeroProps) {
                 <div className="flex-grow min-h-[10px] sm:min-h-[15px]"></div>
             </div>
             
-            {/* Banner Image at Absolute Bottom - Mobile Compact, Desktop Large */}
+            {/* Banner Image at Absolute Bottom - Responsive via picture to avoid double-fetch */}
             <div className="w-full flex justify-center items-center absolute bottom-0 left-0 right-0 z-10">
-                {/* Mobile Banner Image */}
-                <img 
-                    src="/images/marketplace-banner.webp" 
-                    alt="Marketplace Banner" 
-                    className="sm:hidden h-64 xs:h-72 w-auto object-contain max-w-[95%] block mx-auto"
-                    style={{
-                        filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
-                    }}
-                />
-                {/* Desktop Banner Image */}
-                <img 
-                    src="/images/marketplace-banner.webp" 
-                    alt="Marketplace Banner" 
-                    className="hidden sm:block h-48 md:h-56 lg:h-64 xl:h-72 2xl:h-80 w-auto object-contain max-w-[90%] md:max-w-[85%] lg:max-w-full mx-auto"
-                    style={{
-                        filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
-                    }}
-                />
+                <picture>
+                    <source media="(min-width: 640px)" srcSet="/images/marketplace-banner.webp" />
+                    <img
+                        src="/images/marketplace-banner.webp"
+                        alt="Marketplace Banner"
+                        fetchPriority="high"
+                        width={1200}
+                        height={480}
+                        className="h-64 xs:h-72 sm:h-48 md:h-56 lg:h-64 xl:h-72 2xl:h-80 w-auto object-contain max-w-[95%] sm:max-w-[90%] md:max-w-[85%] lg:max-w-full mx-auto"
+                        style={{
+                            filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
+                        }}
+                    />
+                </picture>
             </div>
         </section>
     );

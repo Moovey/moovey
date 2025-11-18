@@ -2,13 +2,15 @@ import { MarketplaceItem } from './types';
 
 interface MarketplaceItemCardProps {
     item: MarketplaceItem;
+    index: number;
     getImageUrl: (imagePath: string) => string;
     handleImageError: (e: React.SyntheticEvent<HTMLImageElement>, imagePath: string) => void;
     onItemClick: (item: MarketplaceItem) => void;
 }
 
 export default function MarketplaceItemCard({ 
-    item, 
+    item,
+    index,
     getImageUrl, 
     handleImageError,
     onItemClick 
@@ -46,6 +48,10 @@ export default function MarketplaceItemCard({
                         src={getImageUrl(item.images[0])}
                         alt={item.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        loading={index < 1 ? 'eager' : 'lazy'}
+                        decoding="async"
+                        width={600}
+                        height={600}
                         onError={(e) => handleImageError(e, item.images?.[0] || '')}
                         data-attempt="0"
                     />
