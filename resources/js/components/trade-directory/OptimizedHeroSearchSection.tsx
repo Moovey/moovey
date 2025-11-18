@@ -170,8 +170,8 @@ export default function OptimizedHeroSearchSection({
         )), [handlePopularServiceClick, isSearching]);
 
     return (
-        <section 
-            className="h-[360px] px-4 sm:px-6 lg:px-8 flex items-center relative bg-cover bg-center bg-no-repeat"
+        <section
+            className="h-[360px] px-4 sm:px-6 lg:px-8 relative bg-cover bg-center bg-no-repeat"
             style={{
                 background: `linear-gradient(135deg, #8ae2eb 0%, #eafffe 100%), url('/images/community-background.webp')`,
                 backgroundSize: 'cover, cover',
@@ -180,64 +180,36 @@ export default function OptimizedHeroSearchSection({
                 backgroundBlendMode: 'overlay'
             }}
         >
-            <div className="max-w-7xl mx-auto w-full relative z-10">
-                <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-center h-full">
-                    {/* Left Side - Mascot Image */}
-                    <div className="text-center lg:text-left order-2 lg:order-1 flex items-center justify-center">
-                        <div className="relative inline-block">
-                            {/* Mascot Image Container */}
-                            <div 
-                                className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 mx-auto relative rounded-full overflow-hidden"
-                            >
-                                {/* Loading placeholder */}
-                                {!imageLoaded && (
-                                    <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-full" />
-                                )}
-                                
-                                {/* Main image */}
-                                {!imageError && (
-                                    <div 
-                                        className={`w-full h-full bg-cover bg-center bg-no-repeat transition-opacity duration-300 ${
-                                            imageLoaded ? 'opacity-100' : 'opacity-0'
-                                        }`}
-                                        style={{
-                                            backgroundImage: 'url(/images/trade-directory-banner.webp)',
-                                        }}
-                                    />
-                                )}
-
-                                {/* Fallback content */}
-                                {imageError && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-[#17B7C7] rounded-full">
-                                        <span className="text-white text-6xl">🐄</span>
-                                    </div>
-                                )}
-
-                                {/* SEARCH Signs - keeping these as decorative overlays */}
-                                <div className="absolute top-12 sm:top-16 md:top-20 left-4 sm:left-6 md:left-8 bg-[#17B7C7] text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm font-bold transform -rotate-12 shadow-lg">
-                                    SEARCH
-                                </div>
-                                <div className="absolute top-20 sm:top-24 md:top-32 right-4 sm:right-6 md:right-8 bg-[#17B7C7] text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm font-bold transform rotate-12 shadow-lg">
-                                    FIND
-                                </div>
-                                
-                                {/* Decorative elements */}
-                                <div className="absolute top-2 sm:top-3 md:top-4 right-2 sm:right-3 md:right-4 text-[#17B7C7] text-lg sm:text-xl md:text-2xl drop-shadow-lg">⭐</div>
-                                <div className="absolute bottom-8 sm:bottom-10 md:bottom-12 left-2 sm:left-3 md:left-4 text-yellow-400 text-lg sm:text-xl drop-shadow-lg">◆</div>
-                                <div className="absolute top-20 sm:top-24 md:top-28 left-1 sm:left-1 md:left-2 text-[#17B7C7] text-base sm:text-lg drop-shadow-lg">●</div>
+            <div className="max-w-7xl mx-auto w-full relative z-10 h-full">
+                <div className="grid lg:grid-cols-2 gap-4 lg:gap-8 items-center h-full">
+                    {/* Left Side - Mascot Image (desktop only) */}
+                    <div className="hidden lg:flex items-center justify-center h-full order-2 lg:order-1">
+                        {!imageError ? (
+                            <img
+                                src="/images/trade-directory-banner.webp"
+                                alt="Moovey Mascot"
+                                onLoad={() => setImageLoaded(true)}
+                                onError={() => { setImageError(true); setImageLoaded(true); }}
+                                className={`h-60 xl:h-72 object-contain select-none pointer-events-none transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                                decoding="async"
+                                loading="lazy"
+                            />
+                        ) : (
+                            <div className="h-56 xl:h-64 flex items-center justify-center">
+                                <span className="text-7xl">🐄</span>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Right Side - Search Interface */}
-                    <div className="order-1 lg:order-2 flex flex-col justify-center">
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl font-bold text-[#17B7C7] mb-3 sm:mb-4 leading-tight text-center lg:text-left">
+                    <div className="order-1 lg:order-2 flex flex-col justify-start h-full pt-16 sm:pt-20">
+                        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#17B7C7] mb-2 sm:mb-3 leading-tight text-center lg:text-left">
                             Find Movers & Services
                         </h1>
                         
                         {/* Primary Search Bar */}
-                        <div className="mb-3 sm:mb-4">
-                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+                        <div className="mb-2 sm:mb-3">
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 w-full relative z-20">
                                 <input
                                     type="text"
                                     placeholder="Search for movers, services..."
@@ -245,12 +217,12 @@ export default function OptimizedHeroSearchSection({
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyPress={handleKeyPress}
                                     disabled={isSearching}
-                                    className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-900 placeholder-gray-500 border-2 border-gray-300 rounded-lg sm:rounded-l-xl sm:rounded-r-none focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50"
+                                    className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-900 placeholder-gray-500 border-2 border-gray-300 rounded-lg sm:rounded-l-xl sm:rounded-r-none focus:border-[#17B7C7] focus:outline-none bg-white disabled:opacity-50 shadow-sm"
                                 />
                                 <button 
                                     onClick={handleSearch}
                                     disabled={isSearching}
-                                    className="px-4 sm:px-6 py-2 sm:py-3 bg-[#17B7C7] text-white font-semibold rounded-lg sm:rounded-r-xl sm:rounded-l-none hover:bg-[#139AAA] transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="px-4 sm:px-6 py-2 sm:py-3 bg-[#17B7C7] text-white font-semibold rounded-lg sm:rounded-r-xl sm:rounded-l-none hover:bg-[#139AAA] transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
                                 >
                                     {isSearching ? (
                                         <>
@@ -264,14 +236,14 @@ export default function OptimizedHeroSearchSection({
                             </div>
                             
                             {/* Quick Service Tags */}
-                            <div className="mt-3 flex flex-wrap gap-2">
+                            <div className="mt-2 flex flex-wrap gap-2 max-h-[56px] overflow-y-auto">
                                 <span className="text-xs text-gray-600">Popular services:</span>
                                 {popularServiceButtons}
                             </div>
                         </div>
 
                         {/* Advanced Filters */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mt-1">
                             <select
                                 value={selectedService}
                                 onChange={(e) => setSelectedService(e.target.value)}
@@ -329,7 +301,7 @@ export default function OptimizedHeroSearchSection({
                         
                         
                         {/* Service Filters Explanation */}
-                        <div className="mt-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                        <div className="mt-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-2 hidden sm:block">
                             <div className="flex items-start space-x-1">
                                 <span className="text-blue-600 text-sm">💡</span>
                                 <div>
