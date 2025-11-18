@@ -229,8 +229,19 @@ export default function Marketplace() {
     return (
         <>
             <Head title="Moovey Marketplace - Buy & Sell Preloved Items">
-                <link rel="preconnect" href="https://fonts.bunny.net" />
-                <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900" rel="stylesheet" />
+                <link rel="preconnect" href="https://fonts.bunny.net" crossOrigin="" />
+                <link
+                    rel="preload"
+                    as="style"
+                    href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900&display=swap"
+                />
+                <link
+                    href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900&display=swap"
+                    rel="stylesheet"
+                />
+                {/* Preload hero imagery to improve LCP */}
+                <link rel="preload" as="image" href="/images/marketplace-banner.webp" />
+                <link rel="preload" as="image" href="/images/marketplace-background.webp" />
             </Head>
             
             <div className="min-h-screen bg-gray-50 font-['Inter',sans-serif]">

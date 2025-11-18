@@ -46,6 +46,8 @@ export default function MarketplaceHero({ stats }: MarketplaceHeroProps) {
                         src="/images/marketplace-banner.webp"
                         alt="Marketplace Banner"
                         fetchPriority="high"
+                        decoding="async"
+                        sizes="100vw"
                         width={1200}
                         height={480}
                         className="h-64 xs:h-72 sm:h-48 md:h-56 lg:h-64 xl:h-72 2xl:h-80 w-auto object-contain max-w-[95%] sm:max-w-[90%] md:max-w-[85%] lg:max-w-full mx-auto"

@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import MarketplaceItemCard from './MarketplaceItemCard';
+import { useEffect, useRef, useState } from 'react';
 import { MarketplaceItem } from './types';
 
 interface MarketplaceGridProps {
@@ -10,13 +11,42 @@ interface MarketplaceGridProps {
     onItemClick: (item: MarketplaceItem) => void;
 }
 
-export default function MarketplaceGrid({ 
-    items, 
-    loading, 
-    getImageUrl, 
+export default function MarketplaceGrid({
+    items,
+    loading,
+    getImageUrl,
     handleImageError,
-    onItemClick
+    onItemClick,
 }: MarketplaceGridProps) {
+    // Incremental rendering for better TTI and memory
+    const [visibleCount, setVisibleCount] = useState<number>(() => {
+        // Conservative initial render to reduce work on mobile
+        return 8;
+    });
+    const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        // Reset visible count when items change drastically
+        setVisibleCount(8);
+    }, [items.length]);
+
+    useEffect(() => {
+        if (!loadMoreRef.current) return;
+        if (typeof window === 'undefined') return;
+        const target = loadMoreRef.current;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const first = entries[0];
+                if (first.isIntersecting) {
+                    // Load more in batches
+                    setVisibleCount((v) => Math.min(items.length, v + 12));
+                }
+            },
+            { rootMargin: '600px 0px 600px 0px' }
+        );
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [items.length]);
     if (loading) {
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -58,17 +88,23 @@ export default function MarketplaceGrid({
     }
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {items.map((item, index) => (
-                <MarketplaceItemCard
-                    key={item.id}
-                    item={item}
-                    index={index}
-                    getImageUrl={getImageUrl}
-                    handleImageError={handleImageError}
-                    onItemClick={onItemClick}
-                />
-            ))}
-        </div>
+        <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {items.slice(0, visibleCount).map((item, index) => (
+                    <MarketplaceItemCard
+                        key={item.id}
+                        item={item}
+                        index={index}
+                        getImageUrl={getImageUrl}
+                        handleImageError={handleImageError}
+                        onItemClick={onItemClick}
+                    />
+                ))}
+            </div>
+            {/* Sentinel to trigger loading more cards */}
+            {visibleCount < items.length && (
+                <div ref={loadMoreRef} className="h-8" aria-hidden="true" />
+            )}
+        </>
     );
 }

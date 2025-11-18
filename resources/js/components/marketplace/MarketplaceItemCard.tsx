@@ -37,9 +37,10 @@ export default function MarketplaceItemCard({
     };
 
     return (
-        <div 
+        <div
             onClick={() => onItemClick(item)}
             className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer"
+            style={{ ...( { contentVisibility: 'auto', containIntrinsicSize: '600px' } as any) }}
         >
             {/* Image Display */}
             <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden">
@@ -49,9 +50,11 @@ export default function MarketplaceItemCard({
                         alt={item.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         loading={index < 1 ? 'eager' : 'lazy'}
+                        fetchPriority={index < 1 ? 'low' : 'low'}
                         decoding="async"
                         width={600}
                         height={600}
+                        sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                         onError={(e) => handleImageError(e, item.images?.[0] || '')}
                         data-attempt="0"
                     />

@@ -197,6 +197,10 @@ export default function ItemDetailModal({
                                             className="w-full h-full object-cover"
                                             onError={(e) => handleImageError(e, images[currentImageIndex])}
                                             data-attempt="0"
+                                            width={800}
+                                            height={800}
+                                            loading="eager"
+                                            decoding="async"
                                         />
                                         
                                         {hasMultipleImages && (
@@ -255,6 +259,10 @@ export default function ItemDetailModal({
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => handleImageError(e, image)}
                                                 data-attempt="0"
+                                                width={128}
+                                                height={128}
+                                                loading="lazy"
+                                                decoding="async"
                                             />
                                         </button>
                                     ))}
