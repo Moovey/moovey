@@ -299,7 +299,7 @@ export default function OptimizedSearchResults({
                     <p className="text-gray-600 text-center sm:text-right text-sm sm:text-base">
                         {loading ? (
                             <span className="inline-flex items-center gap-2">
-                                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                                <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block" aria-label="Loading"></span>
                                 Searching...
                             </span>
                         ) : (

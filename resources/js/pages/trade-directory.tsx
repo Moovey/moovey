@@ -1,9 +1,10 @@
 import { Head } from '@inertiajs/react';
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
 import OptimizedHeroSearchSection from '@/components/trade-directory/OptimizedHeroSearchSection';
-import OptimizedSearchResults from '@/components/trade-directory/OptimizedSearchResults';
+// Lazy load heavy results component to cut initial mobile bundle
+const OptimizedSearchResults = lazy(() => import('@/components/trade-directory/OptimizedSearchResults'));
 import { 
     LazyRecommendedServices, 
     LazyArticlesSection, 
@@ -11,6 +12,31 @@ import {
 } from '@/components/trade-directory/lazy';
 import { useTradeDirectoryCache, tradeDirectoryCache } from '@/hooks/useTradeDirectoryCache';
 import { PREDEFINED_SERVICES } from '@/constants/services';
+
+// Hoisted static data to avoid reallocation each render
+const LOCATIONS = [
+    'London','South East','South West','Midlands','North','Scotland','Wales','Northern Ireland','Manchester','Birmingham','Liverpool','Leeds','Near me'
+];
+
+const DEFAULT_SERVICE_PROVIDERS = [
+    { id: 1, name: "Ethan's Moving Crew", description: "Ethan and his team offer comprehensive moving services, including packing, loading, transportation, and unpacking. Highly rated by customers.", services: ["House Removals","Packing Service","Long-distance Moves"], logo_url: null, plan: "basic", user_name: "Ethan Smith", rating: 5, verified: true, response_time: "Usually responds within 2 hours", availability: "Available: Weekdays and Saturdays" },
+    { id: 2, name: "Sophia's Packing Pros", description: "Sophia specialises in packing and unpacking services, ensuring the safe handling of belongings. Highly rated by customers.", services: ["Packing Service","Fragile-only Packing"], logo_url: null, plan: "premium", user_name: "Sophia Johnson", rating: 4, verified: true, response_time: "Usually responds within 1 hour", availability: "Available: Weekdays" },
+    { id: 3, name: "Olivia's Cleaning Crew", description: "Olivia provides professional cleaning services for move-in and move-out situations. Highly rated by customers.", services: ["Cleaning","Deep Cleaning"], logo_url: null, plan: "basic", user_name: "Olivia Brown", rating: 5, verified: true, response_time: "Usually responds within 3 hours", availability: "Available: Weekdays and Sundays" }
+];
+
+const RECOMMENDED_SERVICES = [
+    { name: "Moving Company", status: "completed", icon: "✅", priority: "Booked" },
+    { name: "Packing Service", status: "recommended", icon: "⚠️", priority: "High Priority" },
+    { name: "Cleaning Service", status: "missing", icon: "❌", priority: "Recommended" },
+    { name: "Storage", status: "optional", icon: "⚠️", priority: "May be needed" },
+    { name: "Utility Setup", status: "missing", icon: "❌", priority: "Not Arranged" }
+];
+
+const ARTICLES = [
+    { title: "Top 5 Packing Tips for a Stress-Free Move", description: "Discover essential packing strategies to ensure your belongings arrive safely and your move flows organized.", image: "boxes" },
+    { title: "How to Choose the Right Moving Company", description: "Essential tips for selecting a reliable moving company that fits your budget and timeline.", image: "boxes" },
+    { title: "Moving Day Checklist: Don't Forget These Essentials", description: "A comprehensive checklist to ensure nothing gets overlooked on your big moving day.", image: "boxes" }
+];
 
 export default function TradeDirectory() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -34,61 +60,11 @@ export default function TradeDirectory() {
 
     const serviceTypes = [...PREDEFINED_SERVICES];
 
-    const locations = [
-        'London', 'South East', 'South West', 'Midlands', 'North', 
-        'Scotland', 'Wales', 'Northern Ireland', 'Manchester', 
-        'Birmingham', 'Liverpool', 'Leeds', 'Near me'
-    ];
+    const locations = LOCATIONS;
 
-    const serviceProviders = [
-        {
-            id: 1,
-            name: "Ethan's Moving Crew",
-            description: "Ethan and his team offer comprehensive moving services, including packing, loading, transportation, and unpacking. Highly rated by customers.",
-            services: ["House Removals", "Packing Service", "Long-distance Moves"],
-            logo_url: null,
-            plan: "basic",
-            user_name: "Ethan Smith",
-            rating: 5,
-            verified: true,
-            response_time: "Usually responds within 2 hours",
-            availability: "Available: Weekdays and Saturdays"
-        },
-        {
-            id: 2,
-            name: "Sophia's Packing Pros",
-            description: "Sophia specialises in packing and unpacking services, ensuring the safe handling of belongings. Highly rated by customers.",
-            services: ["Packing Service", "Fragile-only Packing"],
-            logo_url: null,
-            plan: "premium",
-            user_name: "Sophia Johnson",
-            rating: 4,
-            verified: true,
-            response_time: "Usually responds within 1 hour",
-            availability: "Available: Weekdays"
-        },
-        {
-            id: 3,
-            name: "Olivia's Cleaning Crew",
-            description: "Olivia provides professional cleaning services for move-in and move-out situations. Highly rated by customers.",
-            services: ["Cleaning", "Deep Cleaning"],
-            logo_url: null,
-            plan: "basic",
-            user_name: "Olivia Brown",
-            rating: 5,
-            verified: true,
-            response_time: "Usually responds within 3 hours",
-            availability: "Available: Weekdays and Sundays"
-        }
-    ];
+    const serviceProviders = DEFAULT_SERVICE_PROVIDERS;
 
-    const recommendedServices = [
-        { name: "Moving Company", status: "completed", icon: "✅", priority: "Booked" },
-        { name: "Packing Service", status: "recommended", icon: "⚠️", priority: "High Priority" },
-        { name: "Cleaning Service", status: "missing", icon: "❌", priority: "Recommended" },
-        { name: "Storage", status: "optional", icon: "⚠️", priority: "May be needed" },
-        { name: "Utility Setup", status: "missing", icon: "❌", priority: "Not Arranged" }
-    ];
+    const recommendedServices = RECOMMENDED_SERVICES;
 
     // Optimized search handler with caching
     const handleSearch = useCallback(async (searchParams: {
@@ -144,32 +120,32 @@ export default function TradeDirectory() {
         preloadDefault();
     }, []);
 
-    const articles = [
-        {
-            title: "Top 5 Packing Tips for a Stress-Free Move",
-            description: "Discover essential packing strategies to ensure your belongings arrive safely and your move flows organized.",
-            image: "boxes"
-        },
-        {
-            title: "How to Choose the Right Moving Company",
-            description: "Essential tips for selecting a reliable moving company that fits your budget and timeline.",
-            image: "boxes"
-        },
-        {
-            title: "Moving Day Checklist: Don't Forget These Essentials",
-            description: "A comprehensive checklist to ensure nothing gets overlooked on your big moving day.",
-            image: "boxes"
+    // Idle prefetch: warm up heavy chunks and optional API after initial paint without blocking critical path
+    useEffect(() => {
+        const idleTask = () => {
+            // Prefetch results component chunk
+            import('@/components/trade-directory/OptimizedSearchResults');
+            // Prefetch lazy grouped components chunk
+            import('@/components/trade-directory/lazy');
+            // Warm API cache (small limit) if not already cached
+            fetch('/api/business/search?limit=5', { credentials: 'same-origin' }).catch(() => {});
+        };
+        if (typeof (window as any).requestIdleCallback === 'function') {
+            (window as any).requestIdleCallback(idleTask, { timeout: 3000 });
+        } else {
+            setTimeout(idleTask, 1500);
         }
-    ];
+    }, []);
+
+    const articles = ARTICLES;
 
     return (
         <>
             <Head title="Trade Directory - Find Movers & Services">
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900" rel="stylesheet" />
-                {/* Preload critical resources */}
-                <link rel="preload" href="/api/business/search?limit=5" as="fetch" crossOrigin="anonymous" />
-                <link rel="preload" href="/images/trade-directory-banner.webp" as="image" />
+                {/* Preload only critical image (removed unused API preload to avoid console warning) */}
+                <link rel="preload" href="/images/trade-directory-banner.webp" as="image" fetchPriority="high" />
             </Head>
             
             <div className="min-h-screen bg-white font-['Inter',sans-serif]">
@@ -246,10 +222,12 @@ export default function TradeDirectory() {
 
                 {/* Show default content when no search has been performed */}
                 {!hasSearched && (
-                    <OptimizedSearchResults 
-                        serviceProviders={serviceProviders}
-                        loading={loading}
-                    />
+                    <Suspense fallback={<div className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50"><div className="max-w-7xl mx-auto space-y-4"><div className="h-8 w-40 bg-gray-200 rounded animate-pulse" /><div className="h-40 bg-white rounded-xl shadow animate-pulse" /></div></div>}>
+                        <OptimizedSearchResults 
+                            serviceProviders={serviceProviders}
+                            loading={loading}
+                        />
+                    </Suspense>
                 )}
 
                 {/* Lazy-loaded What to Read Next Section */}

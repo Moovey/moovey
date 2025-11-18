@@ -188,6 +188,8 @@ export default function OptimizedHeroSearchSection({
                             <img
                                 src="/images/trade-directory-banner.webp"
                                 alt="Moovey Mascot"
+                                width={240}
+                                height={240}
                                 onLoad={() => setImageLoaded(true)}
                                 onError={() => { setImageError(true); setImageLoaded(true); }}
                                 className={`h-60 xl:h-72 object-contain select-none pointer-events-none transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
