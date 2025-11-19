@@ -57,21 +57,106 @@ export default function IndividualLessonView({
     useEffect(() => {
         const style = document.createElement('style');
         style.textContent = `
-            @keyframes fireworks {
-                0% { transform: scale(0.5) rotate(0deg); opacity: 0; }
-                50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
-                100% { transform: scale(1) rotate(360deg); opacity: 0; }
-            }
-            .fireworks {
+            .fireworks-container {
                 position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                font-size: 4rem;
-                animation: fireworks 2s ease-in-out;
-                z-index: 1000;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
                 pointer-events: none;
+                z-index: 1000;
+                overflow: hidden;
             }
+            
+            .firework {
+                position: absolute;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                box-shadow: 0 0 8px currentColor;
+            }
+            
+            .confetti {
+                position: absolute;
+                width: 8px;
+                height: 8px;
+                animation: confetti-fall 3s linear forwards;
+            }
+            
+            .firework-1 { animation: explode-1 1.2s ease-out forwards; }
+            .firework-2 { animation: explode-2 1.2s ease-out forwards; }
+            .firework-3 { animation: explode-3 1.2s ease-out forwards; }
+            .firework-4 { animation: explode-4 1.2s ease-out forwards; }
+            .firework-5 { animation: explode-5 1.2s ease-out forwards; }
+            .firework-6 { animation: explode-6 1.2s ease-out forwards; }
+            .firework-7 { animation: explode-7 1.2s ease-out forwards; }
+            .firework-8 { animation: explode-8 1.2s ease-out forwards; }
+            .firework-9 { animation: explode-9 1.2s ease-out forwards; }
+            .firework-10 { animation: explode-10 1.2s ease-out forwards; }
+            .firework-11 { animation: explode-11 1.2s ease-out forwards; }
+            .firework-12 { animation: explode-12 1.2s ease-out forwards; }
+            .firework-13 { animation: explode-13 1.2s ease-out forwards; }
+            .firework-14 { animation: explode-14 1.2s ease-out forwards; }
+            .firework-15 { animation: explode-15 1.2s ease-out forwards; }
+            .firework-16 { animation: explode-16 1.2s ease-out forwards; }
+            .firework-17 { animation: explode-17 1.2s ease-out forwards; }
+            .firework-18 { animation: explode-18 1.2s ease-out forwards; }
+            .firework-19 { animation: explode-19 1.2s ease-out forwards; }
+            .firework-20 { animation: explode-20 1.2s ease-out forwards; }
+            
+            @keyframes explode-1 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(60px, -30px); opacity: 1; } 100% { transform: scale(0) translate(120px, 60px); opacity: 0; } }
+            @keyframes explode-2 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(-45px, -60px); opacity: 1; } 100% { transform: scale(0) translate(-90px, 30px); opacity: 0; } }
+            @keyframes explode-3 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(80px, 20px); opacity: 1; } 100% { transform: scale(0) translate(160px, -40px); opacity: 0; } }
+            @keyframes explode-4 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(-30px, 70px); opacity: 1; } 100% { transform: scale(0) translate(-60px, -20px); opacity: 0; } }
+            @keyframes explode-5 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(50px, -80px); opacity: 1; } 100% { transform: scale(0) translate(100px, 40px); opacity: 0; } }
+            @keyframes explode-6 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(-70px, -20px); opacity: 1; } 100% { transform: scale(0) translate(-140px, 80px); opacity: 0; } }
+            @keyframes explode-7 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(40px, 90px); opacity: 1; } 100% { transform: scale(0) translate(80px, -60px); opacity: 0; } }
+            @keyframes explode-8 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(-90px, 30px); opacity: 1; } 100% { transform: scale(0) translate(-180px, -70px); opacity: 0; } }
+            @keyframes explode-9 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(70px, -50px); opacity: 1; } 100% { transform: scale(0) translate(140px, 100px); opacity: 0; } }
+            @keyframes explode-10 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(-20px, -90px); opacity: 1; } 100% { transform: scale(0) translate(-40px, 50px); opacity: 0; } }
+            @keyframes explode-11 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(100px, 10px); opacity: 1; } 100% { transform: scale(0) translate(200px, -80px); opacity: 0; } }
+            @keyframes explode-12 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(-60px, 80px); opacity: 1; } 100% { transform: scale(0) translate(-120px, -30px); opacity: 0; } }
+            @keyframes explode-13 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(30px, -70px); opacity: 1; } 100% { transform: scale(0) translate(60px, 90px); opacity: 0; } }
+            @keyframes explode-14 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(-80px, -40px); opacity: 1; } 100% { transform: scale(0) translate(-160px, 70px); opacity: 0; } }
+            @keyframes explode-15 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(90px, 60px); opacity: 1; } 100% { transform: scale(0) translate(180px, -90px); opacity: 0; } }
+            @keyframes explode-16 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(-50px, -80px); opacity: 1; } 100% { transform: scale(0) translate(-100px, 40px); opacity: 0; } }
+            @keyframes explode-17 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(120px, -10px); opacity: 1; } 100% { transform: scale(0) translate(240px, 80px); opacity: 0; } }
+            @keyframes explode-18 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(-40px, 90px); opacity: 1; } 100% { transform: scale(0) translate(-80px, -60px); opacity: 0; } }
+            @keyframes explode-19 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(110px, -60px); opacity: 1; } 100% { transform: scale(0) translate(220px, 30px); opacity: 0; } }
+            @keyframes explode-20 { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1) translate(-70px, 50px); opacity: 1; } 100% { transform: scale(0) translate(-140px, -100px); opacity: 0; } }
+            
+            @keyframes confetti-fall {
+                0% {
+                    transform: translateY(0) rotate(0deg);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+            
+            .particle-1 { background: #ff6b6b; }
+            .particle-2 { background: #4ecdc4; }
+            .particle-3 { background: #45b7d1; }
+            .particle-4 { background: #f9ca24; }
+            .particle-5 { background: #f0932b; }
+            .particle-6 { background: #eb4d4b; }
+            .particle-7 { background: #6c5ce7; }
+            .particle-8 { background: #fd79a8; }
+            .particle-9 { background: #00b894; }
+            .particle-10 { background: #fdcb6e; }
+            
+            .confetti-1 { background: #ff6b6b; }
+            .confetti-2 { background: #4ecdc4; }
+            .confetti-3 { background: #45b7d1; }
+            .confetti-4 { background: #f9ca24; }
+            .confetti-5 { background: #f0932b; }
+            .confetti-6 { background: #eb4d4b; }
+            .confetti-7 { background: #6c5ce7; }
+            .confetti-8 { background: #fd79a8; }
+            .confetti-9 { background: #00b894; }
+            .confetti-10 { background: #fdcb6e; }
             .lesson-content h1, .lesson-content h2, .lesson-content h3 {
                 color: #1f2937;
                 margin-top: 2rem;
@@ -189,13 +274,19 @@ export default function IndividualLessonView({
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
+                    // Start fireworks sequence
                     setShowFireworks(true);
-                    setTimeout(() => setShowFireworks(false), 2000);
                     
-                    // Refresh the page to update lesson progress
+                    // Create the fireworks effect
                     setTimeout(() => {
+                        createFireworks();
+                    }, 100);
+                    
+                    // Hide fireworks container and refresh page
+                    setTimeout(() => {
+                        setShowFireworks(false);
                         router.reload();
-                    }, 1500);
+                    }, 3000);
                 } else {
                     alert(data.message || 'Failed to mark lesson as complete. Please try again.');
                 }
@@ -254,6 +345,60 @@ export default function IndividualLessonView({
 
     const navInfo = getCurrentLessonNavInfo();
 
+    const createFireworks = () => {
+        const container = document.querySelector('.fireworks-container');
+        if (!container) return;
+
+        // Create multiple firework explosions
+        const explosionCount = 5;
+        
+        for (let i = 0; i < explosionCount; i++) {
+            setTimeout(() => {
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * (window.innerHeight * 0.6) + (window.innerHeight * 0.1);
+                
+                // Create explosion particles
+                for (let j = 0; j < 20; j++) {
+                    const particle = document.createElement('div');
+                    particle.className = `firework firework-${j + 1} particle-${(j % 10) + 1}`;
+                    
+                    particle.style.left = x + 'px';
+                    particle.style.top = y + 'px';
+                    
+                    container.appendChild(particle);
+                    
+                    // Remove particle after animation
+                    setTimeout(() => {
+                        if (particle.parentNode) {
+                            particle.parentNode.removeChild(particle);
+                        }
+                    }, 1200);
+                }
+                
+                // Create confetti
+                for (let k = 0; k < 15; k++) {
+                    setTimeout(() => {
+                        const confetti = document.createElement('div');
+                        confetti.className = `confetti confetti-${(k % 10) + 1}`;
+                        confetti.style.left = (x + (Math.random() - 0.5) * 100) + 'px';
+                        confetti.style.top = y + 'px';
+                        confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                        confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
+                        
+                        container.appendChild(confetti);
+                        
+                        // Remove confetti after animation
+                        setTimeout(() => {
+                            if (confetti.parentNode) {
+                                confetti.parentNode.removeChild(confetti);
+                            }
+                        }, 4000);
+                    }, k * 50);
+                }
+            }, i * 300);
+        }
+    };
+
     return (
         <>
             <Head title={lesson.title}>
@@ -262,7 +407,7 @@ export default function IndividualLessonView({
 
             {/* Fireworks overlay */}
             {showFireworks && (
-                <div className="fireworks">🎉✨🎊</div>
+                <div className="fireworks-container"></div>
             )}
 
             <div className="min-h-screen bg-white">
