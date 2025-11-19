@@ -68,9 +68,8 @@ export default function MooveyAcademy({
     const publishedLessons = lessons; // No need to filter again since backend already filters
 
     const handleBeginProgress = (stageName: string, stageBadge: string) => {
-        setSelectedStage(stageName);
-        setSelectedStageBadge(stageBadge);
-        setShowLessons(true);
+        // Redirect to stage page instead of showing lesson viewer
+        router.visit(`/academy/stage/${encodeURIComponent(stageName)}`);
     };
 
     const handleBackToAcademy = () => {

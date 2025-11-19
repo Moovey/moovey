@@ -44,6 +44,8 @@ Route::get('/storage-file/{path}', function ($path) {
 
 Route::get('/', [PublicController::class, 'welcomeTest'])->name('home');
 Route::get('/academy', [PublicController::class, 'academy'])->name('academy');
+Route::get('/academy/stage/{stage}', [PublicController::class, 'academyStage'])->name('academy.stage');
+Route::get('/academy/lesson/{lesson}', [PublicController::class, 'academyLesson'])->name('academy.lesson');
 Route::get('/tools', [PublicController::class, 'tools'])->name('tools');
 
 // Individual Tool Pages
@@ -100,6 +102,9 @@ Route::middleware('auth')->group(function () {
     // Avatar Upload Routes
     Route::post('/api/avatar/upload', [AvatarController::class, 'update'])->name('api.avatar.upload');
     Route::delete('/api/avatar', [AvatarController::class, 'destroy'])->name('api.avatar.delete');
+    
+    // Lesson Progress Routes
+    Route::post('/api/lessons/{lesson}/complete', [\App\Http\Controllers\LessonController::class, 'markComplete'])->name('api.lessons.complete');
     
     // Friendship API Routes
     Route::post('/api/friendships/send', [\App\Http\Controllers\FriendshipController::class, 'sendRequest'])->name('api.friendships.send');

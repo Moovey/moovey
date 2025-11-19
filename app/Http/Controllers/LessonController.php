@@ -181,6 +181,7 @@ class LessonController extends Controller
         $nextLesson = $lesson->getNextLesson();
         
         return response()->json([
+            'success' => true,
             'message' => 'Lesson completed successfully!',
             'progress' => [
                 'is_completed' => $progress->is_completed,

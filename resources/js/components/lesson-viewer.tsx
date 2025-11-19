@@ -103,7 +103,8 @@ export default function LessonViewer({ stage, lessons, onBack, stageBadge, isAut
             alert('🔒 You must complete the previous lessons to access this one.');
             return;
         }
-        setSelectedLesson(lesson);
+        // Redirect to individual lesson page
+        router.visit(`/academy/lesson/${lesson.id}`);
     };
 
     const handleBackToLessons = () => {

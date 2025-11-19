@@ -130,6 +130,271 @@ class PublicController extends Controller
     }
 
     /**
+     * Display the academy stage page with lessons for a specific stage.
+     */
+    public function academyStage(string $stage): Response
+    {
+        $user = Auth::user();
+        
+        // Stage metadata mapping
+        $stageMetadata = [
+            'Move Dreamer' => ['badge' => 'Move Dreamer.png'],
+            'Plan Starter' => ['badge' => 'Plan Starter.png'],
+            'Moovey Critic' => ['badge' => 'Moovey Critic.png'],
+            'Prep Pioneer' => ['badge' => 'Prep Pioneer.png'],
+            'Moovey Director' => ['badge' => 'Moovey Director.png'],
+            'Move Rockstar' => ['badge' => 'Move Rockstar.png'],
+            'Home Navigator' => ['badge' => 'Home Navigator.png'],
+            'Settler Specialist' => ['badge' => 'Settler Specialist.png'],
+            'Moovey Star' => ['badge' => 'Moovey Star.png']
+        ];
+        
+        $stageBadge = $stageMetadata[$stage]['badge'] ?? $stage . '.png';
+        
+        // Get lessons for the specific stage
+        $lessons = Lesson::published()
+            ->where('lesson_stage', $stage)
+            ->ordered()
+            ->get()
+            ->map(function ($lesson) use ($user) {
+                // Only get progress if user is logged in
+                $progress = null;
+                $isAccessible = true;
+                $isCompleted = false;
+                
+                if ($user) {
+                    try {
+                        $progress = $lesson->getUserProgress($user->id);
+                        $isAccessible = $lesson->isAccessibleByUser($user->id);
+                        $isCompleted = $lesson->isCompletedByUser($user->id);
+                    } catch (\Exception $e) {
+                        Log::error('Error getting lesson progress', [
+                            'lesson_id' => $lesson->id,
+                            'user_id' => $user->id,
+                            'error' => $e->getMessage()
+                        ]);
+                        // Default values if there's an error
+                        $progress = null;
+                        $isAccessible = $lesson->lesson_order <= 1; // Only first lesson accessible on error
+                        $isCompleted = false;
+                    }
+                }
+                
+                return [
+                    'id' => $lesson->id,
+                    'title' => $lesson->title,
+                    'description' => $lesson->description,
+                    'lesson_stage' => $lesson->lesson_stage,
+                    'duration' => $lesson->duration,
+                    'difficulty' => $lesson->difficulty,
+                    'lesson_order' => $lesson->lesson_order,
+                    'created_at' => $lesson->created_at->format('Y-m-d'),
+                    'status' => $lesson->status,
+                    'content_html' => $lesson->content_html,
+                    'content_file_url' => $lesson->content_file_url,
+                    'thumbnail_file_url' => $lesson->thumbnail_file_url,
+                    
+                    // Progress and accessibility information
+                    'is_accessible' => $isAccessible,
+                    'is_completed' => $isCompleted,
+                    'progress_percentage' => $progress?->progress_percentage ?? 0,
+                    'started_at' => $progress?->started_at?->format('Y-m-d H:i:s'),
+                    'completed_at' => $progress?->completed_at?->format('Y-m-d H:i:s'),
+                    
+                    // Next/Previous lesson info
+                    'has_previous' => $lesson->getPreviousLesson() !== null,
+                    'has_next' => $lesson->getNextLesson() !== null,
+                ];
+            });
+
+        // Calculate stage progress
+        $stageProgress = null;
+        if ($user) {
+            $totalLessons = $lessons->count();
+            $completedLessons = $lessons->where('is_completed', true)->count();
+            $stageProgress = [
+                'percentage' => $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100, 2) : 0,
+                'completed' => $completedLessons,
+                'total' => $totalLessons
+            ];
+        } else {
+            $stageProgress = [
+                'percentage' => 0,
+                'completed' => 0,
+                'total' => $lessons->count()
+            ];
+        }
+
+        return Inertia::render('academy/stage', [
+            'stage' => $stage,
+            'stageBadge' => $stageBadge,
+            'stageLessons' => $lessons->values(),
+            'stageProgress' => $stageProgress,
+            'isAuthenticated' => $user !== null,
+        ]);
+    }
+
+    /**
+     * Display a specific lesson page.
+     */
+    public function academyLesson(string $lesson): Response
+    {
+        $user = Auth::user();
+        
+        // Find the lesson by id
+        $lessonModel = Lesson::published()->findOrFail($lesson);
+        
+        // Stage metadata mapping
+        $stageMetadata = [
+            'Move Dreamer' => ['badge' => 'Move Dreamer.png'],
+            'Plan Starter' => ['badge' => 'Plan Starter.png'],
+            'Moovey Critic' => ['badge' => 'Moovey Critic.png'],
+            'Prep Pioneer' => ['badge' => 'Prep Pioneer.png'],
+            'Moovey Director' => ['badge' => 'Moovey Director.png'],
+            'Move Rockstar' => ['badge' => 'Move Rockstar.png'],
+            'Home Navigator' => ['badge' => 'Home Navigator.png'],
+            'Settler Specialist' => ['badge' => 'Settler Specialist.png'],
+            'Moovey Star' => ['badge' => 'Moovey Star.png']
+        ];
+        
+        $stageBadge = $stageMetadata[$lessonModel->lesson_stage]['badge'] ?? $lessonModel->lesson_stage . '.png';
+        
+        // Get lesson data with progress information
+        $progress = null;
+        $isAccessible = true;
+        $isCompleted = false;
+        
+        if ($user) {
+            try {
+                $progress = $lessonModel->getUserProgress($user->id);
+                $isAccessible = $lessonModel->isAccessibleByUser($user->id);
+                $isCompleted = $lessonModel->isCompletedByUser($user->id);
+            } catch (\Exception $e) {
+                Log::error('Error getting lesson progress', [
+                    'lesson_id' => $lessonModel->id,
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage()
+                ]);
+                // Default values if there's an error
+                $progress = null;
+                $isAccessible = $lessonModel->lesson_order <= 1; // Only first lesson accessible on error
+                $isCompleted = false;
+            }
+        }
+
+        // Get all lessons in the same stage for navigation
+        $stageLessons = Lesson::published()
+            ->where('lesson_stage', $lessonModel->lesson_stage)
+            ->ordered()
+            ->get()
+            ->map(function ($stageLesson) use ($user) {
+                // Only get progress if user is logged in
+                $progress = null;
+                $isAccessible = true;
+                $isCompleted = false;
+                
+                if ($user) {
+                    try {
+                        $progress = $stageLesson->getUserProgress($user->id);
+                        $isAccessible = $stageLesson->isAccessibleByUser($user->id);
+                        $isCompleted = $stageLesson->isCompletedByUser($user->id);
+                    } catch (\Exception $e) {
+                        Log::error('Error getting lesson progress', [
+                            'lesson_id' => $stageLesson->id,
+                            'user_id' => $user->id,
+                            'error' => $e->getMessage()
+                        ]);
+                        // Default values if there's an error
+                        $progress = null;
+                        $isAccessible = $stageLesson->lesson_order <= 1;
+                        $isCompleted = false;
+                    }
+                }
+                
+                return [
+                    'id' => $stageLesson->id,
+                    'title' => $stageLesson->title,
+                    'description' => $stageLesson->description,
+                    'lesson_stage' => $stageLesson->lesson_stage,
+                    'duration' => $stageLesson->duration,
+                    'difficulty' => $stageLesson->difficulty,
+                    'lesson_order' => $stageLesson->lesson_order,
+                    'created_at' => $stageLesson->created_at->format('Y-m-d'),
+                    'status' => $stageLesson->status,
+                    'content_html' => $stageLesson->content_html,
+                    'content_file_url' => $stageLesson->content_file_url,
+                    'thumbnail_file_url' => $stageLesson->thumbnail_file_url,
+                    
+                    // Progress and accessibility information
+                    'is_accessible' => $isAccessible,
+                    'is_completed' => $isCompleted,
+                    'progress_percentage' => $progress?->progress_percentage ?? 0,
+                    'started_at' => $progress?->started_at?->format('Y-m-d H:i:s'),
+                    'completed_at' => $progress?->completed_at?->format('Y-m-d H:i:s'),
+                    
+                    // Next/Previous lesson info
+                    'has_previous' => $stageLesson->getPreviousLesson() !== null,
+                    'has_next' => $stageLesson->getNextLesson() !== null,
+                ];
+            });
+
+        // Calculate stage progress
+        $stageProgress = null;
+        if ($user) {
+            $totalLessons = $stageLessons->count();
+            $completedLessons = $stageLessons->where('is_completed', true)->count();
+            $stageProgress = [
+                'percentage' => $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100, 2) : 0,
+                'completed' => $completedLessons,
+                'total' => $totalLessons
+            ];
+        } else {
+            $stageProgress = [
+                'percentage' => 0,
+                'completed' => 0,
+                'total' => $stageLessons->count()
+            ];
+        }
+
+        $lessonData = [
+            'id' => $lessonModel->id,
+            'title' => $lessonModel->title,
+            'description' => $lessonModel->description,
+            'lesson_stage' => $lessonModel->lesson_stage,
+            'duration' => $lessonModel->duration,
+            'difficulty' => $lessonModel->difficulty,
+            'lesson_order' => $lessonModel->lesson_order,
+            'created_at' => $lessonModel->created_at->format('Y-m-d'),
+            'status' => $lessonModel->status,
+            'content_html' => $lessonModel->content_html,
+            'content_file_url' => $lessonModel->content_file_url,
+            'thumbnail_file_url' => $lessonModel->thumbnail_file_url,
+            
+            // Progress and accessibility information
+            'is_accessible' => $isAccessible,
+            'is_completed' => $isCompleted,
+            'progress_percentage' => $progress?->progress_percentage ?? 0,
+            'started_at' => $progress?->started_at?->format('Y-m-d H:i:s'),
+            'completed_at' => $progress?->completed_at?->format('Y-m-d H:i:s'),
+            
+            // Next/Previous lesson info
+            'has_previous' => $lessonModel->getPreviousLesson() !== null,
+            'has_next' => $lessonModel->getNextLesson() !== null,
+            'previous_lesson' => $lessonModel->getPreviousLesson()?->id,
+            'next_lesson' => $lessonModel->getNextLesson()?->id,
+        ];
+
+        return Inertia::render('academy/lesson', [
+            'lesson' => $lessonData,
+            'stageLessons' => $stageLessons->values(),
+            'stage' => $lessonModel->lesson_stage,
+            'stageBadge' => $stageBadge,
+            'stageProgress' => $stageProgress,
+            'isAuthenticated' => $user !== null,
+        ]);
+    }
+
+    /**
      * Display the tools page.
      */
     public function tools(): Response

@@ -227,7 +227,7 @@ export default function ModuleCards({
 
                                     {/* Right Sidebar */}
                                     <div className="w-full lg:w-80 xl:w-96 bg-[#00BCD4] p-4 sm:p-6 text-white border-t lg:border-t-0 lg:border-l border-white border-opacity-20">
-                                        <h4 className="font-semibold mb-3 sm:mb-4 text-base sm:text-lg">Lessons in this Stage</h4>
+                                        <h4 className="font-semibold mb-3 sm:mb-4 text-base sm:text-lg text-white">Lessons in this Stage</h4>
                                         {(() => {
                                             const paginatedData = getPaginatedLessons(stageName, stageLessons);
                                             return (
@@ -263,7 +263,7 @@ export default function ModuleCards({
                                                                 </div>
                                                                 <button 
                                                                     onClick={() => lesson.is_accessible && handleBeginProgress(stageName, metadata.badge)}
-                                                                    className={`text-xs sm:text-sm text-left flex-1 min-w-0 leading-relaxed ${
+                                                                    className={`text-xs sm:text-sm text-left flex-1 min-w-0 leading-relaxed text-white ${
                                                                         !lesson.is_accessible
                                                                             ? 'opacity-50 cursor-not-allowed' 
                                                                             : lesson.is_accessible && !lesson.is_completed
@@ -274,7 +274,7 @@ export default function ModuleCards({
                                                                     }`}
                                                                     disabled={!lesson.is_accessible}
                                                                 >
-                                                                    <span className="line-clamp-2">{lesson.title}</span>
+                                                                    <span className="line-clamp-2 text-white">{lesson.title}</span>
                                                                 </button>
                                                             </div>
                                                         ))}
