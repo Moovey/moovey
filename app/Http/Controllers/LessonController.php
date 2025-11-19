@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class LessonController extends Controller
 {
@@ -87,6 +88,10 @@ class LessonController extends Controller
         }
 
         $lesson->save();
+
+        // Clear admin academy cache when a new lesson is created
+        Cache::forget('admin_academy_lessons');
+        Cache::forget('admin_academy_lessons_search');
 
         Log::info('Lesson saved successfully', [
             'lesson_id' => $lesson->id,
@@ -267,6 +272,10 @@ class LessonController extends Controller
 
             $lesson->save();
 
+            // Clear admin academy cache when a lesson is updated
+            Cache::forget('admin_academy_lessons');
+            Cache::forget('admin_academy_lessons_search');
+
             return redirect()->route('admin.academy')->with('success', 'Lesson updated successfully!');
         }
         
@@ -280,6 +289,10 @@ class LessonController extends Controller
         }
 
         $lesson->update($request->only(['status']));
+
+        // Clear admin academy cache when lesson status is updated
+        Cache::forget('admin_academy_lessons');
+        Cache::forget('admin_academy_lessons_search');
 
         return back()->with('success', 'Lesson updated successfully!');
     }
@@ -301,6 +314,10 @@ class LessonController extends Controller
         }
         
         $lesson->delete();
+
+        // Clear admin academy cache when a lesson is deleted
+        Cache::forget('admin_academy_lessons');
+        Cache::forget('admin_academy_lessons_search');
 
         return back()->with('success', 'Lesson deleted successfully!');
     }
