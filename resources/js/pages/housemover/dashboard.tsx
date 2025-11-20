@@ -2,7 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
-import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
+import HousemoverNavigation from '@/components/housemover/HousemoverNavigation';
 
 // Lazy load heavy components for better initial page load
 const CompleteMovingJourney = lazy(() => import('@/components/housemover/CompleteMovingJourney'));
@@ -193,15 +193,7 @@ export default function Dashboard({
     const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set(['banner', 'tabs']));
     const [dataVersion, setDataVersion] = useState(0); // For tracking data freshness
 
-    // Navigation tabs configuration
-    const navigationTabs = [
-        { id: 'overview', icon: '🏠', label: 'OVERVIEW' },
-        { id: 'chain-checker', icon: '⛓️', label: 'CHAIN CHECKER', route: '/housemover/chain-checker' },
-        { id: 'move-details', icon: '📋', label: 'MY MOVE', route: '/housemover/move-details' },
-        { id: 'achievements', icon: '🏆', label: 'ACHIEVEMENTS', route: '/housemover/achievements' },
-        { id: 'connections', icon: '🔗', label: 'CONNECTIONS', route: '/housemover/connections' },
-        { id: 'settings', icon: '⚙️', label: 'SETTINGS', route: '/profile-settings' }
-    ];
+    // Tab change handler - overview is managed locally, others redirect
 
     // Function to handle tab change with URL update
     const handleTabChange = (tabId: string) => {
@@ -213,7 +205,7 @@ export default function Dashboard({
             url.searchParams.delete('tab');
             window.history.pushState({}, '', url.toString());
         }
-        // Other tabs are handled by SubNavigationTabs component routing
+        // Other tabs are handled by HousemoverNavigation component routing
     };
 
     // Optimized data loading with progressive enhancement
@@ -978,9 +970,8 @@ export default function Dashboard({
                 <div>
 
             {/* Sub-Navigation Tabs */}
-            <SubNavigationTabs 
+            <HousemoverNavigation 
                 activeTab={activeTab}
-                tabs={navigationTabs}
                 onTabChange={handleTabChange}
             />
 

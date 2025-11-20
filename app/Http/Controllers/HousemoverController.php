@@ -249,7 +249,7 @@ class HousemoverController extends Controller
      */
     public function profileSettings(): Response
     {
-        return Inertia::render('profile-settings');
+        return Inertia::render('housemover/profile-settings');
     }
 
     /**

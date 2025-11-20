@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
-import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
+import HousemoverNavigation from '@/components/housemover/HousemoverNavigation';
 import { useMoveProgress } from '@/hooks/useMoveProgress';
 
 interface CommunityMember {
@@ -423,17 +423,7 @@ export default function Connections() {
             <EnhancedWelcomeBanner subtitle="Connect with others to earn community coins!" showProgress={true} taskData={taskData || undefined} />
 
             {/* Sub-Navigation Tabs */}
-            <SubNavigationTabs
-                activeTab="connections"
-                tabs={[
-                    { id: 'overview', icon: '🏠', label: 'OVERVIEW', route: '/dashboard' },
-                    { id: 'chain-checker', icon: '⛓️', label: 'CHAIN CHECKER', route: '/housemover/chain-checker' },
-                    { id: 'move-details', icon: '📋', label: 'MY MOVE', route: '/housemover/move-details' },
-                    { id: 'achievements', icon: '🏆', label: 'ACHIEVEMENTS', route: '/housemover/achievements' },
-                    { id: 'connections', icon: '🔗', label: 'CONNECTIONS' },
-                    { id: 'settings', icon: '⚙️', label: 'SETTINGS', route: '/profile-settings' },
-                ]}
-            />
+            <HousemoverNavigation activeTab="connections" />
 
             {/* Main Content - Professional Bento Grid Layout */}
             <div className="max-w-7xl mx-auto">

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
-import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
+import HousemoverNavigation from '@/components/housemover/HousemoverNavigation';
 import { useMoveProgress } from '@/hooks/useMoveProgress';
 import { 
     AchievementCelebrationModal, 
@@ -557,17 +557,7 @@ export default function Achievements() {
             <EnhancedWelcomeBanner subtitle="Unlock achievements to earn more coins!" showProgress={true} taskData={taskData || undefined} />
 
             {/* Sub-Navigation Tabs */}
-            <SubNavigationTabs
-                activeTab="achievements"
-                tabs={[
-                    { id: 'overview', icon: '🏠', label: 'OVERVIEW', route: '/dashboard' },
-                    { id: 'chain-checker', icon: '⛓️', label: 'CHAIN CHECKER', route: '/housemover/chain-checker' },
-                    { id: 'move-details', icon: '📋', label: 'MY MOVE', route: '/housemover/move-details' },
-                    { id: 'achievements', icon: '🏆', label: 'ACHIEVEMENTS' },
-                    { id: 'connections', icon: '🔗', label: 'CONNECTIONS', route: '/housemover/connections' },
-                    { id: 'settings', icon: '⚙️', label: 'SETTINGS', route: '/profile-settings' },
-                ]}
-            />
+            <HousemoverNavigation activeTab="achievements" />
 
             {/* Achievement Gallery Header */}
             <AchievementGalleryHeader 

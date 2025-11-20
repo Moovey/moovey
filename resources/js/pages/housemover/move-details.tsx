@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
-import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
+import HousemoverNavigation from '@/components/housemover/HousemoverNavigation';
 import CompleteMovingJourney from '@/components/housemover/CompleteMovingJourney';
 import PropertyBasket from '@/components/housemover/chain-checker/PropertyBasket';
 import LocationAutocomplete from '@/components/community/shared/LocationAutocomplete';
@@ -392,17 +392,7 @@ export default function MoveDetails({ auth, moveDetails, taskData }: MoveDetails
 
             <div>
                 <div>
-                    <SubNavigationTabs
-                        activeTab="move-details"
-                        tabs={[
-                            { id: 'overview', icon: '🏠', label: 'OVERVIEW', route: '/dashboard' },
-                            { id: 'chain-checker', icon: '⛓️', label: 'CHAIN CHECKER', route: '/housemover/chain-checker' },
-                            { id: 'move-details', icon: '📋', label: 'MY MOVE' },
-                            { id: 'achievements', icon: '🏆', label: 'ACHIEVEMENTS', route: '/housemover/achievements' },
-                            { id: 'connections', icon: '🔗', label: 'CONNECTIONS', route: '/housemover/connections' },
-                            { id: 'settings', icon: '⚙️', label: 'SETTINGS', route: '/profile-settings' },
-                        ]}
-                    />
+                    <HousemoverNavigation activeTab="move-details" />
 
                     {/* Toast notifications handle feedback; inline banner removed */}
 

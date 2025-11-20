@@ -2,7 +2,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { useMemo, useState, useRef } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
-import SubNavigationTabs from '@/components/housemover/SubNavigationTabs';
+import HousemoverNavigation from '@/components/housemover/HousemoverNavigation';
 import { toast } from 'react-toastify';
 import { getAvatarUrl, getFallbackAvatarUrl } from '@/utils/fileUtils';
 import { useMoveProgress } from '@/hooks/useMoveProgress';
@@ -286,17 +286,7 @@ export default function ProfileSettings() {
             <EnhancedWelcomeBanner subtitle="Complete your profile to earn bonus coins!" showProgress={true} taskData={taskData || undefined} />
 
             {/* Sub-Navigation Tabs */}
-            <SubNavigationTabs
-                activeTab="settings"
-                tabs={[
-                    { id: 'overview', icon: '🏠', label: 'OVERVIEW', route: '/dashboard' },
-                    { id: 'chain-checker', icon: '⛓️', label: 'CHAIN CHECKER', route: '/housemover/chain-checker' },
-                    { id: 'move-details', icon: '📋', label: 'MY MOVE', route: '/housemover/move-details' },
-                    { id: 'achievements', icon: '🏆', label: 'ACHIEVEMENTS', route: '/housemover/achievements' },
-                    { id: 'connections', icon: '🔗', label: 'CONNECTIONS', route: '/housemover/connections' },
-                    { id: 'settings', icon: '⚙️', label: 'SETTINGS' },
-                ]}
-            />
+            <HousemoverNavigation activeTab="settings" />
 
             {/* Page Header */}
             <div className="text-center mb-8">
