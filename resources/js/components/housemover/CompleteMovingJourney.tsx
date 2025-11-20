@@ -69,9 +69,11 @@ const CompleteMovingJourney: React.FC<CompleteMovingJourneyProps> = ({
                         >
                             <div
                                 className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300 group-hover:scale-105 ${
-                                    activeSection === section.id
-                                        ? 'bg-[#00BCD4] ring-2 ring-[#E0F7FA]'
-                                        : getProgressColor(getSectionProgress(section.id))
+                                    getSectionProgress(section.id) > 0
+                                        ? (activeSection === section.id
+                                            ? 'bg-[#00BCD4] ring-2 ring-[#E0F7FA]'
+                                            : getProgressColor(getSectionProgress(section.id)))
+                                        : 'bg-gray-400'
                                 }`}
                             >
                                 {section.icon}
@@ -112,9 +114,11 @@ const CompleteMovingJourney: React.FC<CompleteMovingJourneyProps> = ({
                             >
                                 <div
                                     className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base shadow-lg transition-all duration-300 group-hover:scale-110 ${
-                                        activeSection === section.id
-                                            ? 'bg-[#00BCD4] ring-3 ring-[#E0F7FA]'
-                                            : getProgressColor(getSectionProgress(section.id))
+                                        getSectionProgress(section.id) > 0
+                                            ? (activeSection === section.id
+                                                ? 'bg-[#00BCD4] ring-3 ring-[#E0F7FA]'
+                                                : getProgressColor(getSectionProgress(section.id)))
+                                            : 'bg-gray-400'
                                     }`}
                                 >
                                     {section.icon}
@@ -156,9 +160,11 @@ const CompleteMovingJourney: React.FC<CompleteMovingJourneyProps> = ({
                             >
                                 <div
                                     className={`w-16 h-16 xl:w-20 xl:h-20 rounded-full flex items-center justify-center text-white font-bold text-lg xl:text-xl shadow-lg transition-all duration-300 group-hover:scale-110 ${
-                                        activeSection === section.id
-                                            ? 'bg-[#00BCD4] ring-4 ring-[#E0F7FA]'
-                                            : getProgressColor(getSectionProgress(section.id))
+                                        getSectionProgress(section.id) > 0
+                                            ? (activeSection === section.id
+                                                ? 'bg-[#00BCD4] ring-4 ring-[#E0F7FA]'
+                                                : getProgressColor(getSectionProgress(section.id)))
+                                            : 'bg-gray-400'
                                     }`}
                                 >
                                     {section.icon}
