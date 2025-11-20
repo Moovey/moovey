@@ -52,6 +52,7 @@ export default function IndividualLessonView({
 }: IndividualLessonViewProps) {
     const [isMarkingComplete, setIsMarkingComplete] = useState(false);
     const [showFireworks, setShowFireworks] = useState(false);
+    const [needsRefresh, setNeedsRefresh] = useState(false);
 
     // Add CSS animations to the document head
     useEffect(() => {
@@ -248,7 +249,9 @@ export default function IndividualLessonView({
         router.visit(`/academy/stage/${encodeURIComponent(stage)}`);
     };
 
-    const handleMarkComplete = async () => {
+    const handleMarkComplete = async (retryCount = 0) => {
+        const MAX_RETRIES = 2;
+        
         if (!isAuthenticated) {
             alert('Please log in to mark lessons as complete.');
             return;
@@ -262,11 +265,29 @@ export default function IndividualLessonView({
         setIsMarkingComplete(true);
 
         try {
+            // Get fresh CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                             (window as any).mooveyConfig?.csrfToken || '';
+            
+            if (!csrfToken && retryCount === 0) {
+                console.warn('No CSRF token found, attempting to refresh...');
+                // Try to refresh CSRF token by making a simple GET request first
+                await fetch('/api/csrf-refresh', { 
+                    method: 'GET', 
+                    credentials: 'same-origin' 
+                }).catch(() => {});
+                
+                // Retry with potentially refreshed token
+                return handleMarkComplete(retryCount + 1);
+            }
+
             const response = await fetch(`/api/lessons/${lesson.id}/complete`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'same-origin',
             });
@@ -288,20 +309,62 @@ export default function IndividualLessonView({
                         router.reload();
                     }, 3000);
                 } else {
-                    alert(data.message || 'Failed to mark lesson as complete. Please try again.');
+                    throw new Error(data.message || 'Server returned success=false');
                 }
             } else {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('Server responded with error:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    errorData: errorData
-                });
-                alert(errorData.error || `Failed to mark lesson as complete (${response.status}). Please try again.`);
+                // Handle specific error cases
+                if (response.status === 419 && retryCount < MAX_RETRIES) {
+                    // CSRF token mismatch - retry with fresh token
+                    console.warn('CSRF token mismatch, retrying...');
+                    setTimeout(() => {
+                        handleMarkComplete(retryCount + 1);
+                    }, 500);
+                    return;
+                }
+                
+                if (response.status === 422) {
+                    // Validation error
+                    const errorData = await response.json().catch(() => ({ message: 'Validation failed' }));
+                    throw new Error(errorData.message || 'Validation error occurred');
+                }
+                
+                if (response.status === 500 && retryCount < MAX_RETRIES) {
+                    // Server error - retry after delay
+                    console.warn('Server error, retrying...');
+                    setTimeout(() => {
+                        handleMarkComplete(retryCount + 1);
+                    }, 1000);
+                    return;
+                }
+                
+                const errorData = await response.json().catch(() => ({ 
+                    message: `HTTP ${response.status}: ${response.statusText}` 
+                }));
+                
+                throw new Error(errorData.message || errorData.error || 
+                    `Request failed with status ${response.status}`);
             }
         } catch (error) {
-            console.error('Error marking lesson complete:', error);
-            alert('An error occurred. Please check your connection and try again.');
+            console.error('Error marking lesson complete:', {
+                error: error,
+                lessonId: lesson.id,
+                retryCount: retryCount,
+                timestamp: new Date().toISOString()
+            });
+            
+            if (retryCount < MAX_RETRIES && 
+                (error instanceof TypeError || (error instanceof Error && error.message.includes('fetch')))) {
+                // Network error - retry after delay
+                console.warn('Network error, retrying...');
+                setTimeout(() => {
+                    handleMarkComplete(retryCount + 1);
+                }, 1500);
+                return;
+            }
+            
+            // Final error - show user-friendly message
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            alert(`Failed to mark lesson as complete: ${errorMessage}\n\nPlease try refreshing the page and attempting again.`);
         } finally {
             setIsMarkingComplete(false);
         }
@@ -589,12 +652,31 @@ export default function IndividualLessonView({
                                     
                                     {!lesson.is_completed && isAuthenticated && (
                                         <button
-                                            onClick={handleMarkComplete}
+                                            onClick={() => handleMarkComplete(0)}
                                             disabled={isMarkingComplete}
-                                            className="px-8 py-3 bg-[#17B7C7] text-white rounded-lg font-semibold hover:bg-[#139AAA] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="px-8 py-3 bg-[#17B7C7] text-white rounded-lg font-semibold hover:bg-[#139AAA] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                         >
-                                            {isMarkingComplete ? 'Marking Complete...' : '✓ Mark as Complete'}
+                                            {isMarkingComplete ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                    Marking Complete...
+                                                </>
+                                            ) : (
+                                                <>✓ Mark as Complete</>
+                                            )}
                                         </button>
+                                    )}
+                                    
+                                    {needsRefresh && (
+                                        <div className="text-center mt-3">
+                                            <p className="text-sm text-amber-600 mb-2">Having trouble? Try refreshing the page.</p>
+                                            <button
+                                                onClick={() => window.location.reload()}
+                                                className="text-sm text-amber-700 underline hover:no-underline"
+                                            >
+                                                Refresh Page
+                                            </button>
+                                        </div>
                                     )}
                                     
                                     {lesson.is_completed && (
