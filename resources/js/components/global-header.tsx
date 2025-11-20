@@ -214,7 +214,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
 
             {/* Mobile Menu */}
             <div className={`
-                fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl z-50 
+                fixed top-0 right-0 h-full w-72 max-w-[80vw] bg-white shadow-2xl z-50 
                 transform transition-transform duration-300 ease-in-out lg:hidden
                 ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}
             `}>
@@ -245,13 +245,13 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                     </div>
 
                     {/* Mobile Navigation */}
-                    <nav className="flex-1 overflow-y-auto py-6">
-                        <div className="space-y-2 px-6">
+                    <nav className="flex-1 overflow-y-auto py-4">
+                        <div className="space-y-1 px-4">
                             {/* Home Link for Mobile */}
                             <Link 
                                 href="/" 
                                 onClick={closeMobileMenu}
-                                className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
                                     isHomePage
                                         ? 'bg-[#17B7C7] text-white' 
                                         : 'text-gray-700 hover:bg-gray-100'
@@ -260,12 +260,12 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                 HOME
                             </Link>
                             
-                            <div className="border-t border-gray-200 my-4"></div>
+                            <div className="border-t border-gray-200 my-3"></div>
                             {auth.user && (
                                 <Link 
                                     href={route('dashboard')} 
                                     onClick={closeMobileMenu}
-                                    className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                    className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
                                         isActive('dashboard')
                                             ? 'bg-[#17B7C7] text-white' 
                                             : 'text-gray-700 hover:bg-gray-100'
@@ -277,18 +277,18 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                             <Link 
                                 href={route('academy')} 
                                 onClick={closeMobileMenu}
-                                className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
                                     isActive('academy')
                                         ? 'bg-[#17B7C7] text-white' 
                                         : 'text-gray-700 hover:bg-gray-100'
                                 }`}
                             >
-                                MOOVEY ACADEMY
+                                ACADEMY
                             </Link>
                             <Link 
                                 href={route('tools')} 
                                 onClick={closeMobileMenu}
-                                className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
                                     isActive('tools')
                                         ? 'bg-[#17B7C7] text-white' 
                                         : 'text-gray-700 hover:bg-gray-100'
@@ -299,7 +299,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                             <Link 
                                 href={route('community')} 
                                 onClick={closeMobileMenu}
-                                className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
                                     isActive('community')
                                         ? 'bg-[#17B7C7] text-white' 
                                         : 'text-gray-700 hover:bg-gray-100'
@@ -310,7 +310,7 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                             <Link 
                                 href={route('trade-directory')} 
                                 onClick={closeMobileMenu}
-                                className={`block px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                                className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
                                     isActive('trade-directory') || isActive('trade_directory')
                                         ? 'bg-[#17B7C7] text-white' 
                                         : 'text-gray-700 hover:bg-gray-100'
@@ -323,23 +323,23 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                     </nav>
 
                     {/* Mobile Auth Section */}
-                    <div className="border-t border-gray-200 p-6">
+                    <div className="border-t border-gray-200 p-4">
                         {auth.user ? (
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {/* Mobile Notifications and Messages */}
-                                <div className="mb-4 flex space-x-2">
+                                <div className="mb-3 flex space-x-2">
                                     <NotificationDropdown />
                                     <MessageDropdown />
                                 </div>
                                 
                                 {/* User Profile Info */}
-                                <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-[#E0F7FA] to-[#B2EBF2] rounded-lg">
-                                    <Avatar className="h-10 w-10 ring-2 ring-white shadow-md">
+                                <div className="flex items-center space-x-3 p-2.5 bg-gradient-to-r from-[#E0F7FA] to-[#B2EBF2] rounded-lg">
+                                    <Avatar className="h-8 w-8 ring-2 ring-white shadow-md">
                                         <AvatarImage 
                                             src={getAvatarUrl(auth.user.avatar) || undefined} 
                                             alt={auth.user.name} 
                                         />
-                                        <AvatarFallback className="bg-gradient-to-br from-[#00BCD4] to-[#1A237E] text-white font-bold text-sm">
+                                        <AvatarFallback className="bg-gradient-to-br from-[#00BCD4] to-[#1A237E] text-white font-bold text-xs">
                                             {getInitials(auth.user.name)}
                                         </AvatarFallback>
                                     </Avatar>
@@ -357,18 +357,18 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                 </div>
                                 
                                 {/* User Menu Links */}
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                     <Link
                                         href={route('dashboard')}
                                         onClick={closeMobileMenu}
-                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                        className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                                     >
                                         My Move
                                     </Link>
                                     <Link
                                         href="/profile/settings"
                                         onClick={closeMobileMenu}
-                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                        className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                                     >
                                         Profile Settings
                                     </Link>
@@ -377,25 +377,25 @@ export default function GlobalHeader({ currentPage }: GlobalHeaderProps) {
                                         method="post"
                                         as="button"
                                         onClick={closeMobileMenu}
-                                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        className="block w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     >
                                         Sign Out
                                     </Link>
                                 </div>
                             </div>
                         ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 <Link
                                     href={route('login')}
                                     onClick={closeMobileMenu}
-                                    className="block w-full text-center px-4 py-3 bg-[#17B7C7] text-white font-medium rounded-lg hover:bg-[#139AAA] transition-colors"
+                                    className="block w-full text-center px-3 py-2.5 bg-[#17B7C7] text-white text-sm font-medium rounded-lg hover:bg-[#139AAA] transition-colors"
                                 >
                                     LOGIN
                                 </Link>
                                 <Link
                                     href={route('register')}
                                     onClick={closeMobileMenu}
-                                    className="block w-full text-center px-4 py-3 border-2 border-[#17B7C7] text-[#17B7C7] font-medium rounded-lg hover:bg-[#17B7C7] hover:text-white transition-colors"
+                                    className="block w-full text-center px-3 py-2.5 border-2 border-[#17B7C7] text-[#17B7C7] text-sm font-medium rounded-lg hover:bg-[#17B7C7] hover:text-white transition-colors"
                                 >
                                     REGISTER
                                 </Link>
