@@ -12,7 +12,7 @@ const SimplePriorityTasksWidget = lazy(() => import('@/components/housemover/ove
 const SimpleMoveCountdown = lazy(() => import('@/components/housemover/overview/SimpleMoveCountdown'));
 const SimpleVouchersRewards = lazy(() => import('@/components/housemover/overview/SimpleVouchersRewards'));
 const SimpleStatisticsDashboard = lazy(() => import('@/components/housemover/overview/SimpleStatisticsDashboard'));
-const PropertyBasket = lazy(() => import('@/components/housemover/chain-checker/PropertyBasket'));
+const PropertyBasketSection = lazy(() => import('@/components/housemover/overview/PropertyBasketSection'));
 
 interface Task {
     id: string;
@@ -364,7 +364,6 @@ export default function Dashboard({
     const [personalDetails, setPersonalDetails] = useState<PersonalDetails>(personalDetailsFromProps);
     const [selectedCtaTasks, setSelectedCtaTasks] = useState<Set<string>>(new Set());
     const [userPriorityTasks, setUserPriorityTasks] = useState<Task[]>([]);
-    const [showPropertyBasket, setShowPropertyBasket] = useState(false);
 
     const moveStages: MoveStage[] = [
         {
@@ -1009,60 +1008,10 @@ export default function Dashboard({
                         <LoadingSkeleton className="h-32" />
                     )}
 
-                    {/* Property Basket Section */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 bg-gradient-to-r from-[#00BCD4] to-[#00ACC1] rounded-lg flex items-center justify-center">
-                                    <span className="text-white text-xl">🏠</span>
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-semibold text-gray-900">Property Basket</h3>
-                                    <p className="text-sm text-gray-600">Track properties and claim your listings</p>
-                                </div>
-                            </div>
-                            
-                            <div className="flex items-center space-x-3">
-                                <button
-                                    onClick={() => setShowPropertyBasket(!showPropertyBasket)}
-                                    className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
-                                >
-                                    {showPropertyBasket ? 'Hide' : 'Show'} Properties
-                                </button>
-                                <a
-                                    href="/housemover/chain-checker"
-                                    className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
-                                >
-                                    View in Chain Checker →
-                                </a>
-                            </div>
-                        </div>
-                        
-                        <p className="text-gray-600 mb-4">
-                            Add properties from Rightmove to track interest and claim your listings. When others claim the same properties, you'll be notified of potential chain connections.
-                        </p>
-                        
-                        {showPropertyBasket && (
-                            <Suspense fallback={<LoadingSkeleton className="h-64" />}>
-                                <PropertyBasket />
-                            </Suspense>
-                        )}
-                        
-                        <div className="mt-6 p-4 bg-gradient-to-r from-[#00BCD4] to-[#00ACC1] rounded-lg text-white">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h4 className="font-semibold">Ready to track your moving chain?</h4>
-                                    <p className="text-sm opacity-90">Activate Chain Checker to sync your properties and monitor progress</p>
-                                </div>
-                                <a
-                                    href="/housemover/chain-checker"
-                                    className="px-4 py-2 bg-white text-[#00BCD4] rounded-lg hover:bg-gray-100 transition-colors font-medium"
-                                >
-                                    Activate Chain Checker
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    {/* Property Basket Section - Responsive Component */}
+                    <Suspense fallback={<LoadingSkeleton className="h-48" />}>
+                        <PropertyBasketSection />
+                    </Suspense>
 
                     {/* Moving Tasks Management Section (CTA Tasks) - Lazy Loaded */}
                     {visibleSections.has('tasks') ? (
@@ -1127,17 +1076,82 @@ export default function Dashboard({
                         <LoadingSkeleton className="h-64" />
                     )}
 
-                    {/* Call-to-Action Area */}
-                    <section className="text-center">
-                        <a 
-                            href="/housemover/move-details" 
-                            className="inline-flex items-center px-10 py-4 bg-[#00BCD4] text-white font-semibold text-lg rounded-lg hover:bg-[#00ACC1] transition-all duration-300 shadow-lg hover:shadow-xl"
-                        >
-                            Continue Your Moving Journey
-                            <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                            </svg>
-                        </a>
+                    {/* Call-to-Action Area - Responsive */}
+                    <section className="text-center px-3 sm:px-4 lg:px-6">
+                        {/* Mobile CTA */}
+                        <div className="block sm:hidden">
+                            <a 
+                                href="/housemover/move-details" 
+                                className="w-full inline-flex items-center justify-center px-6 py-4 bg-[#00BCD4] text-white font-semibold text-base rounded-lg hover:bg-[#00ACC1] transition-all duration-300 shadow-lg hover:shadow-xl"
+                            >
+                                <span className="mr-2">🚀</span>
+                                Continue Journey
+                                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                </svg>
+                            </a>
+                            <p className="text-xs text-gray-600 mt-3">
+                                Track your moving progress & complete tasks
+                            </p>
+                        </div>
+
+                        {/* Tablet CTA */}
+                        <div className="hidden sm:block lg:hidden">
+                            <a 
+                                href="/housemover/move-details" 
+                                className="inline-flex items-center px-8 py-4 bg-[#00BCD4] text-white font-semibold text-lg rounded-lg hover:bg-[#00ACC1] transition-all duration-300 shadow-lg hover:shadow-xl"
+                            >
+                                <span className="mr-3">🚀</span>
+                                Continue Your Moving Journey
+                                <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                </svg>
+                            </a>
+                            <p className="text-sm text-gray-600 mt-4">
+                                Access detailed move planning tools and track your progress
+                            </p>
+                        </div>
+
+                        {/* Desktop CTA */}
+                        <div className="hidden lg:block">
+                            <div className="max-w-4xl mx-auto">
+                                <h3 className="text-2xl xl:text-3xl font-bold text-[#1A237E] mb-4">
+                                    Ready to Take the Next Step?
+                                </h3>
+                                <p className="text-base xl:text-lg text-gray-700 mb-6 max-w-2xl mx-auto">
+                                    Access your detailed moving plan, track progress across all stages, and get personalized guidance for your journey.
+                                </p>
+                                <a 
+                                    href="/housemover/move-details" 
+                                    className="inline-flex items-center px-10 xl:px-12 py-4 xl:py-5 bg-[#00BCD4] text-white font-semibold text-lg xl:text-xl rounded-lg hover:bg-[#00ACC1] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                                >
+                                    <span className="mr-3 text-xl">🚀</span>
+                                    Continue Your Moving Journey
+                                    <svg className="ml-3 w-5 h-5 xl:w-6 xl:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                    </svg>
+                                </a>
+                                
+                                {/* Desktop Additional Features */}
+                                <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                                        <div className="text-2xl mb-2">📊</div>
+                                        <div className="text-sm font-medium text-[#1A237E]">Detailed Progress</div>
+                                        <div className="text-xs text-gray-600">Track every stage</div>
+                                    </div>
+                                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                                        <div className="text-2xl mb-2">✅</div>
+                                        <div className="text-sm font-medium text-[#1A237E]">Task Management</div>
+                                        <div className="text-xs text-gray-600">Organize & prioritize</div>
+                                    </div>
+                                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                                        <div className="text-2xl mb-2">🎯</div>
+                                        <div className="text-sm font-medium text-[#1A237E]">Personal Guidance</div>
+                                        <div className="text-xs text-gray-600">Customized support</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </section>
 
                     {/* Performance Monitoring - Hidden */}

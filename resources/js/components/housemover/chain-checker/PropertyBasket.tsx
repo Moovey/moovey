@@ -692,25 +692,47 @@ const PropertyBasket: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            {/* Add Property Section */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex items-center justify-between mb-4">
+            {/* Add Property Section - Responsive */}
+            <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 lg:p-5">
+                {/* Mobile Header */}
+                <div className="block sm:hidden mb-4">
+                    <div className="text-center">
+                        <h4 className="font-semibold text-gray-900 mb-2">Add Property</h4>
+                        <p className="text-sm text-gray-600 mb-3">
+                            Add properties with Rightmove URL and photos
+                        </p>
+                        {userChainRole && autoClaimType && (
+                            <p className="text-xs text-gray-500 mb-3 bg-yellow-50 p-2 rounded">
+                                Auto-claim as {autoClaimType}
+                            </p>
+                        )}
+                        <button
+                            onClick={() => setShowAddProperty(!showAddProperty)}
+                            className="w-full px-4 py-2 text-sm text-white bg-[#00BCD4] hover:bg-[#00ACC1] transition-colors rounded-lg"
+                        >
+                            {showAddProperty ? '✕ Cancel' : '+ Add Property'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Tablet & Desktop Header */}
+                <div className="hidden sm:flex items-center justify-between mb-4">
                     <div>
-                        <h4 className="font-semibold text-gray-900">Add Property to Basket</h4>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <h4 className="font-semibold text-gray-900 text-lg lg:text-xl">Add Property to Basket</h4>
+                        <p className="text-sm lg:text-base text-gray-600 mt-1">
                             Add properties with Rightmove URL, custom name, and optional photos
                         </p>
                         {userChainRole && autoClaimType && (
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs lg:text-sm text-gray-500 mt-1">
                                 Based on your chain role ({userChainRole.replace('_', ' ')}), properties can be auto-claimed as {autoClaimType}
                             </p>
                         )}
                     </div>
                     <button
                         onClick={() => setShowAddProperty(!showAddProperty)}
-                        className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
+                        className="px-4 py-2 text-sm lg:text-base text-[#00BCD4] hover:text-[#00ACC1] transition-colors font-medium hover:bg-[#E0F7FA] rounded-lg"
                     >
-                        {showAddProperty ? 'Cancel' : 'Add Property'}
+                        {showAddProperty ? '✕ Cancel' : '+ Add Property'}
                     </button>
                 </div>
 
@@ -867,23 +889,45 @@ const PropertyBasket: React.FC = () => {
                 onRequestDeclined={loadBasketProperties}
             />
 
-            {/* Search Existing Properties */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <h4 className="font-semibold text-gray-900 mb-4">Search Existing Properties</h4>
+            {/* Search Existing Properties - Responsive */}
+            <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 lg:p-5">
+                <h4 className="font-semibold text-gray-900 mb-4 text-center sm:text-left text-lg lg:text-xl">Search Existing Properties</h4>
                 
-                <div className="flex items-center space-x-3 mb-4">
+                {/* Mobile Search */}
+                <div className="block sm:hidden mb-4">
+                    <div className="space-y-3">
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && searchProperties()}
+                            className="w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                            placeholder="Search properties..."
+                        />
+                        <button
+                            onClick={searchProperties}
+                            disabled={searchingProperties}
+                            className="w-full px-4 py-3 bg-[#00BCD4] text-white rounded-lg hover:bg-[#00ACC1] transition-colors disabled:opacity-50 font-medium"
+                        >
+                            {searchingProperties ? '🔍 Searching...' : '🔍 Search Properties'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Desktop Search */}
+                <div className="hidden sm:flex items-center space-x-3 mb-4">
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && searchProperties()}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
+                        className="flex-1 px-3 py-2 lg:py-3 border border-gray-300 rounded-md lg:rounded-lg shadow-sm focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900"
                         placeholder="Search by address, title, or URL..."
                     />
                     <button
                         onClick={searchProperties}
                         disabled={searchingProperties}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                        className="px-4 py-2 lg:px-6 lg:py-3 bg-[#00BCD4] text-white rounded-lg hover:bg-[#00ACC1] transition-colors disabled:opacity-50 font-medium"
                     >
                         {searchingProperties ? '🔍' : 'Search'}
                     </button>
@@ -892,31 +936,63 @@ const PropertyBasket: React.FC = () => {
                 {searchResults.length > 0 && (
                     <div className="space-y-3">
                         {searchResults.map((property) => (
-                            <div key={property.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div className="flex-1">
-                                    <div className="font-medium text-gray-900">{property.property_title}</div>
-                                    <div className="text-sm text-gray-600">
-                                        {property.formatted_price} • {property.summary}
+                            <div key={property.id} className="bg-gray-50 rounded-lg p-3 lg:p-4">
+                                {/* Mobile Layout */}
+                                <div className="block sm:hidden">
+                                    <div className="mb-3">
+                                        <div className="font-medium text-gray-900 mb-1 text-sm">{property.property_title}</div>
+                                        <div className="text-xs text-gray-600 mb-2">
+                                            {property.formatted_price} • {property.summary}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                            👥 {property.basket_count} interested
+                                        </div>
                                     </div>
-                                    <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
-                                        <span>{property.basket_count} users interested</span>
+                                    <div className="flex space-x-2">
+                                        <button
+                                            onClick={() => addExistingPropertyToBasket(property, false)}
+                                            className="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                                        >
+                                            Add
+                                        </button>
+                                        {autoClaimType && (
+                                            <button
+                                                onClick={() => addExistingPropertyToBasket(property, true)}
+                                                className="flex-1 px-3 py-2 text-sm bg-[#00BCD4] text-white rounded-lg hover:bg-[#00ACC1] transition-colors font-medium"
+                                            >
+                                                Add & Claim
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                    <button
-                                        onClick={() => addExistingPropertyToBasket(property, false)}
-                                        className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-                                    >
-                                        Add
-                                    </button>
-                                    {autoClaimType && (
+
+                                {/* Desktop Layout */}
+                                <div className="hidden sm:flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <div className="font-medium text-gray-900">{property.property_title}</div>
+                                        <div className="text-sm text-gray-600">
+                                            {property.formatted_price} • {property.summary}
+                                        </div>
+                                        <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
+                                            <span>👥 {property.basket_count} users interested</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-2 ml-4">
                                         <button
-                                            onClick={() => addExistingPropertyToBasket(property, true)}
-                                            className="px-3 py-1 text-sm bg-[#00BCD4] text-white rounded hover:bg-[#00ACC1] transition-colors"
+                                            onClick={() => addExistingPropertyToBasket(property, false)}
+                                            className="px-3 py-1 lg:px-4 lg:py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
                                         >
-                                            Add & Claim
+                                            Add
                                         </button>
-                                    )}
+                                        {autoClaimType && (
+                                            <button
+                                                onClick={() => addExistingPropertyToBasket(property, true)}
+                                                className="px-3 py-1 lg:px-4 lg:py-2 text-sm bg-[#00BCD4] text-white rounded hover:bg-[#00ACC1] transition-colors"
+                                            >
+                                                Add & Claim
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -924,14 +1000,33 @@ const PropertyBasket: React.FC = () => {
                 )}
             </div>
 
-            {/* Basket Properties */}
+            {/* Basket Properties - Responsive */}
             <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-gray-900">
+                {/* Mobile Header */}
+                <div className="block sm:hidden">
+                    <div className="text-center mb-4">
+                        <h4 className="font-semibold text-gray-900 text-lg mb-3">
+                            Property Basket ({Array.isArray(basketProperties) ? basketProperties.length : 0})
+                        </h4>
+                        <label className="inline-flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+                            <input
+                                type="checkbox"
+                                checked={showFavoritesOnly}
+                                onChange={(e) => setShowFavoritesOnly(e.target.checked)}
+                                className="rounded border-gray-300 text-red-500 focus:ring-red-500"
+                            />
+                            <span>❤️ Favorites only</span>
+                        </label>
+                    </div>
+                </div>
+
+                {/* Desktop Header */}
+                <div className="hidden sm:flex items-center justify-between">
+                    <h4 className="font-semibold text-gray-900 text-lg lg:text-xl">
                         Your Property Basket ({Array.isArray(basketProperties) ? basketProperties.length : 0})
                     </h4>
                     <div className="flex items-center space-x-3">
-                        <label className="flex items-center space-x-2 text-sm text-gray-600">
+                        <label className="flex items-center space-x-2 text-sm lg:text-base text-gray-600">
                             <input
                                 type="checkbox"
                                 checked={showFavoritesOnly}
@@ -963,21 +1058,242 @@ const PropertyBasket: React.FC = () => {
                                 </p>
                             </div>
                         ) : (
-                            <div className="grid gap-4">
+                            <div className="space-y-4">
                                 {Array.isArray(basketProperties) && basketProperties
                                     .filter(item => !showFavoritesOnly || item.is_favorite)
                                     .map((item) => (
                             <motion.div
                                 key={item.id}
-                                className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                                className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 lg:p-5 hover:shadow-md transition-shadow"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                             >
-                                <div className="flex items-start space-x-4">
-                                    {/* Property Image(s) */}
+                                {/* Mobile Layout */}
+                                <div className="block sm:hidden">
+                                    {/* Mobile Property Image */}
+                                    <div className="mb-3">
+                                        <div 
+                                            className={`w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden relative ${
+                                                (item.property_photos && item.property_photos.length > 0) 
+                                                    ? 'cursor-pointer hover:opacity-80 transition-opacity' 
+                                                    : ''
+                                            }`}
+                                            onClick={() => (item.property_photos && item.property_photos.length > 0) && viewPropertyPhotos(item)}
+                                        >
+                                            {(item.property_photos && item.property_photos.length > 0) ? (
+                                                <>
+                                                    <img
+                                                        src={item.property_photos[0].startsWith('http') ? item.property_photos[0] : `${window.location.origin}${item.property_photos[0]}`}
+                                                        alt={item.property_title}
+                                                        className="w-full h-full object-cover rounded-lg"
+                                                        onError={(e) => {
+                                                            const target = e.target as HTMLImageElement;
+                                                            target.style.display = 'none';
+                                                            const parent = target.parentElement;
+                                                            if (parent) {
+                                                                parent.innerHTML = '<div class="w-full h-full bg-red-100 flex items-center justify-center rounded-lg"><span class="text-red-500 text-sm">Error</span></div>';
+                                                            }
+                                                        }}
+                                                    />
+                                                    {item.property_photos && item.property_photos.length > 1 && (
+                                                        <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
+                                                            +{item.property_photos.length - 1}
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute inset-0 hover:bg-black hover:bg-opacity-20 transition-colors flex items-center justify-center">
+                                                        <span className="text-white text-sm opacity-0 hover:opacity-100 transition-opacity">👁️ View</span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex flex-col items-center justify-center border border-gray-400 rounded-lg">
+                                                    <div className="text-4xl mb-2">🏠</div>
+                                                    <div className="text-sm text-gray-600 text-center px-2">No Image</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Mobile Property Details */}
+
+                                    {editingProperty === item.id ? (
+                                        /* Mobile Edit Mode */
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Property Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={editFormData.property_title}
+                                                    onChange={(e) => setEditFormData({...editFormData, property_title: e.target.value})}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900 bg-white"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                                <input
+                                                    type="text"
+                                                    value={editFormData.property_address}
+                                                    onChange={(e) => setEditFormData({...editFormData, property_address: e.target.value})}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900 bg-white"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                                <textarea
+                                                    value={editFormData.notes}
+                                                    onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                                                    rows={2}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-[#00BCD4] focus:border-[#00BCD4] text-gray-900 bg-white"
+                                                />
+                                            </div>
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={() => saveEditProperty(item.id)}
+                                                    className="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors font-medium"
+                                                >
+                                                    ✓ Save
+                                                </button>
+                                                <button
+                                                    onClick={cancelEditProperty}
+                                                    className="flex-1 px-3 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                                                >
+                                                    ✕ Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* Mobile Display Mode */
+                                        <>
+                                            <div className="mb-3">
+                                                <h5 className="font-medium text-gray-900 text-base mb-1">
+                                                    {item.property_title}
+                                                </h5>
+                                                <div className="text-sm text-gray-600 mb-1">
+                                                    {item.price ? `£${item.price.toLocaleString()}` : 'Price on request'} • {item.bedrooms ? `${item.bedrooms} bed` : ''} {item.property_type ? item.property_type.toLowerCase() : ''}
+                                                </div>
+                                                {item.address && (
+                                                    <div className="text-xs text-gray-500 mb-2">
+                                                        📍 {item.address}
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Mobile Interest Stats */}
+                                                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-2">
+                                                    <span className="bg-gray-100 px-2 py-1 rounded">👥 {item.basket_count} interested</span>
+                                                    {item.is_favorite && (
+                                                        <span className="bg-red-100 text-red-600 px-2 py-1 rounded flex items-center space-x-1">
+                                                            <span>❤️</span>
+                                                            <span>Favorite</span>
+                                                        </span>
+                                                    )}
+                                                    {item.is_claimed && (
+                                                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
+                                                            ✓ Claimed as {item.claim_type}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Mobile Notes */}
+                                                {item.notes && (
+                                                    <div className="mb-3 p-2 bg-blue-50 rounded text-sm text-gray-700">
+                                                        <span className="font-medium">Notes:</span> {item.notes}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Mobile Action Buttons */}
+                                            <div className="space-y-3">
+                                                {/* Mobile Primary Actions */}
+                                                <div className="flex space-x-2">
+                                                    <button
+                                                        onClick={() => toggleFavorite(item.id, item.is_favorite)}
+                                                        className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                                            item.is_favorite 
+                                                                ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                        }`}
+                                                    >
+                                                        {item.is_favorite ? '❤️ Unfavorite' : '🤍 Favorite'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => startEditProperty(item)}
+                                                        className="px-3 py-2 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors rounded-lg"
+                                                        title="Edit Property"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteProperty(item.id)}
+                                                        className="px-3 py-2 bg-red-100 text-red-600 hover:bg-red-200 transition-colors rounded-lg"
+                                                        title="Delete Property"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+
+                                                {/* Mobile Secondary Actions */}
+                                                <div className="space-y-2">
+                                                    <a
+                                                        href={item.rightmove_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="block w-full text-center px-3 py-2 text-sm text-[#00BCD4] bg-[#E0F7FA] hover:bg-[#B2EBF2] transition-colors rounded-lg font-medium"
+                                                    >
+                                                        🔗 View on Rightmove
+                                                    </a>
+                                                    
+                                                    {!item.is_claimed && (
+                                                        <div className="space-y-2">
+                                                            {userChainRole === 'first_time_buyer' ? (
+                                                                <button
+                                                                    onClick={() => claimProperty(item.id, 'buyer', false)}
+                                                                    className="w-full px-3 py-2 text-sm text-white bg-green-600 hover:bg-green-700 transition-colors rounded-lg font-medium"
+                                                                >
+                                                                    🏡 Claim as Buyer
+                                                                </button>
+                                                            ) : userChainRole === 'seller_only' ? (
+                                                                <button
+                                                                    onClick={() => claimProperty(item.id, 'seller', false)}
+                                                                    className="w-full px-3 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors rounded-lg font-medium"
+                                                                >
+                                                                    🏠 Claim as Seller
+                                                                </button>
+                                                            ) : (
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    <button
+                                                                        onClick={() => claimProperty(item.id, 'buyer', false)}
+                                                                        className="px-3 py-2 text-sm text-white bg-green-600 hover:bg-green-700 transition-colors rounded-lg font-medium"
+                                                                    >
+                                                                        🏡 Buyer
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => claimProperty(item.id, 'seller', false)}
+                                                                        className="px-3 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors rounded-lg font-medium"
+                                                                    >
+                                                                        🏠 Seller
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    <button
+                                                        onClick={() => removePropertyFromBasket(item.id)}
+                                                        className="w-full px-3 py-2 text-sm text-orange-600 bg-orange-100 hover:bg-orange-200 transition-colors rounded-lg font-medium"
+                                                    >
+                                                        🗑️ Remove from Basket
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                {/* Desktop Layout */}
+                                <div className="hidden sm:flex items-start space-x-4">
+                                    {/* Desktop Property Image(s) */}
                                     <div className="flex-shrink-0">
                                         <div 
-                                            className={`w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden relative ${
+                                            className={`w-16 h-16 lg:w-20 lg:h-20 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden relative ${
                                                 (item.property_photos && item.property_photos.length > 0) 
                                                     ? 'cursor-pointer hover:opacity-80 transition-opacity' 
                                                     : ''
@@ -1017,7 +1333,7 @@ const PropertyBasket: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* Property Details */}
+                                    {/* Desktop Property Details */}
                                     <div className="flex-1 min-w-0">
                                         {editingProperty === item.id ? (
                                             /* Edit Mode */
@@ -1200,36 +1516,36 @@ const PropertyBasket: React.FC = () => {
                                                         )}
                                                     </div>
 
-                                                    {/* Actions */}
+                                                    {/* Desktop Actions */}
                                                     <div className="flex items-center space-x-2 ml-4">
                                                         <button
                                                             onClick={() => toggleFavorite(item.id, item.is_favorite)}
-                                                            className={`p-2 transition-colors ${
+                                                            className={`p-2 lg:p-3 transition-colors rounded-lg hover:bg-gray-100 ${
                                                                 item.is_favorite 
                                                                     ? 'text-red-500 hover:text-red-600' 
                                                                     : 'text-gray-400 hover:text-red-500'
                                                             }`}
                                                             title={item.is_favorite ? "Remove from favorites" : "Add to favorites"}
                                                         >
-                                                            <svg className="w-5 h-5" fill={item.is_favorite ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                                                            <svg className="w-5 h-5 lg:w-6 lg:h-6" fill={item.is_favorite ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                                             </svg>
                                                         </button>
                                                         <button
                                                             onClick={() => startEditProperty(item)}
-                                                            className="p-2 text-blue-600 hover:text-blue-700 transition-colors"
+                                                            className="p-2 lg:p-3 text-blue-600 hover:text-blue-700 transition-colors rounded-lg hover:bg-blue-50"
                                                             title="Edit Property"
                                                         >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                             </svg>
                                                         </button>
                                                         <button
                                                             onClick={() => deleteProperty(item.id)}
-                                                            className="p-2 text-red-600 hover:text-red-700 transition-colors"
+                                                            className="p-2 lg:p-3 text-red-600 hover:text-red-700 transition-colors rounded-lg hover:bg-red-50"
                                                             title="Delete Property"
                                                         >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                             </svg>
                                                         </button>
@@ -1238,14 +1554,14 @@ const PropertyBasket: React.FC = () => {
                                             </>
                                         )}
 
-                                        {/* Action Buttons - Only show when not editing */}
+                                        {/* Desktop Action Buttons - Only show when not editing */}
                                         {editingProperty !== item.id && (
-                                            <div className="flex items-center space-x-3 mt-3">
+                                            <div className="flex flex-wrap items-center gap-2 lg:gap-3 mt-3">
                                                 <a
                                                     href={item.rightmove_url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-sm text-[#00BCD4] hover:text-[#00ACC1] transition-colors"
+                                                    className="text-sm lg:text-base text-[#00BCD4] hover:text-[#00ACC1] transition-colors font-medium px-2 py-1 rounded hover:bg-[#E0F7FA]"
                                                 >
                                                     View on Rightmove
                                                 </a>
@@ -1256,14 +1572,14 @@ const PropertyBasket: React.FC = () => {
                                                         {userChainRole === 'first_time_buyer' ? (
                                                             <button
                                                                 onClick={() => claimProperty(item.id, 'buyer', false)}
-                                                                className="text-sm text-green-600 hover:text-green-700 transition-colors font-medium"
+                                                                className="text-sm lg:text-base text-green-600 hover:text-green-700 transition-colors font-medium px-2 py-1 rounded hover:bg-green-50"
                                                             >
                                                                 Claim as Buyer
                                                             </button>
                                                         ) : userChainRole === 'seller_only' ? (
                                                             <button
                                                                 onClick={() => claimProperty(item.id, 'seller', false)}
-                                                                className="text-sm text-blue-600 hover:text-blue-700 transition-colors font-medium"
+                                                                className="text-sm lg:text-base text-blue-600 hover:text-blue-700 transition-colors font-medium px-2 py-1 rounded hover:bg-blue-50"
                                                             >
                                                                 Claim as Seller
                                                             </button>
@@ -1272,13 +1588,13 @@ const PropertyBasket: React.FC = () => {
                                                             <>
                                                                 <button
                                                                     onClick={() => claimProperty(item.id, 'buyer', false)}
-                                                                    className="text-sm text-green-600 hover:text-green-700 transition-colors"
+                                                                    className="text-sm lg:text-base text-green-600 hover:text-green-700 transition-colors px-2 py-1 rounded hover:bg-green-50"
                                                                 >
                                                                     Claim as Buyer
                                                                 </button>
                                                                 <button
                                                                     onClick={() => claimProperty(item.id, 'seller', false)}
-                                                                    className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                                                                    className="text-sm lg:text-base text-blue-600 hover:text-blue-700 transition-colors px-2 py-1 rounded hover:bg-blue-50"
                                                                 >
                                                                     Claim as Seller
                                                                 </button>
@@ -1289,7 +1605,7 @@ const PropertyBasket: React.FC = () => {
                                                 
                                                 <button
                                                     onClick={() => removePropertyFromBasket(item.id)}
-                                                    className="text-sm text-orange-600 hover:text-orange-700 transition-colors"
+                                                    className="text-sm lg:text-base text-orange-600 hover:text-orange-700 transition-colors px-2 py-1 rounded hover:bg-orange-50"
                                                 >
                                                     Remove from Basket
                                                 </button>
@@ -1305,28 +1621,28 @@ const PropertyBasket: React.FC = () => {
                 )}
             </div>
 
-            {/* Photo Modal */}
+            {/* Photo Modal - Responsive */}
             {showPhotoModal && selectedPropertyPhotos && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-4 border-b">
-                            <h3 className="text-lg font-semibold text-gray-900">Property Photos</h3>
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-2 sm:p-4">
+                    <div className="bg-white rounded-lg sm:rounded-xl max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between p-3 sm:p-4 border-b">
+                            <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">Property Photos</h3>
                             <button
                                 onClick={() => {
                                     setShowPhotoModal(false);
                                     setSelectedPropertyPhotos(null);
                                 }}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg"
                             >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
-                        <div className="p-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="p-3 sm:p-4 lg:p-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
                                 {selectedPropertyPhotos.map((photo, index) => (
-                                    <div key={index} className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                    <div key={index} className="aspect-square bg-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                                         <img
                                             src={photo}
                                             alt={`Property photo ${index + 1}`}
