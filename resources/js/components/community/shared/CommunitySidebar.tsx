@@ -57,16 +57,31 @@ export default function CommunitySidebar({
             <div className="lg:hidden mb-6 sm:mb-8 space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
                 <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg">
                     <div className="text-center">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-gradient-to-br from-[#17B7C7] to-[#1A237E] rounded-xl sm:rounded-2xl flex items-center justify-center">
-                            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.8-9M7 13l-1.8-9m0 0h15.75M7 13v6a2 2 0 002 2h8a2 2 0 002-2v-6M9 9h6" />
-                            </svg>
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 bg-white rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg border-2 border-gray-100">
+                            <img 
+                                src="/images/marketplace_logo.webp" 
+                                alt="Marketplace" 
+                                className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
+                                onError={(e) => {
+                                    // Fallback if WebP doesn't exist, try other formats
+                                    const target = e.target as HTMLImageElement;
+                                    if (target.src.includes('.webp')) {
+                                        target.src = '/images/marketplace_logo.png';
+                                    } else if (target.src.includes('.png')) {
+                                        target.src = '/images/marketplace_logo.jpg';
+                                    } else if (target.src.includes('.jpg')) {
+                                        target.src = '/images/marketplace_logo.svg';
+                                    } else {
+                                        target.style.display = 'none';
+                                    }
+                                }}
+                            />
                         </div>
                         <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Marketplace</h3>
                         <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Find great deals</p>
                         <Link
                             href="/marketplace"
-                            className="w-full bg-gradient-to-r from-[#17B7C7] to-[#1A237E] text-white px-3 py-2 text-xs sm:text-sm rounded-lg font-medium hover:from-[#139AAA] hover:to-[#0D1957] transition-all duration-200 transform hover:scale-105 shadow-md inline-block text-center"
+                            className="w-full bg-gradient-to-r from-[#00BCD4] to-[#17B7C7] text-white px-3 py-2 text-xs sm:text-sm rounded-lg font-medium hover:from-[#00ACC1] hover:to-[#139AAA] transition-all duration-200 transform hover:scale-105 shadow-md inline-block text-center"
                         >
                             Browse
                         </Link>
@@ -110,16 +125,31 @@ export default function CommunitySidebar({
             <div className="hidden lg:flex lg:w-64 xl:w-80 flex-col space-y-6">
                 <div className="bg-white rounded-3xl p-6 shadow-lg">
                     <div className="text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-[#17B7C7] to-[#1A237E] rounded-2xl flex items-center justify-center">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.8-9M7 13l-1.8-9m0 0h15.75M7 13v6a2 2 0 002 2h8a2 2 0 002-2v-6M9 9h6" />
-                            </svg>
+                        <div className="w-20 h-20 mx-auto mb-4 bg-white rounded-2xl flex items-center justify-center shadow-lg border-2 border-gray-100">
+                            <img 
+                                src="/images/marketplace_logo.webp" 
+                                alt="Marketplace" 
+                                className="w-16 h-16 object-contain"
+                                onError={(e) => {
+                                    // Fallback if WebP doesn't exist, try other formats
+                                    const target = e.target as HTMLImageElement;
+                                    if (target.src.includes('.webp')) {
+                                        target.src = '/images/marketplace_logo.png';
+                                    } else if (target.src.includes('.png')) {
+                                        target.src = '/images/marketplace_logo.jpg';
+                                    } else if (target.src.includes('.jpg')) {
+                                        target.src = '/images/marketplace_logo.svg';
+                                    } else {
+                                        target.style.display = 'none';
+                                    }
+                                }}
+                            />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Moovey Marketplace</h3>
                         <p className="text-gray-600 text-sm mb-4">Find great deals on items others are decluttering</p>
                         <Link
                             href="/marketplace"
-                            className="w-full bg-gradient-to-r from-[#17B7C7] to-[#1A237E] text-white px-4 py-2 rounded-lg font-medium hover:from-[#139AAA] hover:to-[#0D1957] transition-all duration-200 transform hover:scale-105 shadow-md inline-block text-center"
+                            className="w-full bg-gradient-to-r from-[#00BCD4] to-[#17B7C7] text-white px-4 py-2 rounded-lg font-medium hover:from-[#00ACC1] hover:to-[#139AAA] transition-all duration-200 transform hover:scale-105 shadow-md inline-block text-center"
                         >
                             Browse Marketplace
                         </Link>
