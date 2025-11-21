@@ -35,8 +35,8 @@ export default function HousemoverNavigation({ activeTab, onTabChange }: Housemo
     const TabContent = ({ tab, className }: { tab: Tab; className: string }) => {
         const content = (
             <>
-                <span className="text-lg xl:text-xl">{tab.icon}</span>
-                <span className="text-xs xl:text-sm font-medium">{tab.label}</span>
+                <span className="text-base lg:text-lg xl:text-xl">{tab.icon}</span>
+                <span className="text-xs lg:text-xs xl:text-sm font-medium">{tab.label}</span>
             </>
         );
 
@@ -118,12 +118,12 @@ export default function HousemoverNavigation({ activeTab, onTabChange }: Housemo
             {/* Desktop & Large Screen Layout - Full Horizontal */}
             <div className="hidden lg:block">
                 <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-2">
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-1 lg:space-x-2">
                         {tabs.map((tab) => (
                             <TabContent
                                 key={tab.id}
                                 tab={tab}
-                                className={`flex items-center space-x-3 px-4 xl:px-6 py-3 rounded-lg font-semibold transition-all duration-200 flex-1 justify-center ${
+                                className={`flex items-center space-x-2 px-2 lg:px-3 xl:px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex-1 justify-center whitespace-nowrap ${
                                     activeTab === tab.id 
                                         ? 'bg-gradient-to-r from-[#17B7C7] to-[#00BCD4] text-white shadow-md transform scale-105' 
                                         : 'text-gray-600 hover:bg-[#17B7C7]/10 hover:text-[#17B7C7] hover:scale-102 hover:shadow-sm'
