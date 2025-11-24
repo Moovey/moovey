@@ -453,9 +453,42 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {[
-                                        { value: 'first_time_buyer', label: 'First-Time Buyer', icon: '🏠', description: 'Buying your first property' },
-                                        { value: 'seller_only', label: 'Selling Only', icon: '💰', description: 'Downsizing or moving abroad' },
-                                        { value: 'buyer_seller', label: 'Buying & Selling', icon: '🔄', description: 'Most common moving scenario' },
+                                        { 
+                                            value: 'first_time_buyer', 
+                                            label: 'First-Time Buyer', 
+                                            icon: (
+                                                <div className="w-12 h-12 bg-gradient-to-br from-[#00BCD4] to-[#17B7C7] rounded-lg flex items-center justify-center">
+                                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V9.375c0-.621.504-1.125 1.125-1.125H20.25M8.25 21l10.5 0m-11.25-9.375h11.25C18.621 11.625 19.125 11.121 19.125 10.5V9.15c0-.201-.075-.402-.225-.563L12.375 2.062a.75.75 0 00-1.061 0L4.8 8.587c-.15.161-.225.362-.225.563v.939c0 .621.504 1.125 1.125 1.125z" />
+                                                    </svg>
+                                                </div>
+                                            ), 
+                                            description: 'Buying your first property' 
+                                        },
+                                        { 
+                                            value: 'seller_only', 
+                                            label: 'Selling Only', 
+                                            icon: (
+                                                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                            ), 
+                                            description: 'Downsizing or moving abroad' 
+                                        },
+                                        { 
+                                            value: 'buyer_seller', 
+                                            label: 'Buying & Selling', 
+                                            icon: (
+                                                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                                                    </svg>
+                                                </div>
+                                            ), 
+                                            description: 'Most common moving scenario' 
+                                        },
                                     ].map((option) => (
                                         <button
                                             key={option.value}
@@ -468,7 +501,7 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                                 }
                                             `}
                                         >
-                                            <div className="text-2xl mb-2">{option.icon}</div>
+                                            <div className="mb-3 flex justify-center">{option.icon}</div>
                                             <div className="font-semibold text-gray-900">{option.label}</div>
                                             <div className="text-sm text-gray-600 mt-1">{option.description}</div>
                                         </button>
@@ -499,7 +532,13 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                     </div>
                                 ) : availableProperties.length === 0 ? (
                                     <div className="text-center py-8">
-                                        <div className="text-gray-400 text-4xl mb-4">🏠</div>
+                                        <div className="mb-4 flex justify-center">
+                                            <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
+                                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V9.375c0-.621.504-1.125 1.125-1.125H20.25M8.25 21l10.5 0m-11.25-9.375h11.25C18.621 11.625 19.125 11.121 19.125 10.5V9.15c0-.201-.075-.402-.225-.563L12.375 2.062a.75.75 0 00-1.061 0L4.8 8.587c-.15.161-.225.362-.225.563v.939c0 .621.504 1.125 1.125 1.125z" />
+                                                </svg>
+                                            </div>
+                                        </div>
                                         <h3 className="text-lg font-medium text-gray-900 mb-2">No Properties Found</h3>
                                         <p className="text-gray-600 mb-6">{getPropertyPromptMessage()}</p>
                                         <button
@@ -975,7 +1014,13 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                 {/* Extended Chain Knowledge Section */}
                                 <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg mt-8">
                                     <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
-                                        <span className="text-purple-500 mr-2">🔗</span>
+                                        <div className="mr-3">
+                                            <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded flex items-center justify-center">
+                                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                                                </svg>
+                                            </div>
+                                        </div>
                                         Extended Chain Knowledge
                                     </h4>
                                     <p className="text-sm text-gray-600 mb-6">
@@ -986,7 +1031,13 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                     {(formData.chain_role === 'seller_only' || formData.chain_role === 'buyer_seller') && (
                                         <div className="mb-6">
                                             <h5 className="font-medium text-gray-900 mb-4 flex items-center">
-                                                <span className="text-green-500 mr-2">📈</span>
+                                                <div className="mr-3">
+                                                    <div className="w-5 h-5 bg-gradient-to-br from-green-500 to-green-600 rounded flex items-center justify-center">
+                                                        <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
                                                 Your Buyer's Chain (Up the Chain)
                                             </h5>
                                             
@@ -1107,7 +1158,13 @@ const ChainSetupWizard: React.FC<ChainSetupWizardProps> = ({ onComplete, onCance
                                     {(formData.chain_role === 'first_time_buyer' || formData.chain_role === 'buyer_seller') && (
                                         <div className="mb-6">
                                             <h5 className="font-medium text-gray-900 mb-4 flex items-center">
-                                                <span className="text-blue-500 mr-2">📉</span>
+                                                <div className="mr-3">
+                                                    <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded flex items-center justify-center">
+                                                        <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6L9 12.75l4.286-4.286a11.948 11.948 0 014.306 6.43l.776 2.898m0 0l3.182-5.511m-3.182 5.511l-5.511-3.182" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
                                                 Your Seller's Chain (Down the Chain)
                                             </h5>
                                             

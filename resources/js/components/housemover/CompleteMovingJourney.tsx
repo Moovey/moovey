@@ -21,6 +21,7 @@ interface CompleteMovingJourneyProps {
      * so logic stays with existing page implementation.
      */
     getProgressColor: (progress: number) => string;
+    getSectionIcon: (iconName: string, iconSize?: string) => React.ReactElement | null;
     className?: string;
 }
 
@@ -37,8 +38,10 @@ const CompleteMovingJourney: React.FC<CompleteMovingJourneyProps> = ({
     onSectionClick,
     getSectionProgress,
     getProgressColor,
+    getSectionIcon,
     className = ''
 }) => {
+
     return (
         <div className={`bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 lg:mb-8 ${className}`}>            
             {/* Mobile Layout */}
@@ -76,7 +79,7 @@ const CompleteMovingJourney: React.FC<CompleteMovingJourneyProps> = ({
                                         : 'bg-gray-400'
                                 }`}
                             >
-                                {section.icon}
+                                {getSectionIcon(section.icon, "w-4 h-4")}
                             </div>
                             <div className="mt-2 text-center">
                                 <div className="text-xs text-gray-600 font-medium mb-1 leading-tight">{section.shortName}</div>
@@ -121,7 +124,7 @@ const CompleteMovingJourney: React.FC<CompleteMovingJourneyProps> = ({
                                             : 'bg-gray-400'
                                     }`}
                                 >
-                                    {section.icon}
+                                    {getSectionIcon(section.icon, "w-5 h-5")}
                                 </div>
                                 <div className="mt-2 text-center max-w-16">
                                     <div className="text-xs text-gray-600 font-medium mb-1 leading-tight">{section.shortName}</div>
@@ -167,7 +170,7 @@ const CompleteMovingJourney: React.FC<CompleteMovingJourneyProps> = ({
                                             : 'bg-gray-400'
                                     }`}
                                 >
-                                    {section.icon}
+                                    {getSectionIcon(section.icon, "w-6 h-6 xl:w-8 xl:h-8")}
                                 </div>
                                 <div className="mt-3 xl:mt-4 text-center max-w-20 xl:max-w-24">
                                     <div className="text-xs xl:text-sm text-gray-600 font-medium mb-1">{section.shortName}</div>

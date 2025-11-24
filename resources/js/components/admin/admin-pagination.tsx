@@ -51,26 +51,26 @@ const AdminPagination = memo(function AdminPagination({
             pages.push(1);
             
             if (currentPage <= 3) {
-                // Show first few pages
-                for (let i = 2; i <= 4; i++) {
+                // Show first 5 pages (1, 2, 3, 4, 5)
+                for (let i = 2; i <= Math.min(5, totalPages); i++) {
                     pages.push(i);
                 }
-                if (totalPages > 4) {
+                if (totalPages > 5) {
                     pages.push('ellipsis');
                     pages.push(totalPages);
                 }
             } else if (currentPage >= totalPages - 2) {
-                // Show last few pages
-                if (totalPages > 4) {
+                // Show last 5 pages
+                if (totalPages > 5) {
                     pages.push('ellipsis');
                 }
-                for (let i = totalPages - 3; i <= totalPages; i++) {
+                for (let i = Math.max(totalPages - 4, 2); i <= totalPages; i++) {
                     if (i > 1) pages.push(i);
                 }
             } else {
-                // Show pages around current
+                // Show current page and 2 pages on each side (5 total)
                 pages.push('ellipsis');
-                for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+                for (let i = currentPage - 2; i <= currentPage + 2; i++) {
                     pages.push(i);
                 }
                 pages.push('ellipsis');

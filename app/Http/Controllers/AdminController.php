@@ -158,7 +158,7 @@ class AdminController extends Controller
     /**
      * Display the users management page.
      */
-    public function users(): Response
+    public function users(Request $request): Response
     {
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Admin access required');
@@ -176,8 +176,8 @@ class AdminController extends Controller
             ];
         });
 
-        // Eager load relationships and optimize queries
-        $users = User::with([
+        // Build query with filters
+        $query = User::with([
                 'profile:id,user_id,post_count,friend_count',
             ])
             ->withCount([
@@ -192,24 +192,54 @@ class AdminController extends Controller
             ->select([
                 'id', 'name', 'email', 'role', 'avatar', 
                 'email_verified_at', 'created_at', 'updated_at'
-            ])
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($user) {
-                // Add computed avatar URL
-                $user->avatar_url = $user->avatar ? url('/files/avatars/' . basename($user->avatar)) : null;
-                return $user;
+            ]);
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('role', 'like', "%{$search}%");
             });
+        }
+
+        // Apply role filter
+        if ($request->filled('role') && $request->role !== 'All Users') {
+            $query->where('role', strtolower($request->role));
+        }
+
+        // Apply sorting
+        $sortField = $request->get('sort', 'created_at');
+        $sortOrder = $request->get('order', 'desc');
+        
+        if (in_array($sortField, ['name', 'email', 'role', 'created_at'])) {
+            $query->orderBy($sortField, $sortOrder);
+        } elseif ($sortField === 'messages') {
+            $query->orderBy('sent_messages_count', $sortOrder);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        // Paginate with 5 users per page
+        $users = $query->paginate(5)->withQueryString();
+        
+        // Transform the paginated data
+        $users->getCollection()->transform(function ($user) {
+            // Add computed avatar URL
+            $user->avatar_url = $user->avatar ? url('/files/avatars/' . basename($user->avatar)) : null;
+            return $user;
+        });
         
         return Inertia::render('admin/users', [
             'users' => $users,
             'stats' => $stats,
             'initialFilters' => [
-                'search' => request('search', ''),
-                'role' => request('role', 'All Users'),
-                'sort' => request('sort', 'created_at'),
-                'order' => request('order', 'desc'),
-                'page' => request('page', 1),
+                'search' => $request->get('search', ''),
+                'role' => $request->get('role', 'All Users'),
+                'sort' => $request->get('sort', 'created_at'),
+                'order' => $request->get('order', 'desc'),
+                'page' => $request->get('page', 1),
             ]
         ]);
     }
@@ -262,16 +292,32 @@ class AdminController extends Controller
             $query->orderBy($sortField, $sortOrder);
         } elseif ($sortField === 'messages') {
             $query->orderBy('sent_messages_count', $sortOrder);
+        } else {
+            $query->orderBy('created_at', 'desc');
         }
 
-        $users = $query->get()->map(function ($user) {
+        // Paginate with 5 users per page
+        $users = $query->paginate(5)->withQueryString();
+        
+        // Transform the paginated data
+        $users->getCollection()->transform(function ($user) {
             $user->avatar_url = $user->avatar ? url('/files/avatars/' . basename($user->avatar)) : null;
             return $user;
         });
 
         return response()->json([
-            'users' => $users,
-            'total' => $users->count()
+            'users' => $users->items(),
+            'pagination' => [
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'per_page' => $users->perPage(),
+                'total' => $users->total(),
+                'from' => $users->firstItem(),
+                'to' => $users->lastItem(),
+                'has_more_pages' => $users->hasMorePages(),
+                'prev_page_url' => $users->previousPageUrl(),
+                'next_page_url' => $users->nextPageUrl(),
+            ]
         ]);
     }
 

@@ -417,15 +417,6 @@ export default function OptimizedCommunityFeed({
                                 </div>
                             )}
 
-                            {/* Debug: Show when button should be visible */}
-                            {process.env.NODE_ENV === 'development' && (
-                                <div className="text-center mt-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
-                                    <p>Button visibility: hasMore={pagination.hasMore ? 'true' : 'false'}, 
-                                    isLoading={isLoadingMore ? 'true' : 'false'}, 
-                                    postsLength={posts.length}</p>
-                                </div>
-                            )}
-
                             {/* End of posts message */}
                             {!pagination.hasMore && posts.length > 0 && (
                                 <div className="text-center mt-6 sm:mt-8 py-4 sm:py-6 border-t border-gray-200">

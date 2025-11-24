@@ -9,6 +9,49 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
 import { PREDEFINED_SERVICES } from '@/constants/services';
 
+// Professional SVG icons for Business Services
+const getBusinessServicesIcon = (name: string, className: string = "w-6 h-6") => {
+    const icons: Record<string, React.JSX.Element> = {
+        logo: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+        ),
+        business: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+        ),
+        tag: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+        ),
+        upload: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+        ),
+        arrow: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+        ),
+        star: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+        ),
+        premium: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+        )
+    };
+    
+    return icons[name] || icons.business;
+};
+
 type BasicListing = {
   name: string;
   description: string;
@@ -212,8 +255,13 @@ export default function BusinessServices() {
       {/* Free Basic Listing */}
       <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-[#1A237E]">Free Basic Listing</h2>
-          <p className="text-gray-600 text-sm">A simple one-line entry: name + short description, and a small JPEG logo.</p>
+          <h2 className="text-2xl font-bold text-[#1A237E] flex items-center">
+            <div className="w-8 h-8 bg-[#17B7C7] rounded-lg flex items-center justify-center mr-3 shadow-lg">
+              {getBusinessServicesIcon('tag', 'w-5 h-5 text-white')}
+            </div>
+            Free Basic Listing
+          </h2>
+          <p className="text-gray-600 text-sm ml-11">A simple one-line entry: name + short description, and a small JPEG logo.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -328,7 +376,9 @@ export default function BusinessServices() {
                   {initialProfile.logoUrl ? (
                     <img src={initialProfile.logoUrl} alt="Logo" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-lg">🏷️</span>
+                    <div className="w-8 h-8 bg-gradient-to-br from-[#00BCD4] to-[#17B7C7] rounded flex items-center justify-center">
+                      {getBusinessServicesIcon('business', 'w-4 h-4 text-white')}
+                    </div>
                   )}
                 </div>
                 <div className="flex-1 truncate">
@@ -353,7 +403,12 @@ export default function BusinessServices() {
       <div className="bg-[#E0F7FA] rounded-xl p-8 shadow-sm">
         <div className="flex items-start justify-between gap-6 flex-col md:flex-row">
           <div>
-            <h3 className="text-2xl font-bold text-[#1A237E] mb-2">Activate Your Premium Profile — Free for 12 Months</h3>
+            <h3 className="text-2xl font-bold text-[#1A237E] mb-2 flex items-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center mr-3 shadow-lg">
+                {getBusinessServicesIcon('star', 'w-5 h-5 text-yellow-800')}
+              </div>
+              Activate Your Premium Profile — Free for 12 Months
+            </h3>
             <p className="text-gray-700 mb-4 max-w-2xl">
               When a customer tries to connect with you, we’ll email you a link to activate your Moovey profile. Activate to enjoy a free
               12‑month premium trial and unlock customer connections and more.
@@ -367,11 +422,14 @@ export default function BusinessServices() {
             </ul>
           </div>
           <div className="shrink-0">
-            <Link href="/business/profile" className="inline-flex items-center px-6 py-3 bg-[#00BCD4] text-white rounded-lg font-semibold hover:bg-[#00ACC1] transition-colors">
+            <Link href="/business/profile" className="inline-flex items-center px-6 py-3 bg-[#00BCD4] text-white rounded-lg font-semibold hover:bg-[#00ACC1] transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+              <div className="flex items-center mr-2">
+                {getBusinessServicesIcon('premium', 'w-5 h-5')}
+              </div>
               Start Free 12‑Month Trial
-              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <div className="ml-2">
+                {getBusinessServicesIcon('arrow', 'w-4 h-4')}
+              </div>
             </Link>
             <div className="text-[11px] text-gray-600 mt-2">Only upgraded businesses can message customers.</div>
           </div>

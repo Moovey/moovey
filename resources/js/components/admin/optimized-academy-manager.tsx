@@ -10,6 +10,80 @@ const LessonStats = lazy(() => import('@/components/admin/lesson-stats'));
 const LessonTable = lazy(() => import('@/components/admin/lesson-table'));
 const AdminPagination = lazy(() => import('@/components/admin/admin-pagination'));
 
+// Professional SVG icons for Academy Management
+const getAcademyIcon = (name: string, className: string = "w-5 h-5") => {
+    const icons: Record<string, React.JSX.Element> = {
+        academy: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+            </svg>
+        ),
+        lessons: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+        ),
+        published: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        ),
+        drafts: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+        ),
+        archived: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+        ),
+        plus: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+        ),
+        search: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+        ),
+        close: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        ),
+        chevronDown: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+        ),
+        success: (
+            <svg className={className} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+        ),
+        emptySearch: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0118 12a8 8 0 01-8 8 8 8 0 01-8-8 8 8 0 018-8c2.027 0 3.9.756 5.291 2M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        ),
+        emptyPage: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+        ),
+        rocket: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+        )
+    };
+    
+    return icons[name] || icons.lessons;
+};
+
 // Simple loading components
 const StatsSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -196,9 +270,7 @@ export default function OptimizedAcademyManager() {
                     <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-green-100 border-l-4 border-[#17B7C7] text-gray-800 rounded-lg shadow-sm">
                         <div className="flex items-center">
                             <div className="w-8 h-8 bg-[#17B7C7] rounded-full flex items-center justify-center mr-3">
-                                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
+                                {getAcademyIcon('success', 'w-5 h-5 text-white')}
                             </div>
                             <span className="font-medium">{success}</span>
                         </div>
@@ -211,7 +283,7 @@ export default function OptimizedAcademyManager() {
                         <div className="flex-1">
                             <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#1A237E] flex items-center">
                                 <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#17B7C7] to-[#00BCD4] rounded-lg sm:rounded-xl flex items-center justify-center mr-2 sm:mr-3 md:mr-4 flex-shrink-0">
-                                    <span className="text-sm sm:text-lg md:text-xl lg:text-2xl">🎓</span>
+                                    {getAcademyIcon('academy', 'w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-white')}
                                 </div>
                                 <span className="leading-tight">Academy Management</span>
                                 {loading && (
@@ -225,9 +297,9 @@ export default function OptimizedAcademyManager() {
                         
                         <Button
                             onClick={handleCreateNewLesson}
-                            className="bg-gradient-to-r from-[#17B7C7] to-[#00BCD4] text-white px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg font-semibold hover:from-[#139AAA] hover:to-[#0097A7] transition-all transform hover:scale-105 shadow-lg text-sm sm:text-base whitespace-nowrap self-start sm:self-center"
+                            className="bg-gradient-to-r from-[#17B7C7] to-[#00BCD4] text-white px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg font-semibold hover:from-[#139AAA] hover:to-[#0097A7] transition-all transform hover:scale-105 shadow-lg text-sm sm:text-base whitespace-nowrap self-start sm:self-center flex items-center"
                         >
-                            <span className="text-base sm:text-lg md:text-xl mr-1 sm:mr-2">➕</span>
+                            {getAcademyIcon('plus', 'w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2')}
                             <span className="hidden xs:inline">Create New </span>Lesson
                         </Button>
                     </div>
@@ -238,7 +310,7 @@ export default function OptimizedAcademyManager() {
                     <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center">
                             <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-gradient-to-br from-[#17B7C7] to-[#00BCD4] rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
-                                <span className="text-white font-bold text-sm sm:text-base md:text-lg">📚</span>
+                                {getAcademyIcon('lessons', 'w-4 h-4 sm:w-5 sm:h-5 text-white')}
                             </div>
                             <div className="min-w-0">
                                 <p className="text-lg sm:text-xl md:text-2xl font-bold text-[#1A237E] truncate">{stats.total}</p>
@@ -249,7 +321,7 @@ export default function OptimizedAcademyManager() {
                     <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center">
                             <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
-                                <span className="text-white font-bold text-sm sm:text-base md:text-lg">✅</span>
+                                {getAcademyIcon('published', 'w-4 h-4 sm:w-5 sm:h-5 text-white')}
                             </div>
                             <div className="min-w-0">
                                 <p className="text-lg sm:text-xl md:text-2xl font-bold text-[#1A237E] truncate">{stats.published}</p>
@@ -260,7 +332,7 @@ export default function OptimizedAcademyManager() {
                     <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center">
                             <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
-                                <span className="text-white font-bold text-sm sm:text-base md:text-lg">📝</span>
+                                {getAcademyIcon('drafts', 'w-4 h-4 sm:w-5 sm:h-5 text-white')}
                             </div>
                             <div className="min-w-0">
                                 <p className="text-lg sm:text-xl md:text-2xl font-bold text-[#1A237E] truncate">{stats.drafts}</p>
@@ -271,7 +343,7 @@ export default function OptimizedAcademyManager() {
                     <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center">
                             <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
-                                <span className="text-white font-bold text-sm sm:text-base md:text-lg">📦</span>
+                                {getAcademyIcon('archived', 'w-4 h-4 sm:w-5 sm:h-5 text-white')}
                             </div>
                             <div className="min-w-0">
                                 <p className="text-lg sm:text-xl md:text-2xl font-bold text-[#1A237E] truncate">{stats.archived}</p>
@@ -287,9 +359,7 @@ export default function OptimizedAcademyManager() {
                         {/* Search */}
                         <div className="relative flex-1">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
+                                {getAcademyIcon('search', 'h-4 w-4 sm:h-5 sm:w-5 text-gray-400')}
                             </div>
                             <input
                                 type="text"
@@ -303,9 +373,7 @@ export default function OptimizedAcademyManager() {
                                     onClick={() => setSearchQuery('')}
                                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 touch-manipulation"
                                 >
-                                    <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
+                                    {getAcademyIcon('close', 'h-4 w-4 sm:h-5 sm:w-5')}
                                 </button>
                             )}
                         </div>
@@ -323,9 +391,7 @@ export default function OptimizedAcademyManager() {
                                 <option value="Archived">Archived</option>
                             </select>
                             <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
+                                {getAcademyIcon('chevronDown', 'w-4 h-4 text-gray-500')}
                             </div>
                         </div>
                     </div>
@@ -370,7 +436,7 @@ export default function OptimizedAcademyManager() {
                 {paginatedLessons.length === 0 && filteredLessons.length === 0 && allLessons.length > 0 && !loading && (
                     <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8 md:p-12 text-center">
                         <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gradient-to-br from-[#17B7C7] to-[#00BCD4] rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                            <span className="text-2xl sm:text-3xl">🔍</span>
+                            {getAcademyIcon('emptySearch', 'w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 text-white')}
                         </div>
                         <h3 className="text-lg sm:text-xl font-semibold text-[#1A237E] mb-2 sm:mb-3">No lessons found</h3>
                         <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base px-2">
@@ -388,7 +454,7 @@ export default function OptimizedAcademyManager() {
                 {paginatedLessons.length === 0 && filteredLessons.length > 0 && !loading && (
                     <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8 md:p-12 text-center">
                         <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gradient-to-br from-[#17B7C7] to-[#00BCD4] rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                            <span className="text-2xl sm:text-3xl">📄</span>
+                            {getAcademyIcon('emptyPage', 'w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 text-white')}
                         </div>
                         <h3 className="text-lg sm:text-xl font-semibold text-[#1A237E] mb-2 sm:mb-3">No lessons on this page</h3>
                         <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base px-2">Try going to a different page or adjusting your search.</p>
@@ -404,15 +470,15 @@ export default function OptimizedAcademyManager() {
                 {allLessons.length === 0 && !loading && (
                     <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8 md:p-12 text-center">
                         <div className="w-20 h-20 sm:w-22 sm:h-22 md:w-24 md:h-24 bg-gradient-to-br from-[#17B7C7] to-[#00BCD4] rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                            <span className="text-3xl sm:text-4xl">🎓</span>
+                            {getAcademyIcon('academy', 'w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 text-white')}
                         </div>
                         <h3 className="text-xl sm:text-2xl font-bold text-[#1A237E] mb-2 sm:mb-3">Welcome to Moovey Academy</h3>
                         <p className="text-gray-600 mb-6 sm:mb-8 text-base sm:text-lg px-2 sm:px-4">Start by creating your first lesson to help house movers succeed!</p>
                         <Button
                             onClick={handleCreateNewLesson}
-                            className="bg-gradient-to-r from-[#17B7C7] to-[#00BCD4] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold hover:from-[#139AAA] hover:to-[#0097A7] transition-all transform hover:scale-105 shadow-lg text-base sm:text-lg touch-manipulation"
+                            className="bg-gradient-to-r from-[#17B7C7] to-[#00BCD4] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold hover:from-[#139AAA] hover:to-[#0097A7] transition-all transform hover:scale-105 shadow-lg text-base sm:text-lg touch-manipulation flex items-center justify-center"
                         >
-                            <span className="text-lg sm:text-xl mr-2">🚀</span>
+                            {getAcademyIcon('rocket', 'w-5 h-5 sm:w-6 sm:h-6 mr-2')}
                             Create Your First Lesson
                         </Button>
                     </div>

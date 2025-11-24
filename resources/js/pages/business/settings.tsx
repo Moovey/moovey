@@ -6,6 +6,96 @@ import BusinessHeader from '@/components/business/BusinessHeader';
 import { toast } from 'react-toastify';
 import { getAvatarUrl, getFallbackAvatarUrl } from '@/utils/fileUtils';
 
+// Professional SVG icons for Business Settings
+const getBusinessSettingsIcon = (name: string, className: string = "w-6 h-6") => {
+    const icons: Record<string, React.JSX.Element> = {
+        eye: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+        ),
+        eyeOff: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+            </svg>
+        ),
+        creditCard: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+        ),
+        document: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+        ),
+        chevronDown: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+        ),
+        settings: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        ),
+        shield: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+        ),
+        bell: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+        ),
+        mail: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+        ),
+        phone: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+        ),
+        user: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+        ),
+        building: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+        ),
+        clock: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        ),
+        download: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+        ),
+        lockClosed: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        ),
+        trash: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        )
+    };
+    
+    return icons[name] || icons.settings;
+};
+
 interface SecuritySettings {
     currentPassword: string;
     newPassword: string;
@@ -541,9 +631,9 @@ export default function BusinessSettings() {
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 transition-colors"
                                 >
-                                    {showPassword ? '🙈' : '👁️'}
+                                    {showPassword ? getBusinessSettingsIcon('eyeOff', 'w-5 h-5') : getBusinessSettingsIcon('eye', 'w-5 h-5')}
                                 </button>
                             </div>
                             {(validationErrors.currentPassword || pwdErrors.current_password) && (
@@ -568,9 +658,9 @@ export default function BusinessSettings() {
                                 <button
                                     type="button"
                                     onClick={() => setShowNewPassword(!showNewPassword)}
-                                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 transition-colors"
                                 >
-                                    {showNewPassword ? '🙈' : '👁️'}
+                                    {showNewPassword ? getBusinessSettingsIcon('eyeOff', 'w-5 h-5') : getBusinessSettingsIcon('eye', 'w-5 h-5')}
                                 </button>
                             </div>
                             {pwdData.password && (
@@ -627,9 +717,9 @@ export default function BusinessSettings() {
                                 <button
                                     type="button"
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 transition-colors"
                                 >
-                                    {showConfirmPassword ? '🙈' : '👁️'}
+                                    {showConfirmPassword ? getBusinessSettingsIcon('eyeOff', 'w-5 h-5') : getBusinessSettingsIcon('eye', 'w-5 h-5')}
                                 </button>
                             </div>
                             {(validationErrors.confirmPassword || pwdErrors.password) && (
@@ -673,18 +763,20 @@ export default function BusinessSettings() {
                                 className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
                             >
                                 <span className="font-medium text-gray-900">Payment Methods</span>
-                                <span className={`transform transition-transform ${
+                                <div className={`transform transition-transform ${
                                     expandedSections.paymentMethods ? 'rotate-180' : ''
                                 }`}>
-                                    ▼
-                                </span>
+                                    {getBusinessSettingsIcon('chevronDown', 'w-5 h-5 text-gray-400')}
+                                </div>
                             </button>
                             {expandedSections.paymentMethods && (
                                 <div className="border-t border-gray-200 p-4 space-y-3">
                                     {billingInfo.paymentMethods.map((method) => (
                                         <div key={method.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                             <div className="flex items-center space-x-3">
-                                                <span className="text-2xl">💳</span>
+                                                <div className="w-10 h-10 bg-[#17B7C7] rounded-lg flex items-center justify-center">
+                                                    {getBusinessSettingsIcon('creditCard', 'w-5 h-5 text-white')}
+                                                </div>
                                                 <div>
                                                     <p className="font-medium text-gray-900">
                                                         {method.type} •••• {method.last4}
@@ -718,14 +810,16 @@ export default function BusinessSettings() {
                                 className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
                             >
                                 <span className="font-medium text-gray-900 flex items-center">
-                                    <span className="mr-2">📄</span>
+                                    <div className="w-6 h-6 bg-[#00BCD4] rounded flex items-center justify-center mr-2">
+                                        {getBusinessSettingsIcon('document', 'w-4 h-4 text-white')}
+                                    </div>
                                     Billing History
                                 </span>
-                                <span className={`transform transition-transform ${
+                                <div className={`transform transition-transform ${
                                     expandedSections.billingHistory ? 'rotate-180' : ''
                                 }`}>
-                                    ▼
-                                </span>
+                                    {getBusinessSettingsIcon('chevronDown', 'w-5 h-5 text-gray-400')}
+                                </div>
                             </button>
                             {expandedSections.billingHistory && (
                                 <div className="border-t border-gray-200 p-4 space-y-3">
@@ -812,11 +906,11 @@ export default function BusinessSettings() {
                                             className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors"
                                         >
                                             <span className="text-sm font-medium text-gray-700">Email Preferences</span>
-                                            <span className={`transform transition-transform text-sm ${
+                                            <div className={`transform transition-transform ${
                                                 expandedSections.emailPreferences ? 'rotate-180' : ''
                                             }`}>
-                                                ▼
-                                            </span>
+                                                {getBusinessSettingsIcon('chevronDown', 'w-4 h-4 text-gray-400')}
+                                            </div>
                                         </button>
                                         {expandedSections.emailPreferences && (
                                             <div className="border-t border-gray-200 p-3 space-y-3">

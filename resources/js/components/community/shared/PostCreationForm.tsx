@@ -3,6 +3,55 @@ import { CommunityPost } from '@/types/community';
 import { toast } from 'react-toastify';
 import LocationAutocomplete from './LocationAutocomplete';
 
+// Professional SVG icons for Post Creation Form
+const getPostCreationIcon = (name: string, className: string = "w-5 h-5") => {
+    const icons: Record<string, React.JSX.Element> = {
+        photo: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+        ),
+        video: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+        ),
+        location: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        ),
+        emoji: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        ),
+        close: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        ),
+        post: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+        ),
+        login: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+        ),
+        community: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+            </svg>
+        )
+    };
+    
+    return icons[name] || icons.post;
+};
+
 interface PostCreationFormProps {
     onPostCreated: (post: CommunityPost) => void;
     isAuthenticated: boolean;
@@ -190,13 +239,19 @@ export default function PostCreationForm({
 
     if (!isAuthenticated) {
         return (
-            <div className={`bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6 text-center ${className}`}>
-                <p className="text-gray-600 mb-4">Want to create posts?</p>
+            <div className={`bg-white rounded-xl border border-gray-200 shadow-lg p-4 sm:p-6 text-center ${className}`}>
+                <div className="flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 bg-[#17B7C7] rounded-xl flex items-center justify-center shadow-lg">
+                        {getPostCreationIcon('community', 'w-6 h-6 text-white')}
+                    </div>
+                </div>
+                <p className="text-gray-600 mb-4 font-medium">Want to share with the community?</p>
                 <a 
                     href="/login" 
-                    className="bg-[#17B7C7] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors shadow-lg inline-block"
+                    className="bg-[#17B7C7] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#139AAA] transition-all duration-200 shadow-lg inline-flex items-center space-x-2 transform hover:scale-105"
                 >
-                    Log In
+                    {getPostCreationIcon('login', 'w-5 h-5')}
+                    <span>Log In</span>
                 </a>
             </div>
         );
@@ -243,9 +298,9 @@ export default function PostCreationForm({
                                                 />
                                                 <button
                                                     onClick={() => removeImage(index)}
-                                                    className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-90 text-sm"
+                                                    className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-90 transition-all duration-200 hover:scale-110"
                                                 >
-                                                    ×
+                                                    {getPostCreationIcon('close', 'w-4 h-4')}
                                                 </button>
                                             </div>
                                         ))}
@@ -261,9 +316,9 @@ export default function PostCreationForm({
                                         />
                                         <button
                                             onClick={removeVideo}
-                                            className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-90 text-sm"
+                                            className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-90 transition-all duration-200 hover:scale-110"
                                         >
-                                            ×
+                                            {getPostCreationIcon('close', 'w-4 h-4')}
                                         </button>
                                     </div>
                                 )}
@@ -293,10 +348,10 @@ export default function PostCreationForm({
                     {/* Action Bar */}
                     <div className="px-4 sm:px-6 py-3 border-t border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="flex items-center space-x-2 overflow-x-auto w-full sm:w-auto">
-                            <label className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors flex-shrink-0">
-                                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                                </svg>
+                            <label className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-all duration-200 flex-shrink-0 hover:text-[#17B7C7] group">
+                                <div className="w-6 h-6 text-[#17B7C7] group-hover:scale-110 transition-transform duration-200">
+                                    {getPostCreationIcon('photo', 'w-5 h-5')}
+                                </div>
                                 <span className="text-sm font-medium">Photo</span>
                                 <input
                                     type="file"
@@ -308,10 +363,10 @@ export default function PostCreationForm({
                                 />
                             </label>
                             
-                            <label className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors flex-shrink-0">
-                                <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                                </svg>
+                            <label className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-all duration-200 flex-shrink-0 hover:text-[#00BCD4] group">
+                                <div className="w-6 h-6 text-[#00BCD4] group-hover:scale-110 transition-transform duration-200">
+                                    {getPostCreationIcon('video', 'w-5 h-5')}
+                                </div>
                                 <span className="text-sm font-medium">Video</span>
                                 <input
                                     type="file"
@@ -326,24 +381,26 @@ export default function PostCreationForm({
                                 <button
                                     type="button"
                                     onClick={() => setShowLocationField((v) => !v)}
-                                    className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                                    className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 flex-shrink-0 hover:text-[#1A237E] group"
                                     disabled={isSubmitting}
                                     aria-expanded={showLocationField}
                                     aria-controls="post-location-input"
                                 >
-                                    <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                                    </svg>
+                                    <div className="w-6 h-6 text-[#1A237E] group-hover:scale-110 transition-transform duration-200">
+                                        {getPostCreationIcon('location', 'w-5 h-5')}
+                                    </div>
                                     <span className="text-sm font-medium">{showLocationField ? 'Hide location' : 'Add location'}</span>
                                 </button>
                             )}
 
                             <button
                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                className="flex items-center space-x-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                                className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 flex-shrink-0 hover:text-yellow-500 group"
                                 disabled={isSubmitting}
                             >
-                                <span className="text-lg">😊</span>
+                                <div className="w-6 h-6 text-yellow-500 group-hover:scale-110 transition-transform duration-200">
+                                    {getPostCreationIcon('emoji', 'w-5 h-5')}
+                                </div>
                                 <span className="text-sm font-medium">Emoji</span>
                             </button>
                         </div>

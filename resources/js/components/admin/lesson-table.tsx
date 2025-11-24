@@ -3,6 +3,50 @@ import { Button } from '@/components/ui/button';
 import { router } from '@inertiajs/react';
 import { toast } from 'react-toastify';
 
+// Professional SVG icons for Lesson Table
+const getLessonIcon = (name: string, className: string = "w-4 h-4") => {
+    const icons: Record<string, React.JSX.Element> = {
+        time: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        ),
+        calendar: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+        ),
+        stage: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+            </svg>
+        ),
+        draft: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+        ),
+        publish: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        ),
+        edit: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+        ),
+        delete: (
+            <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        )
+    };
+    
+    return icons[name] || icons.stage;
+};
+
 interface Lesson {
     id: number;
     title: string;
@@ -146,8 +190,14 @@ const LessonTable = memo(function LessonTable({ lessons, onLessonUpdate }: Lesso
                             {/* Meta info */}
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center space-x-3 text-xs text-gray-500">
-                                    <span>⏱️ {lesson.duration}</span>
-                                    <span>📅 {formatDate(lesson.created_at)}</span>
+                                    <span className="flex items-center">
+                                        {getLessonIcon('time', 'w-3 h-3 mr-1')}
+                                        {lesson.duration}
+                                    </span>
+                                    <span className="flex items-center">
+                                        {getLessonIcon('calendar', 'w-3 h-3 mr-1')}
+                                        {formatDate(lesson.created_at)}
+                                    </span>
                                 </div>
                             </div>
                             
@@ -161,7 +211,7 @@ const LessonTable = memo(function LessonTable({ lessons, onLessonUpdate }: Lesso
                                 ) : (
                                     <>
                                         <Button 
-                                            className={`flex-1 py-2.5 text-xs font-medium rounded-lg transition-all touch-manipulation ${
+                                            className={`flex-1 py-2.5 text-xs font-medium rounded-lg transition-all touch-manipulation flex items-center justify-center ${
                                                 lesson.status === 'Published' 
                                                     ? 'bg-amber-500 text-white hover:bg-amber-600' 
                                                     : 'bg-green-500 text-white hover:bg-green-600'
@@ -170,19 +220,22 @@ const LessonTable = memo(function LessonTable({ lessons, onLessonUpdate }: Lesso
                                                 status: lesson.status === 'Published' ? 'Draft' : 'Published' 
                                             })}
                                         >
-                                            {lesson.status === 'Published' ? '📋 Draft' : '✅ Publish'}
+                                            {lesson.status === 'Published' 
+                                                ? <>{getLessonIcon('draft', 'w-4 h-4 mr-1')} Draft</>
+                                                : <>{getLessonIcon('publish', 'w-4 h-4 mr-1')} Publish</>
+                                            }
                                         </Button>
                                         <Button 
-                                            className="flex-1 py-2.5 text-xs font-medium bg-[#17B7C7] text-white rounded-lg hover:bg-[#139AAA] transition-all touch-manipulation"
+                                            className="flex-1 py-2.5 text-xs font-medium bg-[#17B7C7] text-white rounded-lg hover:bg-[#139AAA] transition-all touch-manipulation flex items-center justify-center"
                                             onClick={() => editLesson(lesson.id)}
                                         >
-                                            ✏️ Edit
+                                            {getLessonIcon('edit', 'w-4 h-4 mr-1')} Edit
                                         </Button>
                                         <Button 
-                                            className="px-4 py-2.5 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all touch-manipulation"
+                                            className="px-4 py-2.5 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all touch-manipulation flex items-center justify-center"
                                             onClick={() => deleteLesson(lesson.id, lesson.title)}
                                         >
-                                            🗑️
+                                            {getLessonIcon('delete', 'w-4 h-4')}
                                         </Button>
                                     </>
                                 )}
@@ -215,15 +268,15 @@ const LessonTable = memo(function LessonTable({ lessons, onLessonUpdate }: Lesso
                                     {/* Meta information */}
                                     <div className="flex items-center flex-wrap gap-4 text-sm text-gray-500">
                                         <span className="flex items-center">
-                                            <span className="mr-1">🎓</span>
+                                            {getLessonIcon('stage', 'w-4 h-4 mr-1')}
                                             {lesson.lesson_stage}
                                         </span>
                                         <span className="flex items-center">
-                                            <span className="mr-1">⏱️</span>
+                                            {getLessonIcon('time', 'w-4 h-4 mr-1')}
                                             {lesson.duration}
                                         </span>
                                         <span className="flex items-center">
-                                            <span className="mr-1">📅</span>
+                                            {getLessonIcon('calendar', 'w-4 h-4 mr-1')}
                                             {formatDate(lesson.created_at)}
                                         </span>
                                     </div>
@@ -239,7 +292,7 @@ const LessonTable = memo(function LessonTable({ lessons, onLessonUpdate }: Lesso
                                     ) : (
                                         <>
                                             <Button 
-                                                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                                                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center ${
                                                     lesson.status === 'Published' 
                                                         ? 'bg-amber-500 text-white hover:bg-amber-600' 
                                                         : 'bg-green-500 text-white hover:bg-green-600'
@@ -248,19 +301,22 @@ const LessonTable = memo(function LessonTable({ lessons, onLessonUpdate }: Lesso
                                                     status: lesson.status === 'Published' ? 'Draft' : 'Published' 
                                                 })}
                                             >
-                                                {lesson.status === 'Published' ? 'Unpublish' : 'Publish'}
+                                                {lesson.status === 'Published' 
+                                                    ? <>{getLessonIcon('draft', 'w-3 h-3 mr-1')} Unpublish</>
+                                                    : <>{getLessonIcon('publish', 'w-3 h-3 mr-1')} Publish</>
+                                                }
                                             </Button>
                                             <Button 
-                                                className="px-3 py-1.5 text-xs font-medium bg-[#17B7C7] text-white rounded-lg hover:bg-[#139AAA] transition-colors"
+                                                className="px-3 py-1.5 text-xs font-medium bg-[#17B7C7] text-white rounded-lg hover:bg-[#139AAA] transition-colors flex items-center"
                                                 onClick={() => editLesson(lesson.id)}
                                             >
-                                                Edit
+                                                {getLessonIcon('edit', 'w-3 h-3 mr-1')} Edit
                                             </Button>
                                             <Button 
-                                                className="px-3 py-1.5 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                                                className="px-3 py-1.5 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center"
                                                 onClick={() => deleteLesson(lesson.id, lesson.title)}
                                             >
-                                                Delete
+                                                {getLessonIcon('delete', 'w-3 h-3 mr-1')} Delete
                                             </Button>
                                         </>
                                     )}
