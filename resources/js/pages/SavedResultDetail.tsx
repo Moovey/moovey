@@ -69,12 +69,42 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
     };
 
     const getToolIcon = (toolType: string) => {
+        const iconProps = "w-8 h-8 text-[#17B7C7]";
+        const strokeProps = { strokeWidth: 2, fill: "none", stroke: "currentColor" };
+        
         switch (toolType) {
-            case 'mortgage': return '🏠';
-            case 'affordability': return '📋';
-            case 'volume': return '📦';
-            case 'school-catchment': return '🔍';
-            default: return '🔧';
+            case 'mortgage':
+                return (
+                    <svg className={iconProps} viewBox="0 0 24 24" {...strokeProps}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                );
+            case 'affordability':
+                return (
+                    <svg className={iconProps} viewBox="0 0 24 24" {...strokeProps}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                );
+            case 'volume':
+                return (
+                    <svg className={iconProps} viewBox="0 0 24 24" {...strokeProps}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                );
+            case 'school-catchment':
+                return (
+                    <svg className={iconProps} viewBox="0 0 24 24" {...strokeProps}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                );
+            default:
+                return (
+                    <svg className={iconProps} viewBox="0 0 24 24" {...strokeProps}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                );
         }
     };
 
@@ -96,20 +126,20 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                 <h4 className="font-semibold text-gray-900 mb-4">Loan Parameters</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                        <span className="text-gray-600">Loan Amount:</span>
-                        <p className="font-medium">£{parseFloat(formData.loanAmount || '0').toLocaleString('en-GB')}</p>
+                        <span className="text-gray-700 font-medium">Loan Amount:</span>
+                        <p className="font-semibold text-gray-900">£{parseFloat(formData.loanAmount || '0').toLocaleString('en-GB')}</p>
                     </div>
                     <div>
-                        <span className="text-gray-600">Interest Rate:</span>
-                        <p className="font-medium">{formData.interestRate || 'N/A'}%</p>
+                        <span className="text-gray-700 font-medium">Interest Rate:</span>
+                        <p className="font-semibold text-gray-900">{formData.interestRate || 'N/A'}%</p>
                     </div>
                     <div>
-                        <span className="text-gray-600">Loan Term:</span>
-                        <p className="font-medium">{formData.loanTerm || 'N/A'} years</p>
+                        <span className="text-gray-700 font-medium">Loan Term:</span>
+                        <p className="font-semibold text-gray-900">{formData.loanTerm || 'N/A'} years</p>
                     </div>
                     <div>
-                        <span className="text-gray-600">Down Payment:</span>
-                        <p className="font-medium">£{parseFloat(formData.downPayment || '0').toLocaleString('en-GB')}</p>
+                        <span className="text-gray-700 font-medium">Down Payment:</span>
+                        <p className="font-semibold text-gray-900">£{parseFloat(formData.downPayment || '0').toLocaleString('en-GB')}</p>
                     </div>
                 </div>
             </div>
@@ -117,7 +147,7 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
             {/* Results Breakdown */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-white border rounded-lg p-4">
-                    <h5 className="text-sm font-semibold text-gray-700 mb-1">Total Interest</h5>
+                    <h5 className="text-sm font-semibold text-gray-800 mb-1">Total Interest</h5>
                     <p className="text-lg font-bold text-orange-600">
                         £{results.totalInterest?.toLocaleString('en-GB', { 
                             minimumFractionDigits: 2, 
@@ -126,7 +156,7 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                     </p>
                 </div>
                 <div className="bg-white border rounded-lg p-4">
-                    <h5 className="text-sm font-semibold text-gray-700 mb-1">Total Amount</h5>
+                    <h5 className="text-sm font-semibold text-gray-800 mb-1">Total Amount</h5>
                     <p className="text-lg font-bold text-gray-900">
                         £{results.totalAmount?.toLocaleString('en-GB', { 
                             minimumFractionDigits: 2, 
@@ -135,7 +165,7 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                     </p>
                 </div>
                 <div className="bg-white border rounded-lg p-4">
-                    <h5 className="text-sm font-semibold text-gray-700 mb-1">LTV Ratio</h5>
+                    <h5 className="text-sm font-semibold text-gray-800 mb-1">LTV Ratio</h5>
                     <p className="text-lg font-bold text-blue-600">
                         {results.loanToValue?.toFixed(1) || 'N/A'}%
                     </p>
@@ -159,20 +189,20 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                 <h4 className="font-semibold text-gray-900 mb-4">Financial Parameters</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                        <span className="text-gray-600">Annual Income:</span>
-                        <p className="font-medium">£{parseFloat(formData.grossAnnualIncome || '0').toLocaleString('en-GB')}</p>
+                        <span className="text-gray-700 font-medium">Annual Income:</span>
+                        <p className="font-semibold text-gray-900">£{parseFloat(formData.grossAnnualIncome || '0').toLocaleString('en-GB')}</p>
                     </div>
                     <div>
-                        <span className="text-gray-600">Monthly Debt:</span>
-                        <p className="font-medium">£{parseFloat(formData.monthlyDebtPayments || '0').toLocaleString('en-GB')}</p>
+                        <span className="text-gray-700 font-medium">Monthly Debt:</span>
+                        <p className="font-semibold text-gray-900">£{parseFloat(formData.monthlyDebtPayments || '0').toLocaleString('en-GB')}</p>
                     </div>
                     <div>
-                        <span className="text-gray-600">Down Payment:</span>
-                        <p className="font-medium">£{parseFloat(formData.downPayment || '0').toLocaleString('en-GB')}</p>
+                        <span className="text-gray-700 font-medium">Down Payment:</span>
+                        <p className="font-semibold text-gray-900">£{parseFloat(formData.downPayment || '0').toLocaleString('en-GB')}</p>
                     </div>
                     <div>
-                        <span className="text-gray-600">Interest Rate:</span>
-                        <p className="font-medium">{formData.interestRate || 'N/A'}%</p>
+                        <span className="text-gray-700 font-medium">Interest Rate:</span>
+                        <p className="font-semibold text-gray-900">{formData.interestRate || 'N/A'}%</p>
                     </div>
                 </div>
             </div>
@@ -180,20 +210,20 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
             {/* Financial Ratios */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-white border rounded-lg p-4">
-                    <h5 className="text-sm font-semibold text-gray-700 mb-2">Housing-to-Income Ratio</h5>
+                    <h5 className="text-sm font-semibold text-gray-800 mb-2">Housing-to-Income Ratio</h5>
                     <p className="text-2xl font-bold text-green-600">
                         {results.housingToIncomeRatio?.toFixed(1) || 'N/A'}%
                     </p>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-gray-800 font-medium mt-1">
                         {(results.housingToIncomeRatio || 0) <= 28 ? 'Good ratio' : 'Recommended: ≤28%'}
                     </p>
                 </div>
                 <div className="bg-white border rounded-lg p-4">
-                    <h5 className="text-sm font-semibold text-gray-700 mb-2">Debt-to-Income Ratio</h5>
+                    <h5 className="text-sm font-semibold text-gray-800 mb-2">Debt-to-Income Ratio</h5>
                     <p className="text-2xl font-bold text-purple-600">
                         {results.debtToIncomeRatio?.toFixed(1) || 'N/A'}%
                     </p>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-gray-800 font-medium mt-1">
                         {(results.debtToIncomeRatio || 0) <= 36 ? 'Good ratio' : 'Recommended: ≤36%'}
                     </p>
                 </div>
@@ -202,12 +232,17 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
             {/* Recommendations */}
             {results.recommendations && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-900 mb-3">💡 Recommendations</h4>
+                    <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        <h4 className="font-semibold text-gray-900">Recommendations</h4>
+                    </div>
                     <ul className="space-y-2">
                         {results.recommendations.map((rec: string, index: number) => (
                             <li key={index} className="flex items-start text-sm">
                                 <span className="text-amber-600 mr-2">•</span>
-                                <span className="text-gray-700">{rec}</span>
+                                <span className="text-gray-800 font-medium">{rec}</span>
                             </li>
                         ))}
                     </ul>
@@ -224,9 +259,12 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                 <p className="text-2xl font-bold mb-2">
                     {results.totalVolume?.toFixed(1) || 'N/A'} m³
                 </p>
-                <p className="text-lg">
-                    🚚 {results.recommendedTruck?.name || 'N/A'} - {results.recommendedTruck?.price || 'N/A'}
-                </p>
+                <div className="flex items-center gap-2 text-lg">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <span>{results.recommendedTruck?.name || 'N/A'} - £{results.recommendedTruck?.price || 'N/A'}</span>
+                </div>
             </div>
 
             {/* Room Breakdown */}
@@ -245,9 +283,9 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                                 {room.items && room.items.length > 0 && (
                                     <div className="space-y-1">
                                         {room.items.map((item: any, itemIndex: number) => (
-                                            <div key={itemIndex} className="flex justify-between text-sm text-gray-600">
-                                                <span>{item.name} x{item.quantity}</span>
-                                                <span>{item.volume?.toFixed(1) || '0'} m³</span>
+                                            <div key={itemIndex} className="flex justify-between text-sm text-gray-800">
+                                                <span className="font-medium">{item.name} x{item.quantity}</span>
+                                                <span className="font-semibold">{item.volume?.toFixed(1) || '0'} m³</span>
                                             </div>
                                         ))}
                                     </div>
@@ -265,7 +303,13 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
             {/* Main Result */}
             <div className="bg-[#17B7C7] text-white rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-2">School Catchment Analysis</h3>
-                <p className="text-lg mb-2">📍 {results.searchedAddress || 'Unknown location'}</p>
+                <div className="flex items-center gap-2 text-lg mb-2">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{results.searchedAddress || 'Unknown location'}</span>
+                </div>
                 <p className="text-2xl font-bold">{results.totalCircles || 0} radius circles analyzed</p>
             </div>
 
@@ -273,19 +317,34 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
             {results.summary && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h5 className="text-sm font-semibold text-gray-700 mb-1">Primary Schools</h5>
+                        <div className="flex items-center gap-2 mb-1">
+                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            <h5 className="text-sm font-semibold text-gray-800">Primary Schools</h5>
+                        </div>
                         <p className="text-2xl font-bold text-blue-600">
                             {results.summary.primarySchoolCircles || 0}
                         </p>
                     </div>
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <h5 className="text-sm font-semibold text-gray-700 mb-1">Secondary Schools</h5>
+                        <div className="flex items-center gap-2 mb-1">
+                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <h5 className="text-sm font-semibold text-gray-800">Secondary Schools</h5>
+                        </div>
                         <p className="text-2xl font-bold text-green-600">
                             {results.summary.secondarySchoolCircles || 0}
                         </p>
                     </div>
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <h5 className="text-sm font-semibold text-gray-700 mb-1">Amenities</h5>
+                        <div className="flex items-center gap-2 mb-1">
+                            <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <h5 className="text-sm font-semibold text-gray-800">Amenities</h5>
+                        </div>
                         <p className="text-2xl font-bold text-yellow-600">
                             {results.summary.amenityCircles || 0}
                         </p>
@@ -309,8 +368,8 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                                         }}
                                     />
                                     <div>
-                                        <p className="font-medium text-gray-900">{circle.label}</p>
-                                        <p className="text-sm text-gray-600">{circle.radius}km radius</p>
+                                        <p className="font-semibold text-gray-900">{circle.label}</p>
+                                        <p className="text-sm text-gray-800 font-medium">{circle.radius}km radius</p>
                                     </div>
                                 </div>
                             </div>
@@ -357,20 +416,23 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                             <div className="flex items-center space-x-4">
                                 <Link
                                     href="/saved-results"
-                                    className="text-gray-600 hover:text-[#17B7C7] transition-colors"
+                                    className="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-[#17B7C7] hover:border-[#17B7C7] hover:bg-[#17B7C7]/5 transition-all duration-200 shadow-sm hover:shadow-md"
+                                    title="Back to Saved Results"
                                 >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                                     </svg>
                                 </Link>
                                 <div>
-                                    <div className="flex items-center space-x-3 mb-2">
-                                        <span className="text-3xl">{getToolIcon(savedResult.tool_type)}</span>
+                                    <div className="flex items-center space-x-4 mb-2">
+                                        <div className="flex-shrink-0">
+                                            {getToolIcon(savedResult.tool_type)}
+                                        </div>
                                         <div>
                                             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                                                 {savedResult.name}
                                             </h1>
-                                            <p className="text-gray-600">
+                                            <p className="text-gray-700 font-medium">
                                                 {savedResult.tool_display_name} • Saved on {formatDate(savedResult.calculated_at)}
                                             </p>
                                         </div>
@@ -380,14 +442,18 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                             
                             <div className="flex items-center space-x-3">
                                 <Link
-                                    href={`/tools?tool=${
-                                        savedResult.tool_type === 'mortgage' ? '0' :
-                                        savedResult.tool_type === 'affordability' ? '1' :
-                                        savedResult.tool_type === 'school-catchment' ? '2' :
-                                        savedResult.tool_type === 'volume' ? '3' : '0'
+                                    href={`/tools/${
+                                        savedResult.tool_type === 'mortgage' ? 'mortgage-calculator' :
+                                        savedResult.tool_type === 'affordability' ? 'affordability-calculator' :
+                                        savedResult.tool_type === 'school-catchment' ? 'school-catchment-map' :
+                                        savedResult.tool_type === 'volume' ? 'volume-calculator' : 'mortgage-calculator'
                                     }`}
-                                    className="bg-[#17B7C7] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#139AAA] transition-colors text-sm"
+                                    className="flex items-center gap-2 bg-[#17B7C7] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#139AAA] transition-colors text-sm shadow-sm hover:shadow-md"
                                 >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
                                     Use Tool Again
                                 </Link>
                                 <button
@@ -406,7 +472,10 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                                         </>
                                     ) : (
                                         <>
-                                            🗑️ Delete
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Delete
                                         </>
                                     )}
                                 </button>

@@ -42,7 +42,7 @@ class SavedToolResultController extends Controller
 
     public function index(Request $request): Response
     {
-        $perPage = 15; // Optimized page size - not too small (many requests) or too large (slow loading)
+        $perPage = 10; // 10 results per page for better user experience
         
         $savedResults = SavedToolResult::where('user_id', Auth::id())
             ->select(['id', 'name', 'tool_type', 'results', 'calculated_at', 'created_at']) // Only select needed fields for performance
