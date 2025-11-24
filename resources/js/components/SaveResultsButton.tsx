@@ -48,6 +48,7 @@ export default function SaveResultsButton({
 
             router.post('/saved-results', saveData, {
                 preserveScroll: true,
+                only: ['savedResults'], // Only refresh savedResults data for real-time update
                 onSuccess: () => {
                     setShowSaveDialog(false);
                     setSaveName('');

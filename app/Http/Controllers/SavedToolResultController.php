@@ -24,7 +24,18 @@ class SavedToolResultController extends Controller
 
         $validated['user_id'] = Auth::id();
 
-        SavedToolResult::create($validated);
+        $savedResult = SavedToolResult::create($validated);
+
+        // Get updated saved results for the specific tool type to share with Inertia
+        $updatedSavedResults = SavedToolResult::where('user_id', Auth::id())
+            ->where('tool_type', $validated['tool_type'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Share the updated results with Inertia for real-time update
+        Inertia::share([
+            'savedResults' => $updatedSavedResults
+        ]);
 
         return back()->with('success', 'Results saved successfully!');
     }

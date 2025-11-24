@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { usePage } from '@inertiajs/react';
 
 interface SavedResult {
     id: string;
+    name: string;
     tool_type: string;
     results: any;
     form_data: any;
@@ -17,16 +19,28 @@ interface SavedResultsSidebarProps {
 }
 
 export default function SavedResultsSidebar({ toolType, className = '', initialSavedResults }: SavedResultsSidebarProps) {
-    const [savedResults, setSavedResults] = useState<SavedResult[]>(initialSavedResults || []);
-    const [loading, setLoading] = useState(!initialSavedResults);
+    const { props } = usePage();
+    const sharedSavedResults = (props as any).savedResults as SavedResult[] | undefined;
+    
+    // Use shared results if available, otherwise use initial results
+    const [savedResults, setSavedResults] = useState<SavedResult[]>(
+        sharedSavedResults || initialSavedResults || []
+    );
+    const [loading, setLoading] = useState(!initialSavedResults && !sharedSavedResults);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // Only fetch if no initial results provided (non-Inertia mode)
-        if (!initialSavedResults) {
+        // Update local state when shared results change (real-time updates)
+        if (sharedSavedResults) {
+            // Filter results by tool type since shared results might contain all types
+            const filteredResults = sharedSavedResults.filter(result => result.tool_type === toolType);
+            setSavedResults(filteredResults);
+            setLoading(false);
+        } else if (!initialSavedResults) {
+            // Only fetch if no initial results or shared results provided
             fetchSavedResults();
         }
-    }, [toolType, initialSavedResults]);
+    }, [toolType, initialSavedResults, sharedSavedResults]);
 
     const fetchSavedResults = async () => {
         try {
@@ -98,7 +112,7 @@ export default function SavedResultsSidebar({ toolType, className = '', initialS
                 return {
                     title: `Max House: £${result.results.maxHousePrice?.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
                     subtitle: `Max Loan: £${result.results.maxLoanAmount?.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
-                    details: `Monthly: £${result.results.maxMonthlyPayment?.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                    details: `Monthly: £${result.results.maxMonthlyPayment?.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} | Housing: ${result.results.housingToIncomeRatio?.toFixed(1)}% | Debt: ${result.results.debtToIncomeRatio?.toFixed(1)}%`
                 };
             case 'volume':
                 const roomsText = result.results.roomBreakdown?.length > 0 
@@ -173,7 +187,10 @@ export default function SavedResultsSidebar({ toolType, className = '', initialS
                                 <div key={result.id} className="group border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition-colors">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold text-gray-900">
+                                            <p className="text-sm font-semibold text-gray-900 mb-1">
+                                                {result.name}
+                                            </p>
+                                            <p className="text-sm font-bold text-blue-600">
                                                 Total Volume: {result.results.totalVolume?.toFixed(1)} m³
                                             </p>
                                             <p className="text-xs text-blue-600 font-medium mt-1">
@@ -229,7 +246,10 @@ export default function SavedResultsSidebar({ toolType, className = '', initialS
                             <div key={result.id} className="group border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition-colors">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-gray-900 truncate">
+                                        <p className="text-sm font-semibold text-gray-900 truncate mb-1">
+                                            {result.name}
+                                        </p>
+                                        <p className="text-sm font-medium text-blue-600 truncate">
                                             {formatted.title}
                                         </p>
                                         <p className="text-xs text-gray-600 truncate">
