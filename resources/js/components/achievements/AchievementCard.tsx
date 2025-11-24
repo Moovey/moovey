@@ -1,6 +1,13 @@
 import React from 'react';
 import type { Achievement } from '@/types/achievement';
 
+// Helper function to get the correct image path
+const getAchievementImagePath = (icon: string): string => {
+    // The images are in public/images/Badges/ (note the capital B)
+    // In production, they should be accessible via /images/Badges/
+    return `/images/Badges/${icon}`;
+};
+
 interface AchievementCardProps {
     achievement: Achievement;
     onClick: (achievement: Achievement) => void;
@@ -30,9 +37,33 @@ export default function AchievementCard({
                         <span className="text-3xl">🔒</span>
                     ) : achievement.icon.endsWith('.png') ? (
                         <img 
-                            src={`/images/badges/${achievement.icon}`} 
+                            src={getAchievementImagePath(achievement.icon)}
                             alt={achievement.title}
                             className="w-12 h-12 object-contain"
+                            onError={(e) => {
+                                // Try alternative paths before falling back to emoji
+                                const target = e.target as HTMLImageElement;
+                                const currentSrc = target.src;
+                                
+                                // Try different paths in sequence (case sensitive)
+                                if (currentSrc.includes('/images/Badges/')) {
+                                    // Already tried the correct path, try lowercase
+                                    target.src = `/images/badges/${achievement.icon}`;
+                                } else if (currentSrc.includes('/images/badges/')) {
+                                    // Try with storage path
+                                    target.src = `/storage/images/Badges/${achievement.icon}`;
+                                } else {
+                                    // All paths failed, show fallback emoji
+                                    target.style.display = 'none';
+                                    const parent = target.parentElement;
+                                    if (parent && !parent.querySelector('.fallback-emoji')) {
+                                        const fallback = document.createElement('span');
+                                        fallback.className = 'fallback-emoji text-3xl';
+                                        fallback.textContent = '🏆'; // Trophy emoji as fallback
+                                        parent.appendChild(fallback);
+                                    }
+                                }
+                            }}
                         />
                     ) : (
                         <span className="text-3xl">{achievement.icon}</span>
