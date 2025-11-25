@@ -1,7 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import SaveResultsButton from '@/components/SaveResultsButton';
 import SavedResultsSidebar from '@/components/tools/SavedResultsSidebar';
+import VolumeSummaryCards from './volume-calculator/VolumeSummaryCards';
+import RoomNavigationTabs from './volume-calculator/RoomNavigationTabs';
+import PresetItemsList from './volume-calculator/PresetItemsList';
+import ItemDropdown from './volume-calculator/ItemDropdown';
+import RoomItemsList from './volume-calculator/RoomItemsList';
+import RoomNavigationButtons from './volume-calculator/RoomNavigationButtons';
+import CustomItemForm from './volume-calculator/CustomItemForm';
+import UnassignedItemsList from './volume-calculator/UnassignedItemsList';
+import RoomSelectionModal from './volume-calculator/RoomSelectionModal';
+import TruckRecommendations from './volume-calculator/TruckRecommendations';
 
 interface FurnitureItem {
     id: string;
@@ -9,6 +19,7 @@ interface FurnitureItem {
     volume: number; // in cubic meters
     category: string;
     icon: string;
+    image?: string;
 }
 
 interface Room {
@@ -40,137 +51,228 @@ interface VolumeCalculatorProps {
 }
 
 export default function VolumeCalculator({ initialSavedResults }: VolumeCalculatorProps) {
-    // Comprehensive furniture database with specific items
+    // Define preset items for each room type
+    const presetRoomItems: { [roomName: string]: string[] } = {
+        'Hallway': ['hall_table', 'small_table', 'mirror_small', 'picture_small', 'lamp_floor', 'stool'],
+        'Lounge': ['sofa_3seater', 'armchair_medium', 'coffee_table', 'tv_stand', 'bookcase_small', 'cabinet_small', 'rug_large'],
+        'Kitchen': ['table_breakfast', 'dining_chair', 'fridge_freezer', 'washing_machine', 'microwave', 'freezer_chest'],
+        'Dining Room': ['dining_table_medium', 'dining_chair', 'sideboard_medium', 'welsh_dresser', 'rug_small', 'chair_breakfast'],
+        'Bedroom 1': ['bed_divan_double', 'wardrobe_double', 'chest_drawers_med', 'bedside_cabinet', 'dressing_table', 'bedroom_chair'],
+        'Loft': ['pack_2', 'pack_6', 'suitcases', 'trunk', 'archive_boxes', 'boxed_3cuft'],
+        'Garden': ['garden_bench', 'garden_chair', 'garden_table', 'portable_bbq', 'mower_elec', 'parasol'],
+        'Garage': ['bicycle', 'child_bicycle', 'tool_case', 'ladder', 'workbench', 'pack_2']
+    };
+
+    // Comprehensive furniture database matching Mercia Movers survey items
     const furnitureDatabase: FurnitureItem[] = [
         // Living Room - Seating
-        { id: 'sofa_2seat', name: '2-Seat Sofa', volume: 2.5, category: 'Living Room', icon: '🛋️' },
-        { id: 'sofa_3seat', name: '3-Seat Sofa', volume: 3.2, category: 'Living Room', icon: '🛋️' },
-        { id: 'sofa_corner', name: 'Corner Sofa', volume: 4.5, category: 'Living Room', icon: '🛋️' },
-        { id: 'sofa_sectional', name: 'Sectional Sofa', volume: 5.8, category: 'Living Room', icon: '🛋️' },
-        { id: 'armchair', name: 'Armchair', volume: 1.8, category: 'Living Room', icon: '🪑' },
-        { id: 'recliner', name: 'Recliner Chair', volume: 2.2, category: 'Living Room', icon: '🪑' },
-        { id: 'ottoman', name: 'Ottoman', volume: 0.6, category: 'Living Room', icon: '🪑' },
+        { id: 'armchair_small', name: 'Armchair Small', volume: 1.5, category: 'Living Room', icon: '🪑', image: '/images/tools-item/small_armchair.jpg' },
+        { id: 'armchair_medium', name: 'Armchair Medium', volume: 1.8, category: 'Living Room', icon: '🪑', image: '/images/tools-item/medium_armchair.jpg' },
+        { id: 'armchair_large', name: 'Armchair Large', volume: 2.2, category: 'Living Room', icon: '🪑', image: '/images/tools-item/large_armchair.jpg' },
+        { id: 'armchair_recliner', name: 'Armchair Recliner', volume: 2.5, category: 'Living Room', icon: '🪑', image: '/images/tools-item/reclining_armchair.jpg' },
+        { id: 'sofa_2seater', name: 'Sofa 2 Seater', volume: 2.5, category: 'Living Room', icon: '🛋️', image: '/images/tools-item/sofa_small.jpg' },
+        { id: 'sofa_3seater', name: 'Sofa 3 Seater', volume: 3.2, category: 'Living Room', icon: '🛋️', image: '/images/tools-item/medium_sofa.jpg' },
+        { id: 'sofa_4seater', name: 'Sofa 4 Seater', volume: 4.0, category: 'Living Room', icon: '🛋️', image: '/images/tools-item/large_sofa.jpg' },
+        { id: 'sofa_bed', name: 'Sofa Bed', volume: 3.0, category: 'Living Room', icon: '🛋️', image: '/images/tools-item/Sofa-bed.jpg' },
+        { id: 'chaise_longue', name: 'Chaise Longue', volume: 2.8, category: 'Living Room', icon: '🛋️', image: '/images/tools-item/chaise-longue.jpg' },
+        { id: 'futon', name: 'Futon', volume: 2.0, category: 'Living Room', icon: '🛋️', image: '/images/tools-item/futon.jpg' },
+        { id: 'chair_rocking', name: 'Chair Rocking', volume: 1.5, category: 'Living Room', icon: '🪑', image: '/images/tools-item/rocking_chair.jpg' },
+        { id: 'footstool', name: 'Footstool', volume: 0.6, category: 'Living Room', icon: '🪑', image: '/images/tools-item/footstool.jpg' },
+        { id: 'ottoman_box', name: 'Ottoman Box', volume: 0.8, category: 'Living Room', icon: '🪑', image: '/images/tools-item/ottoman-box.jpg' },
         
-        // Living Room - Tables & Storage
-        { id: 'coffee_table', name: 'Coffee Table', volume: 0.8, category: 'Living Room', icon: '🪑' },
-        { id: 'side_table', name: 'Side Table', volume: 0.3, category: 'Living Room', icon: '🪑' },
-        { id: 'tv_stand', name: 'TV Stand', volume: 1.2, category: 'Living Room', icon: '📺' },
-        { id: 'tv_unit_large', name: 'Large TV Unit', volume: 2.0, category: 'Living Room', icon: '📺' },
-        { id: 'bookshelf_small', name: 'Small Bookshelf', volume: 1.0, category: 'Living Room', icon: '📚' },
-        { id: 'bookshelf_large', name: 'Large Bookshelf', volume: 2.5, category: 'Living Room', icon: '📚' },
-        { id: 'display_cabinet', name: 'Display Cabinet', volume: 1.8, category: 'Living Room', icon: '🗄️' },
+        // Living Room - Tables & Storage  
+        { id: 'coffee_table', name: 'Coffee Table', volume: 0.8, category: 'Living Room', icon: '🪑', image: '/images/tools-item/coffee_table.jpg' },
+        { id: 'small_table', name: 'Small Table', volume: 0.5, category: 'Living Room', icon: '🪑', image: '/images/tools-item/small-table.jpg' },
+        { id: 'hall_table', name: 'Hall Table', volume: 0.7, category: 'Living Room', icon: '🪑', image: '/images/tools-item/hall_table.jpg' },
+        { id: 'nest_of_tables', name: 'Nest of Tables', volume: 0.6, category: 'Living Room', icon: '🪑', image: '/images/tools-item/nest_of_tables.jpg' },
+        { id: 'tv_stand', name: 'TV Stand', volume: 1.2, category: 'Living Room', icon: '📺', image: '/images/tools-item/tvstand.jpg' },
+        { id: 'bookcase_small', name: 'Bookcase Small', volume: 1.0, category: 'Living Room', icon: '📚', image: '/images/tools-item/small-bookcase.jpg' },
+        { id: 'bookcase_short', name: 'Bookcase Short', volume: 1.5, category: 'Living Room', icon: '📚', image: '/images/tools-item/short_bookcase.jpg' },
+        { id: 'bookcase_tall', name: 'Bookcase Tall', volume: 2.5, category: 'Living Room', icon: '📚', image: '/images/tools-item/bookcase_tall.jpg' },
+        { id: 'cabinet_small', name: 'Cabinet Small', volume: 1.2, category: 'Living Room', icon: '🗄️', image: '/images/tools-item/small_oak_cabinet.jpg' },
+        { id: 'cabinet_medium', name: 'Cabinet Medium', volume: 1.8, category: 'Living Room', icon: '🗄️', image: '/images/tools-item/medium_oak_cabinet.jpg' },
+        { id: 'cabinet_large', name: 'Cabinet Large', volume: 2.5, category: 'Living Room', icon: '🗄️', image: '/images/tools-item/large_cabinet.jpg' },
+        { id: 'cd_tower', name: 'CD Tower', volume: 0.4, category: 'Living Room', icon: '💿', image: '/images/tools-item/cd-tower.jpg' },
+        { id: 'hi_fi', name: 'Hi Fi', volume: 0.8, category: 'Living Room', icon: '🔊', image: '/images/tools-item/hifi.jpg' },
+        { id: 'hi_fi_speaker', name: 'Hi Fi Speaker', volume: 0.3, category: 'Living Room', icon: '🔊', image: '/images/tools-item/hifi-speaker.jpg' },
+        { id: 'satellite_box', name: 'Satellite/Freeview Box', volume: 0.1, category: 'Living Room', icon: '📺', image: '/images/tools-item/satellite_box.jpg' },
+        { id: 'vcr_dvd', name: 'VCR/DVD/BluRay', volume: 0.15, category: 'Living Room', icon: '📀', image: '/images/tools-item/vcr-player.jpg' },
         
         // Bedroom - Beds
-        { id: 'single_bed', name: 'Single Bed', volume: 2.0, category: 'Bedroom', icon: '🛏️' },
-        { id: 'double_bed', name: 'Double Bed', volume: 2.8, category: 'Bedroom', icon: '🛏️' },
-        { id: 'queen_bed', name: 'Queen Size Bed', volume: 3.2, category: 'Bedroom', icon: '🛏️' },
-        { id: 'king_bed', name: 'King Size Bed', volume: 3.8, category: 'Bedroom', icon: '🛏️' },
-        { id: 'super_king_bed', name: 'Super King Bed', volume: 4.5, category: 'Bedroom', icon: '🛏️' },
-        { id: 'four_poster_bed', name: 'Four Poster Bed', volume: 5.2, category: 'Bedroom', icon: '🛏️' },
-        { id: 'bunk_bed', name: 'Bunk Bed', volume: 3.5, category: 'Bedroom', icon: '🛏️' },
-        { id: 'sofa_bed', name: 'Sofa Bed', volume: 3.0, category: 'Bedroom', icon: '🛏️' },
+        { id: 'bed_divan_single', name: 'Bed Divan Single', volume: 2.0, category: 'Bedroom', icon: '🛏️', image: '/images/tools-item/single_bed_divan.jpg' },
+        { id: 'bed_divan_double', name: 'Bed Divan Double', volume: 2.8, category: 'Bedroom', icon: '🛏️', image: '/images/tools-item/double_divan.jpg' },
+        { id: 'bed_divan_queen', name: 'Bed Divan Queen Size', volume: 3.2, category: 'Bedroom', icon: '🛏️', image: '/images/tools-item/divan_queen_size.jpg' },
+        { id: 'bed_divan_king', name: 'Bed Divan King Size', volume: 3.8, category: 'Bedroom', icon: '🛏️', image: '/images/tools-item/king_size_divan.jpg' },
+        { id: 'bed_frame_single', name: 'Bed Frame Single', volume: 1.8, category: 'Bedroom', icon: '🛏️', image: '/images/tools-item/single_bed_frame.jpg' },
+        { id: 'bed_frame_double', name: 'Bed Frame Double', volume: 2.5, category: 'Bedroom', icon: '🛏️', image: '/images/tools-item/double-bed-frame.jpg' },
+        { id: 'bed_frame_queen', name: 'Bed Frame Queen Size', volume: 3.0, category: 'Bedroom', icon: '🛏️', image: '/images/tools-item/queen-bed-frame.jpg' },
+        { id: 'bed_frame_king', name: 'Bed Frame King Size', volume: 3.5, category: 'Bedroom', icon: '🛏️', image: '/images/tools-item/king-size-bed-frame.jpg' },
+        { id: 'bed_bunk', name: 'Bed Bunk', volume: 3.5, category: 'Bedroom', icon: '🛏️', image: '/images/tools-item/bunk-bed.jpg' },
+        { id: 'bed_small_childs', name: 'Bed Small Childs', volume: 1.5, category: 'Bedroom', icon: '🛏️', image: '/images/tools-item/child-bed.jpg' },
+        { id: 'cot', name: 'Cot', volume: 1.2, category: 'Bedroom', icon: '🍼', image: '/images/tools-item/cot.jpg' },
         
         // Bedroom - Storage
-        { id: 'wardrobe_small', name: 'Small Wardrobe (2 Door)', volume: 2.5, category: 'Bedroom', icon: '👔' },
-        { id: 'wardrobe_medium', name: 'Medium Wardrobe (3 Door)', volume: 3.2, category: 'Bedroom', icon: '👔' },
-        { id: 'wardrobe_large', name: 'Large Wardrobe (4 Door)', volume: 4.5, category: 'Bedroom', icon: '👔' },
-        { id: 'wardrobe_fitted', name: 'Fitted Wardrobe Section', volume: 3.8, category: 'Bedroom', icon: '👔' },
-        { id: 'chest_drawers_3', name: '3-Drawer Chest', volume: 1.2, category: 'Bedroom', icon: '🗄️' },
-        { id: 'chest_drawers_5', name: '5-Drawer Chest', volume: 1.8, category: 'Bedroom', icon: '🗄️' },
-        { id: 'bedside_table', name: 'Bedside Table', volume: 0.5, category: 'Bedroom', icon: '🪑' },
-        { id: 'dressing_table', name: 'Dressing Table', volume: 1.5, category: 'Bedroom', icon: '🪑' },
+        { id: 'wardrobe_single', name: 'Wardrobe Single', volume: 2.0, category: 'Bedroom', icon: '👔', image: '/images/tools-item/single-wardrobe.jpg' },
+        { id: 'wardrobe_double', name: 'Wardrobe Double', volume: 3.2, category: 'Bedroom', icon: '👔', image: '/images/tools-item/double-wardrobe.jpg' },
+        { id: 'wardrobe_triple', name: 'Wardrobe Triple', volume: 4.5, category: 'Bedroom', icon: '👔', image: '/images/tools-item/triple-wardrobe.jpg' },
+        { id: 'chest_drawers_small', name: 'Chest of Drawers Small', volume: 1.0, category: 'Bedroom', icon: '🗄️', image: '/images/tools-item/small-chest-drawers.jpg' },
+        { id: 'chest_drawers_med', name: 'Chest of Drawers Med', volume: 1.5, category: 'Bedroom', icon: '🗄️', image: '/images/tools-item/med-chest-drawers.jpg' },
+        { id: 'chest_drawers_large', name: 'Chest of Drawers Large', volume: 2.0, category: 'Bedroom', icon: '🗄️', image: '/images/tools-item/large-chest-drawers.jpg' },
+        { id: 'bedside_cabinet', name: 'Bedside Cabinet', volume: 0.5, category: 'Bedroom', icon: '🪑', image: '/images/tools-item/bedside-cabinet.jpg' },
+        { id: 'dressing_table', name: 'Dressing Table', volume: 1.5, category: 'Bedroom', icon: '🪑', image: '/images/tools-item/dressing-table.jpg' },
+        { id: 'bedroom_chair', name: 'Bedroom Chair', volume: 0.8, category: 'Bedroom', icon: '🪑', image: '/images/tools-item/contemporary-armchairs-and-accent-chairs.jpg' },
+        { id: 'nursery_chest', name: 'Nursery Chest/Dresser', volume: 1.8, category: 'Bedroom', icon: '🍼', image: '/images/tools-item/Nursery ChestDresser.jpg' },
         
-        // Kitchen - Appliances (Large)
-        { id: 'fridge_small', name: 'Under-Counter Fridge', volume: 1.2, category: 'Kitchen', icon: '❄️' },
-        { id: 'fridge_standard', name: 'Standard Fridge', volume: 2.0, category: 'Kitchen', icon: '❄️' },
-        { id: 'fridge_large', name: 'Large Fridge-Freezer', volume: 2.8, category: 'Kitchen', icon: '❄️' },
-        { id: 'fridge_american', name: 'American Fridge Freezer', volume: 3.5, category: 'Kitchen', icon: '❄️' },
-        { id: 'chest_freezer', name: 'Chest Freezer', volume: 1.8, category: 'Kitchen', icon: '❄️' },
-        { id: 'washing_machine', name: 'Washing Machine', volume: 1.5, category: 'Kitchen', icon: '🌊' },
-        { id: 'tumble_dryer', name: 'Tumble Dryer', volume: 1.5, category: 'Kitchen', icon: '�' },
-        { id: 'dishwasher', name: 'Dishwasher', volume: 1.2, category: 'Kitchen', icon: '🍽️' },
-        { id: 'range_cooker', name: 'Range Cooker', volume: 2.2, category: 'Kitchen', icon: '🔥' },
+        // Dining Room
+        { id: 'dining_table_small', name: 'Small Dining Table', volume: 1.5, category: 'Dining Room', icon: '🍽️', image: '/images/tools-item/small-meeting-table.jpg' },
+        { id: 'dining_table_medium', name: 'Medium Dining Table', volume: 2.5, category: 'Dining Room', icon: '🍽️', image: '/images/tools-item/breakfast-table.jpg' },
+        { id: 'dining_table_large', name: 'Large Dining Table', volume: 3.5, category: 'Dining Room', icon: '🍽️', image: '/images/tools-item/meeting_table.jpg' },
+        { id: 'dining_chair', name: 'Dining Chair', volume: 0.6, category: 'Dining Room', icon: '🪑', image: '/images/tools-item/dining_chair.jpg' },
+        { id: 'chair_breakfast', name: 'Chair Breakfast', volume: 0.5, category: 'Dining Room', icon: '🪑', image: '/images/tools-item/kitchen_chair.jpg' },
+        { id: 'sideboard_small', name: 'Sideboard Small', volume: 1.5, category: 'Dining Room', icon: '🗄️', image: '/images/tools-item/small_sideboard.jpg' },
+        { id: 'sideboard_medium', name: 'Sideboard Medium', volume: 2.2, category: 'Dining Room', icon: '🗄️', image: '/images/tools-item/sideboard_medium.jpg' },
+        { id: 'sideboard_large', name: 'Sideboard Large', volume: 3.0, category: 'Dining Room', icon: '🗄️', image: '/images/tools-item/large_sideboard.jpg' },
+        { id: 'welsh_dresser', name: 'Welsh Dresser', volume: 3.5, category: 'Dining Room', icon: '🗄️', image: '/images/tools-item/welsh_dresser.jpg' },
         
-        // Kitchen - Appliances (Small)
-        { id: 'microwave', name: 'Microwave', volume: 0.3, category: 'Kitchen', icon: '📻' },
-        { id: 'toaster', name: 'Toaster', volume: 0.1, category: 'Kitchen', icon: '🍞' },
-        { id: 'kettle', name: 'Kettle', volume: 0.05, category: 'Kitchen', icon: '�' },
-        { id: 'food_processor', name: 'Food Processor', volume: 0.2, category: 'Kitchen', icon: '🍽️' },
-        
-        // Kitchen - Furniture
-        { id: 'dining_table_2seat', name: '2-Seater Dining Table', volume: 1.2, category: 'Kitchen', icon: '🍽️' },
-        { id: 'dining_table_4seat', name: '4-Seater Dining Table', volume: 2.0, category: 'Kitchen', icon: '🍽️' },
-        { id: 'dining_table_6seat', name: '6-Seater Dining Table', volume: 2.8, category: 'Kitchen', icon: '🍽️' },
-        { id: 'dining_table_8seat', name: '8-Seater Dining Table', volume: 3.5, category: 'Kitchen', icon: '�️' },
-        { id: 'dining_chair', name: 'Dining Chair', volume: 0.6, category: 'Kitchen', icon: '🪑' },
-        { id: 'bar_stool', name: 'Bar Stool', volume: 0.4, category: 'Kitchen', icon: '🪑' },
-        { id: 'kitchen_island', name: 'Kitchen Island', volume: 3.0, category: 'Kitchen', icon: '�️' },
+        // Kitchen - Appliances
+        { id: 'fridge_small', name: 'Freezer or Fridge Small', volume: 1.2, category: 'Kitchen', icon: '❄️', image: '/images/tools-item/fridge-office.jpg' },
+        { id: 'fridge_freezer', name: 'Fridge Freezer', volume: 2.0, category: 'Kitchen', icon: '❄️', image: '/images/tools-item/fridge-freezer.jpg' },
+        { id: 'fridge_freezer_us', name: 'Fridge Freezer US Style', volume: 3.5, category: 'Kitchen', icon: '❄️', image: '/images/tools-item/american-fridge-freezer.jpg' },
+        { id: 'freezer_chest', name: 'Freezer Chest', volume: 1.8, category: 'Kitchen', icon: '❄️', image: '/images/tools-item/large-chest-freezer.jpg' },
+        { id: 'freezer_tall', name: 'Freezer Tall', volume: 2.5, category: 'Kitchen', icon: '❄️', image: '/images/tools-item/tall-freezer.jpg' },
+        { id: 'washing_machine', name: 'Washing Machine', volume: 1.5, category: 'Kitchen', icon: '🌊', image: '/images/tools-item/washing-machine.jpg' },
+        { id: 'dryer', name: 'Dryer', volume: 1.5, category: 'Kitchen', icon: '🌀', image: '/images/tools-item/dryer.jpg' },
+        { id: 'dishwasher', name: 'Dishwasher', volume: 1.2, category: 'Kitchen', icon: '🍽️', image: '/images/tools-item/dishwasher.jpg' },
+        { id: 'cooker_small', name: 'Cooker Small', volume: 1.5, category: 'Kitchen', icon: '🔥', image: '/images/tools-item/cooker.jpg' },
+        { id: 'cooker_large', name: 'Cooker Large', volume: 2.0, category: 'Kitchen', icon: '🔥', image: '/images/tools-item/large-cooker.jpg' },
+        { id: 'cooker_range', name: 'Cooker Range', volume: 2.5, category: 'Kitchen', icon: '🔥', image: '/images/tools-item/cooker-range.jpg' },
+        { id: 'microwave', name: 'Microwave', volume: 0.3, category: 'Kitchen', icon: '📻', image: '/images/tools-item/microwave2.jpg' },
+        { id: 'kitchen_cabinet', name: 'Kitchen Cabinet', volume: 1.5, category: 'Kitchen', icon: '🗄️', image: '/images/tools-item/kitchen-cabinet.jpg' },
+        { id: 'table_breakfast', name: 'Table Breakfast', volume: 1.2, category: 'Kitchen', icon: '🍽️', image: '/images/tools-item/breakfast-table.jpg' },
         
         // Office
-        { id: 'office_desk_small', name: 'Small Desk', volume: 1.2, category: 'Office', icon: '💻' },
-        { id: 'office_desk_large', name: 'Large Desk', volume: 2.2, category: 'Office', icon: '💻' },
-        { id: 'bureau', name: 'Bureau/Writing Desk', volume: 1.8, category: 'Office', icon: '✍️' },
-        { id: 'office_chair', name: 'Office Chair', volume: 1.0, category: 'Office', icon: '🪑' },
-        { id: 'filing_cabinet_2drawer', name: '2-Drawer Filing Cabinet', volume: 0.8, category: 'Office', icon: '🗄️' },
-        { id: 'filing_cabinet_4drawer', name: '4-Drawer Filing Cabinet', volume: 1.5, category: 'Office', icon: '🗄️' },
-        { id: 'bookshelf_office', name: 'Office Bookshelf', volume: 1.8, category: 'Office', icon: '📚' },
-        { id: 'computer_desk', name: 'Computer Desk', volume: 1.5, category: 'Office', icon: '🖥️' },
-        
-        // Storage & Boxes
-        { id: 'box_book', name: 'Book Box', volume: 0.03, category: 'Storage', icon: '📦' },
-        { id: 'box_small', name: 'Small Box', volume: 0.06, category: 'Storage', icon: '📦' },
-        { id: 'box_medium', name: 'Medium Box', volume: 0.12, category: 'Storage', icon: '📦' },
-        { id: 'box_large', name: 'Large Box', volume: 0.18, category: 'Storage', icon: '📦' },
-        { id: 'box_extra_large', name: 'Extra Large Box', volume: 0.25, category: 'Storage', icon: '📦' },
-        { id: 'wardrobe_box', name: 'Wardrobe Box', volume: 0.35, category: 'Storage', icon: '📦' },
-        { id: 'suitcase_small', name: 'Small Suitcase', volume: 0.2, category: 'Storage', icon: '🧳' },
-        { id: 'suitcase_large', name: 'Large Suitcase', volume: 0.4, category: 'Storage', icon: '🧳' },
-        { id: 'trunk', name: 'Storage Trunk', volume: 0.8, category: 'Storage', icon: '🧳' },
-        
-        // Sports & Recreation
-        { id: 'bicycle', name: 'Bicycle', volume: 1.0, category: 'Sports', icon: '🚲' },
-        { id: 'exercise_bike', name: 'Exercise Bike', volume: 1.5, category: 'Sports', icon: '🚴' },
-        { id: 'treadmill', name: 'Treadmill', volume: 3.2, category: 'Sports', icon: '🏃' },
-        { id: 'golf_clubs', name: 'Set of Golf Clubs', volume: 0.3, category: 'Sports', icon: '⛳' },
-        { id: 'surfboard', name: 'Surfboard', volume: 0.8, category: 'Sports', icon: '🏄' },
-        { id: 'kayak', name: 'Kayak', volume: 2.5, category: 'Sports', icon: '🚣' },
-        { id: 'ski_equipment', name: 'Ski Equipment Set', volume: 0.5, category: 'Sports', icon: '🎿' },
-        { id: 'tennis_rackets', name: 'Tennis Racket Set', volume: 0.2, category: 'Sports', icon: '🎾' },
-        
-        // Musical Instruments
-        { id: 'piano_upright', name: 'Upright Piano', volume: 4.5, category: 'Music', icon: '🎹' },
-        { id: 'piano_digital', name: 'Digital Piano', volume: 1.8, category: 'Music', icon: '🎹' },
-        { id: 'guitar', name: 'Guitar', volume: 0.3, category: 'Music', icon: '🎸' },
-        { id: 'drum_kit', name: 'Drum Kit', volume: 3.0, category: 'Music', icon: '🥁' },
-        { id: 'keyboard', name: 'Keyboard', volume: 0.8, category: 'Music', icon: '🎹' },
+        { id: 'office_desk', name: 'Office Desk', volume: 1.8, category: 'Office', icon: '💻', image: '/images/tools-item/office_desk.jpg' },
+        { id: 'desk_pedestal', name: 'Desk Pedestal', volume: 2.2, category: 'Office', icon: '💻', image: '/images/tools-item/desk-pedistal.jpg' },
+        { id: 'computer_desk', name: 'Computer Desk', volume: 1.5, category: 'Office', icon: '🖥️', image: '/images/tools-item/computer-desk.jpg' },
+        { id: 'writing_desk', name: 'Writing Desk', volume: 1.3, category: 'Office', icon: '✍️', image: '/images/tools-item/writing_desk.jpg' },
+        { id: 'bureau', name: 'Bureau', volume: 1.8, category: 'Office', icon: '✍️', image: '/images/tools-item/bureau.jpg' },
+        { id: 'executive_chair', name: 'Executive Chair', volume: 1.2, category: 'Office', icon: '🪑' },
+        { id: 'swivel_chair', name: 'Swivel Chair', volume: 0.9, category: 'Office', icon: '🪑', image: '/images/tools-item/office-swivel.jpg' },
+        { id: 'static_chair', name: 'Static Chair', volume: 0.8, category: 'Office', icon: '🪑' },
+        { id: 'filing_cabinet_2', name: 'Filing Cabinet 2 Drawer', volume: 0.8, category: 'Office', icon: '🗄️', image: '/images/tools-item/filing-cab-4-drawer.jpg' },
+        { id: 'filing_cabinet_4', name: 'Filing Cabinet 4 Drawer', volume: 1.5, category: 'Office', icon: '🗄️', image: '/images/tools-item/4drawer-filing.jpg' },
+        { id: 'meeting_table', name: 'Meeting Table', volume: 3.0, category: 'Office', icon: '🪑', image: '/images/tools-item/meeting_table.jpg' },
         
         // Electronics
-        { id: 'tv_32inch', name: '32" TV', volume: 0.3, category: 'Electronics', icon: '�' },
-        { id: 'tv_43inch', name: '43" TV', volume: 0.5, category: 'Electronics', icon: '📺' },
-        { id: 'tv_55inch', name: '55" TV', volume: 0.8, category: 'Electronics', icon: '📺' },
-        { id: 'tv_65inch', name: '65" TV', volume: 1.2, category: 'Electronics', icon: '📺' },
-        { id: 'computer_desktop', name: 'Desktop Computer', volume: 0.4, category: 'Electronics', icon: '🖥️' },
-        { id: 'laptop', name: 'Laptop', volume: 0.05, category: 'Electronics', icon: '💻' },
-        { id: 'printer', name: 'Printer', volume: 0.3, category: 'Electronics', icon: '🖨️' },
-        { id: 'sound_system', name: 'Sound System', volume: 1.0, category: 'Electronics', icon: '🔊' },
+        { id: 'tv_flat_small', name: 'TV Flat Screen Small', volume: 0.3, category: 'Electronics', icon: '📺', image: '/images/tools-item/small_flatscreen.jpg' },
+        { id: 'tv_flat_large', name: 'TV Flat Screen Large', volume: 0.8, category: 'Electronics', icon: '📺', image: '/images/tools-item/large_flatscreen.jpg' },
+        { id: 'tv_tube_small', name: 'TV Tube Small', volume: 0.5, category: 'Electronics', icon: '📺', image: '/images/tools-item/small-tube-tv.jpg' },
+        { id: 'tv_tube_large', name: 'TV Tube Large', volume: 1.0, category: 'Electronics', icon: '📺', image: '/images/tools-item/tv-tube-large.jpg' },
+        { id: 'computer_desktop', name: 'Computer Desktop', volume: 0.4, category: 'Electronics', icon: '🖥️', image: '/images/tools-item/desktop.jpg' },
+        { id: 'computer_laptop', name: 'Computer Laptop', volume: 0.05, category: 'Electronics', icon: '💻', image: '/images/tools-item/laptop.jpg' },
+        { id: 'computer_monitor', name: 'Computer Monitor', volume: 0.3, category: 'Electronics', icon: '🖥️', image: '/images/tools-item/monitor.jpg' },
+        { id: 'monitor_flat', name: 'Monitor Flat', volume: 0.2, category: 'Electronics', icon: '🖥️', image: '/images/tools-item/flat-monitor.jpg' },
+        { id: 'printer', name: 'Printer', volume: 0.3, category: 'Electronics', icon: '🖨️', image: '/images/tools-item/HO-printer.jpg' },
+        { id: 'printer_network', name: 'Printer Network', volume: 0.5, category: 'Electronics', icon: '🖨️', image: '/images/tools-item/office-netwrok-printer.jpg' },
+        { id: 'photocopier', name: 'Photocopier', volume: 1.2, category: 'Electronics', icon: '🖨️', image: '/images/tools-item/photocopier.jpg' },
+        { id: 'fax_machine', name: 'Fax Machine', volume: 0.3, category: 'Electronics', icon: '📠', image: '/images/tools-item/fax.jpg' },
+        { id: 'server_cabinet_3ft', name: 'Server Cabinet 3ft', volume: 2.0, category: 'Electronics', icon: '🖥️', image: '/images/tools-item/Server Cabinet 3ft.jpg' },
+        { id: 'server_cabinet_6ft', name: 'Server Cabinet 6ft', volume: 4.0, category: 'Electronics', icon: '🖥️', image: '/images/tools-item/Server Cabinet 6ft.jpg' },
+        { id: 'hard_drive', name: 'Hard Drive', volume: 0.1, category: 'Electronics', icon: '💾', image: '/images/tools-item/Hard Drive.jpg' },
+        
+        // Musical Instruments
+        { id: 'piano_upright', name: 'Piano Upright', volume: 4.5, category: 'Music', icon: '🎹', image: '/images/tools-item/upright_piano.jpg' },
+        { id: 'piano_baby_grand', name: 'Piano Baby Grand', volume: 6.0, category: 'Music', icon: '🎹', image: '/images/tools-item/baby-grand-piano.jpg' },
+        { id: 'grand_piano', name: 'Grand Piano', volume: 8.0, category: 'Music', icon: '🎹', image: '/images/tools-item/grand-piano.jpg' },
+        { id: 'piano_stool', name: 'Piano Stool', volume: 0.5, category: 'Music', icon: '🎹', image: '/images/tools-item/piano_stool.jpg' },
+        
+        // Boxes & Storage
+        { id: 'pack_2', name: 'Pack 2 (Large Box)', volume: 0.18, category: 'Storage', icon: '📦', image: '/images/tools-item/packing_box_large1.jpg' },
+        { id: 'pack_6', name: 'Pack 6 (Small Box)', volume: 0.06, category: 'Storage', icon: '📦', image: '/images/tools-item/packing_box_small1.jpg' },
+        { id: 'boxed_3cuft', name: 'Boxed Already 3cuft', volume: 0.085, category: 'Storage', icon: '📦', image: '/images/tools-item/Packaging_old_outer_carton_.jpg' },
+        { id: 'archive_boxes', name: 'Archive Boxes', volume: 0.04, category: 'Storage', icon: '📦', image: '/images/tools-item/archive-box.jpg' },
+        { id: 'suitcases', name: 'Suitcases', volume: 0.3, category: 'Storage', icon: '🧳', image: '/images/tools-item/suitcase.jpg' },
+        { id: 'trunk', name: 'Trunk', volume: 0.8, category: 'Storage', icon: '🧳', image: '/images/tools-item/trunk.jpg' },
+        { id: 'crates', name: 'Crates', volume: 0.15, category: 'Storage', icon: '📦', image: '/images/tools-item/office-crate.jpg' },
+        { id: 'bags', name: 'Bags', volume: 0.1, category: 'Storage', icon: '👜', image: '/images/tools-item/bag.jpg' },
         
         // Garden & Outdoor
-        { id: 'garden_table', name: 'Garden Table', volume: 1.5, category: 'Garden', icon: '�' },
-        { id: 'garden_chair', name: 'Garden Chair', volume: 0.8, category: 'Garden', icon: '🪑' },
-        { id: 'bbq_grill', name: 'BBQ Grill', volume: 1.8, category: 'Garden', icon: '🔥' },
-        { id: 'lawnmower', name: 'Lawnmower', volume: 1.2, category: 'Garden', icon: '🌱' },
-        { id: 'garden_shed_content', name: 'Garden Shed Contents', volume: 8.0, category: 'Garden', icon: '🏡' },
-        { id: 'patio_heater', name: 'Patio Heater', volume: 0.8, category: 'Garden', icon: '🔥' },
-        { id: 'garden_parasol', name: 'Garden Parasol', volume: 0.5, category: 'Garden', icon: '☂️' },
+        { id: 'garden_table', name: 'Garden Table', volume: 1.5, category: 'Garden', icon: '🪑', image: '/images/tools-item/garden-table.jpg' },
+        { id: 'garden_chair', name: 'Garden Chair', volume: 0.8, category: 'Garden', icon: '🪑', image: '/images/tools-item/garden-chair.jpg' },
+        { id: 'stacking_chair', name: 'Stacking Chair', volume: 0.6, category: 'Garden', icon: '🪑', image: '/images/tools-item/stacking-garden-chair.jpg' },
+        { id: 'folding_chair', name: 'Folding Chair', volume: 0.5, category: 'Garden', icon: '🪑', image: '/images/tools-item/folding-garden-chair.jpg' },
+        { id: 'garden_bench', name: 'Garden Bench', volume: 1.2, category: 'Garden', icon: '🪑', image: '/images/tools-item/garden-bench.jpg' },
+        { id: 'garden_lounger', name: 'Garden Lounger', volume: 1.5, category: 'Garden', icon: '🪑', image: '/images/tools-item/lounger.jpg' },
+        { id: 'picnic_table', name: 'Picnic Table', volume: 2.0, category: 'Garden', icon: '🪑', image: '/images/tools-item/picnic-table.jpg' },
+        { id: 'parasol', name: 'Parasol', volume: 0.5, category: 'Garden', icon: '☂️', image: '/images/tools-item/parasol-1.jpg' },
+        { id: 'portable_bbq', name: 'Portable BBQ', volume: 1.2, category: 'Garden', icon: '🔥', image: '/images/tools-item/bbq.jpg' },
+        { id: 'heater_gas', name: 'Heater Gas', volume: 0.8, category: 'Garden', icon: '🔥', image: '/images/tools-item/patio-heater.jpg' },
+        { id: 'mower_elec', name: 'Mower Elec', volume: 1.0, category: 'Garden', icon: '🌱', image: '/images/tools-item/mower.jpg' },
+        { id: 'mower_petrol', name: 'Mower Petrol', volume: 1.3, category: 'Garden', icon: '🌱', image: '/images/tools-item/petrol-mower.jpg' },
+        { id: 'ride_on_mower', name: 'Ride on Mower', volume: 3.5, category: 'Garden', icon: '🌱', image: '/images/tools-item/ride-on-mower.jpg' },
+        { id: 'strimmer', name: 'Strimmer', volume: 0.6, category: 'Garden', icon: '🌱', image: '/images/tools-item/strimmer.jpg' },
+        { id: 'wheelbarrow', name: 'Wheelbarrow', volume: 0.9, category: 'Garden', icon: '🛞', image: '/images/tools-item/wheelbarrow.jpg' },
+        { id: 'garden_hose', name: 'Garden Hose', volume: 0.2, category: 'Garden', icon: '💧', image: '/images/tools-item/hose.jpg' },
+        { id: 'outdoor_bin', name: 'Outdoor Bin', volume: 0.5, category: 'Garden', icon: '🗑️', image: '/images/tools-item/outdoor-bin.jpg' },
+        { id: 'plant_indoor', name: 'Indoor Plant', volume: 0.3, category: 'Garden', icon: '🪴', image: '/images/tools-item/Indoor Plant.jpg' },
+        { id: 'plant_large', name: 'Large Plant', volume: 0.8, category: 'Garden', icon: '🌿', image: '/images/tools-item/Indoor Plant.jpg' },
+        { id: 'plant_outdoor_small', name: 'Small Outdoor Plant', volume: 0.4, category: 'Garden', icon: '🌱', image: '/images/tools-item/small-outdoor-plant.jpg' },
+        { id: 'plant_outdoor_medium', name: 'Medium Outdoor Plant', volume: 0.6, category: 'Garden', icon: '🌿', image: '/images/tools-item/Medium Outdoor Plant.jpg' },
+        { id: 'plant_outdoor_large', name: 'Large Outdoor Plant', volume: 1.0, category: 'Garden', icon: '🌳', image: '/images/tools-item/Large Outdoor Plant.jpeg' },
+        { id: 'garden_ornament', name: 'Garden Ornament', volume: 0.4, category: 'Garden', icon: '🗿' },
+        
+        // Garage & Tools
+        { id: 'bicycle', name: 'Bicycle', volume: 1.0, category: 'Garage', icon: '🚲', image: '/images/tools-item/bike.jpg' },
+        { id: 'child_bicycle', name: "Child's Bicycle", volume: 0.6, category: 'Garage', icon: '🚲', image: '/images/tools-item/child-bike.jpg' },
+        { id: 'workbench', name: 'Workbench', volume: 2.5, category: 'Garage', icon: '🔨', image: '/images/tools-item/workbench.jpg' },
+        { id: 'tool_case', name: 'Tool Case', volume: 0.3, category: 'Garage', icon: '🧰', image: '/images/tools-item/toolcase.jpg' },
+        { id: 'tool_cabinet', name: 'Tool Cabinet', volume: 2.0, category: 'Garage', icon: '🧰', image: '/images/tools-item/tool-cabinet.jpg' },
+        { id: 'ladder', name: 'Ladder', volume: 0.5, category: 'Garage', icon: '🪜', image: '/images/tools-item/ladder.jpg' },
+        { id: 'step_ladder', name: 'Step Ladder', volume: 0.7, category: 'Garage', icon: '🪜', image: '/images/tools-item/step-ladder.jpg' },
+        { id: 'car_roof_box', name: 'Car Roof Box', volume: 1.5, category: 'Garage', icon: '🚗', image: '/images/tools-item/roof-box.jpg' },
+        { id: 'spare_tyre', name: 'Spare Tyre', volume: 0.4, category: 'Garage', icon: '🛞', image: '/images/tools-item/spare-tyre.jpg' },
+        
+        // Recreation & Sports
+        { id: 'exercise_bike', name: 'Exercise Bike', volume: 1.5, category: 'Sports', icon: '🚴', image: '/images/tools-item/exercise-bike.jpg' },
+        { id: 'running_machine', name: 'Running Machine', volume: 3.2, category: 'Sports', icon: '🏃', image: '/images/tools-item/running-machine.jpg' },
+        { id: 'weights_machine', name: 'Weights Machine', volume: 2.5, category: 'Sports', icon: '🏋️', image: '/images/tools-item/weight-machine.jpg' },
+        { id: 'golf_clubs', name: 'Golf Clubs Bag', volume: 0.3, category: 'Sports', icon: '⛳', image: '/images/tools-item/golf-bag.jpg' },
+        { id: 'canoe', name: 'Canoe', volume: 2.5, category: 'Sports', icon: '🛶', image: '/images/tools-item/canoe.jpg' },
+        { id: 'skis_snowboard', name: 'Skis Snowboard', volume: 0.5, category: 'Sports', icon: '🎿', image: '/images/tools-item/snowboard.jpg' },
+        { id: 'pool_table', name: 'Pool Table', volume: 5.0, category: 'Sports', icon: '🎱', image: '/images/tools-item/pool-table.jpg' },
+        { id: 'snooker_table', name: 'Snooker Table 6ft', volume: 6.0, category: 'Sports', icon: '🎱', image: '/images/tools-item/snooker-table.jpg' },
+        { id: 'table_tennis', name: 'Table Tennis Table', volume: 1.5, category: 'Sports', icon: '🏓', image: '/images/tools-item/table-tennis.jpg' },
+        
+        // Children's Items
+        { id: 'climbing_frame', name: 'Climbing Frame', volume: 4.0, category: 'Children', icon: '🧗', image: '/images/tools-item/climbing-frame.jpg' },
+        { id: 'trampoline', name: 'Trampoline', volume: 3.5, category: 'Children', icon: '🤸', image: '/images/tools-item/trampoline.jpg' },
+        { id: 'swing', name: 'Swing', volume: 2.0, category: 'Children', icon: '🛝', image: '/images/tools-item/swing.jpg' },
+        { id: 'slide', name: 'Slide', volume: 2.5, category: 'Children', icon: '🛝', image: '/images/tools-item/slide.jpg' },
+        { id: 'wendy_house', name: 'Wendy House', volume: 4.5, category: 'Children', icon: '🏠', image: '/images/tools-item/wendy-house.jpg' },
+        { id: 'sandpit', name: 'Sandpit', volume: 1.5, category: 'Children', icon: '🏖️', image: '/images/tools-item/sandpit.jpg' },
+        { id: 'playpen', name: 'Play Pen', volume: 1.0, category: 'Children', icon: '🍼', image: '/images/tools-item/play-pen.jpg' },
+        { id: 'pushchairs', name: 'Pushchairs', volume: 0.8, category: 'Children', icon: '🍼', image: '/images/tools-item/pushchair.jpg' },
+        { id: 'baby_high_chair', name: 'Baby High Chair', volume: 0.7, category: 'Children', icon: '🍼', image: '/images/tools-item/child-chair.jpg' },
+        { id: 'chair_child', name: 'Chair Child', volume: 0.3, category: 'Children', icon: '🪑', image: '/images/tools-item/child-chair.jpg' },
         
         // Miscellaneous
-        { id: 'mirror_large', name: 'Large Mirror', volume: 0.5, category: 'Miscellaneous', icon: '🪞' },
-        { id: 'artwork_large', name: 'Large Artwork/Painting', volume: 0.3, category: 'Miscellaneous', icon: '🖼️' },
-        { id: 'chandelier', name: 'Chandelier', volume: 0.8, category: 'Miscellaneous', icon: '💡' },
-        { id: 'vacuum_cleaner', name: 'Vacuum Cleaner', volume: 0.4, category: 'Miscellaneous', icon: '🧹' },
-        { id: 'ironing_board', name: 'Ironing Board', volume: 0.3, category: 'Miscellaneous', icon: '👕' },
-        { id: 'clothes_airer', name: 'Clothes Airer', volume: 0.4, category: 'Miscellaneous', icon: '👕' },
-        { id: 'pet_carrier', name: 'Pet Carrier', volume: 0.2, category: 'Miscellaneous', icon: '�' }
+        { id: 'mirror_small', name: 'Mirror Small', volume: 0.3, category: 'Miscellaneous', icon: '🪞', image: '/images/tools-item/small_mirror.jpg' },
+        { id: 'mirror_large', name: 'Mirror Large', volume: 0.6, category: 'Miscellaneous', icon: '🪞', image: '/images/tools-item/large_mirror.jpg' },
+        { id: 'picture_small', name: 'Picture Small', volume: 0.1, category: 'Miscellaneous', icon: '🖼️', image: '/images/tools-item/pic-frame-small.jpg' },
+        { id: 'picture_large', name: 'Picture Large', volume: 0.3, category: 'Miscellaneous', icon: '🖼️', image: '/images/tools-item/pic-frame-large.jpg' },
+        { id: 'rug_small', name: 'Rug Small', volume: 0.2, category: 'Miscellaneous', icon: '🟫' },
+        { id: 'rug_large', name: 'Rug Large', volume: 0.5, category: 'Miscellaneous', icon: '🟫' },
+        { id: 'lamp_floor', name: 'Lamp Floor', volume: 0.4, category: 'Miscellaneous', icon: '💡', image: '/images/tools-item/floor_lamp.jpg' },
+        { id: 'lamp_table', name: 'Table Lamp', volume: 0.2, category: 'Miscellaneous', icon: '💡', image: '/images/tools-item/side-lamp.jpg' },
+        { id: 'vacuum_cleaner', name: 'Vacuum Cleaner', volume: 0.4, category: 'Miscellaneous', icon: '🧹', image: '/images/tools-item/Vacuum Cleaner.jpg' },
+        { id: 'ironing_board', name: 'Ironing Board', volume: 0.3, category: 'Miscellaneous', icon: '👕', image: '/images/tools-item/ironing-board.jpg' },
+        { id: 'clothes_basket', name: 'Clothes Basket', volume: 0.3, category: 'Miscellaneous', icon: '🧺', image: '/images/tools-item/clothes-basket.jpg' },
+        { id: 'bin', name: 'Bin', volume: 0.2, category: 'Miscellaneous', icon: '🗑️', image: '/images/tools-item/kitchen-bin.jpg' },
+        { id: 'fan', name: 'Fan', volume: 0.4, category: 'Miscellaneous', icon: '💨', image: '/images/tools-item/office-fan.jpg' },
+        { id: 'dehumidifier', name: 'Dehumidifier', volume: 0.5, category: 'Miscellaneous', icon: '💧', image: '/images/tools-item/dehumidifier.jpg' },
+        { id: 'air_con_unit', name: 'Air Con Unit', volume: 0.8, category: 'Miscellaneous', icon: '❄️', image: '/images/tools-item/aircon-unit.jpg' },
+        { id: 'stool', name: 'Stool', volume: 0.4, category: 'Miscellaneous', icon: '🪑', image: '/images/tools-item/stool.jpg' },
+        { id: 'sundry_cuft', name: 'Sundry Cuft', volume: 0.028, category: 'Miscellaneous', icon: '📦' }
     ];
 
     const truckSizes: TruckSize[] = [
@@ -182,20 +284,19 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
     ];
 
     const [rooms, setRooms] = useState<Room[]>([
-        { id: '1', name: 'Living Room', items: {} },
-        { id: '2', name: 'Bedroom 1', items: {} },
-        { id: '3', name: 'Kitchen', items: {} }
+        { id: '1', name: 'Hallway', items: {} },
+        { id: '2', name: 'Lounge', items: {} },
+        { id: '3', name: 'Kitchen', items: {} },
+        { id: '4', name: 'Dining Room', items: {} },
+        { id: '5', name: 'Bedroom 1', items: {} },
+        { id: '6', name: 'Loft', items: {} },
+        { id: '7', name: 'Garden', items: {} },
+        { id: '8', name: 'Garage', items: {} }
     ]);
 
+    const [currentRoomIndex, setCurrentRoomIndex] = useState<number>(0);
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [customItems, setCustomItems] = useState<FurnitureItem[]>([]);
-    const [showCustomForm, setShowCustomForm] = useState(false);
-    const [customForm, setCustomForm] = useState({
-        name: '',
-        length: '',
-        width: '',
-        height: ''
-    });
     
     // New state for unassigned items and modal
     const [unassignedItems, setUnassignedItems] = useState<UnassignedItem[]>([]);
@@ -203,7 +304,19 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         isOpen: false,
         selectedItem: null
     });
-    const [itemQuantity, setItemQuantity] = useState<number>(1);
+    
+    // Get preset items for current room
+    const getPresetItemsForRoom = (roomName: string): FurnitureItem[] => {
+        const presetIds = presetRoomItems[roomName] || [];
+        return presetIds
+            .map(id => furnitureDatabase.find(item => item.id === id))
+            .filter((item): item is FurnitureItem => item !== undefined);
+    };
+    
+    // Get alphabetically sorted all items
+    const getAllItemsSorted = (): FurnitureItem[] => {
+        return [...furnitureDatabase, ...customItems].sort((a, b) => a.name.localeCompare(b.name));
+    };
 
     // Calculate total volume
     const calculateTotalVolume = (): number => {
@@ -265,7 +378,6 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
             isOpen: true,
             selectedItem: item
         });
-        setItemQuantity(1);
     };
     
     // Close room selection modal
@@ -274,7 +386,23 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
             isOpen: false,
             selectedItem: null
         });
-        setItemQuantity(1);
+    };
+    
+    // Navigation functions
+    const goToNextRoom = () => {
+        if (currentRoomIndex < rooms.length - 1) {
+            setCurrentRoomIndex(currentRoomIndex + 1);
+        }
+    };
+    
+    const goToPreviousRoom = () => {
+        if (currentRoomIndex > 0) {
+            setCurrentRoomIndex(currentRoomIndex - 1);
+        }
+    };
+    
+    const goToRoom = (index: number) => {
+        setCurrentRoomIndex(index);
     };
     
     // Add item to specific room
@@ -289,6 +417,33 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
             }
             return room;
         }));
+    };
+    
+    // Add item to current room
+    const addItemToCurrentRoom = (itemId: string, quantity: number = 1) => {
+        const currentRoom = rooms[currentRoomIndex];
+        if (currentRoom) {
+            addItemToRoom(currentRoom.id, itemId, quantity);
+        }
+    };
+    
+    // Increment item in current room
+    const incrementItem = (itemId: string) => {
+        addItemToCurrentRoom(itemId, 1);
+    };
+    
+    // Decrement item in current room  
+    const decrementItem = (itemId: string) => {
+        const currentRoom = rooms[currentRoomIndex];
+        if (currentRoom) {
+            removeItemFromRoom(currentRoom.id, itemId);
+        }
+    };
+    
+    // Get quantity of item in current room
+    const getItemQuantity = (itemId: string): number => {
+        const currentRoom = rooms[currentRoomIndex];
+        return currentRoom?.items[itemId] || 0;
     };
     
     // Add item without assigning to room
@@ -340,33 +495,33 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
     };
 
     // Add custom item
-    const addCustomItem = () => {
-        if (!customForm.name || !customForm.length || !customForm.width || !customForm.height) {
+    const addCustomItem = (name: string, length: string, width: string, height: string) => {
+        if (!name || !length || !width || !height) {
+            toast.error('Please fill in all fields');
             return;
         }
 
-        const volume = (parseFloat(customForm.length) * parseFloat(customForm.width) * parseFloat(customForm.height)) / 1000000; // Convert cm³ to m³
+        const volume = (parseFloat(length) * parseFloat(width) * parseFloat(height)) / 1000000; // Convert cm³ to m³
 
         const newItem: FurnitureItem = {
             id: `custom_${Date.now()}`,
-            name: customForm.name,
+            name: name,
             volume: volume,
             category: 'Custom',
             icon: '📦'
         };
 
         setCustomItems(prev => [...prev, newItem]);
-        setCustomForm({ name: '', length: '', width: '', height: '' });
-        setShowCustomForm(false);
+        toast.success(`${name} added successfully!`);
     };
 
     // Clear all
     const clearAll = () => {
-        setRooms([
-            { id: '1', name: 'Living Room', items: {} },
-            { id: '2', name: 'Bedroom 1', items: {} },
-            { id: '3', name: 'Kitchen', items: {} }
-        ]);
+        // Clear items from all rooms but keep the room structure
+        setRooms(prev => prev.map(room => ({
+            ...room,
+            items: {}
+        })));
         setCustomItems([]);
         setUnassignedItems([]);
         closeRoomSelectionModal();
@@ -426,8 +581,8 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         : [...furnitureDatabase, ...customItems].filter(item => item.category === selectedCategory);
 
     return (
-        <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                 {/* Saved Results Sidebar */}
                 <div className="xl:col-span-1">
                     <SavedResultsSidebar toolType="volume" initialSavedResults={initialSavedResults} />
@@ -435,31 +590,31 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                 
                 {/* Main Calculator */}
                 <div className="xl:col-span-3">
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden font-sans">
+                    <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 overflow-hidden font-sans">
                         {/* Header */}
-                        <div className="p-6 bg-gray-50 border-b border-gray-200">
-                <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-3">
-                        <h3 className="text-2xl font-bold text-gray-700">Volume Calculator</h3>
-                        <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                        <div className="p-3 sm:p-4 lg:p-6 bg-gray-50 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-700">Volume Calculator</h3>
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-600 rounded-full flex items-center justify-center">
                             <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                             </svg>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                         {calculateTotalVolume() > 0 && (
                             <SaveResultsButton
                                 toolType="volume"
                                 results={getCalculationResults()}
                                 formData={getFormData()}
                                 onSaveComplete={handleSaveComplete}
-                                className="text-xs px-3 py-1"
+                                className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
                             />
                         )}
                         <button
                             onClick={clearAll}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium px-3 py-1 rounded-full hover:bg-red-50 transition-colors"
+                            className="text-red-600 hover:text-red-800 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 sm:py-1.5 rounded-full hover:bg-red-50 transition-colors whitespace-nowrap"
                         >
                             Clear All
                         </button>
@@ -468,381 +623,94 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
             </div>
 
             {/* Summary Cards */}
-            <div className="p-6 bg-white">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-                    <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-600 mb-2">Total Volume</p>
-                        <p className="text-4xl font-bold text-gray-900">
-                            {calculateTotalVolume().toFixed(1)}
-                        </p>
-                        <p className="text-sm text-gray-500">cubic metres</p>
-                    </div>
-                    
-                    <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-600 mb-2">Recommended Truck</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                            {getRecommendedTruck().icon} {getRecommendedTruck().name}
-                        </p>
-                    </div>
-                    
-                    <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-600 mb-2">Estimated Cost</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                            {getRecommendedTruck().price}
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <VolumeSummaryCards 
+                totalVolume={calculateTotalVolume()} 
+                recommendedTruck={getRecommendedTruck()} 
+            />
 
-            {/* Room Management - With Item Display */}
-            <div className="p-6 bg-gray-50 border-t border-gray-200">
-                <div className="flex justify-between items-center mb-6">
-                    <h4 className="text-xl font-bold text-gray-700">Rooms & Items</h4>
-                    <button
-                        onClick={addRoom}
-                        className="bg-[#17B7C7] text-white px-6 py-3 rounded-full text-sm font-semibold hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                    >
-                        Add Room
-                    </button>
-                </div>
-
-                <div className="space-y-4">
-                    {rooms.map(room => {
-                        const roomItems = Object.entries(room.items);
-                        const roomVolume = roomItems.reduce((total, [itemId, quantity]) => {
-                            const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
-                            return total + (item ? item.volume * quantity : 0);
-                        }, 0);
-
-                        return (
-                            <div key={room.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                {/* Room Header */}
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            value={room.name}
-                                            onChange={(e) => updateRoomName(room.id, e.target.value)}
-                                            className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 font-medium text-sm w-32 focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] outline-none"
-                                        />
-                                        <span className="text-sm text-gray-600 font-medium">
-                                            {roomVolume.toFixed(1)}m³ total
-                                        </span>
-                                    </div>
-                                    {rooms.length > 1 && (
-                                        <button
-                                            onClick={() => removeRoom(room.id)}
-                                            className="text-red-600 hover:text-red-800 text-sm font-medium hover:bg-red-100 px-2 py-1 rounded transition-colors"
-                                        >
-                                            Remove Room
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Room Items */}
-                                {roomItems.length > 0 ? (
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-medium text-gray-700 mb-2">Items in this room:</p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                            {roomItems.map(([itemId, quantity]) => {
-                                                const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
-                                                if (!item) return null;
-                                                
-                                                return (
-                                                    <div key={itemId} className="flex items-center justify-between bg-white px-3 py-2 rounded border border-gray-200">
-                                                        <span className="text-sm text-gray-700 flex items-center gap-1">
-                                                            <span className="text-base">{item.icon}</span>
-                                                            <span>{item.name}</span>
-                                                            <span className="text-gray-500">×{quantity}</span>
-                                                        </span>
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className="text-xs text-gray-500 font-medium">
-                                                                {(item.volume * quantity).toFixed(1)}m³
-                                                            </span>
-                                                            <button
-                                                                onClick={() => removeItemFromRoom(room.id, itemId)}
-                                                                className="text-red-600 hover:text-red-800 text-sm hover:bg-red-100 w-6 h-6 rounded flex items-center justify-center transition-colors"
-                                                                title="Remove one item"
-                                                            >
-                                                                −
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-6 text-gray-500">
-                                        <div className="text-2xl mb-2">📦</div>
-                                        <p className="text-sm">No items added to this room yet</p>
-                                        <p className="text-xs">Click on furniture items above to add them here</p>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Furniture Selection */}
-            <div className="mb-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-lg font-semibold text-gray-900">🪑 Add Furniture & Items</h4>
-                    <button
-                        onClick={() => setShowCustomForm(!showCustomForm)}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-                    >
-                        Add Custom Item
-                    </button>
-                </div>
-
-                {/* Category Filter */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {categories.map(category => (
-                        <button
-                            key={category}
-                            onClick={() => setSelectedCategory(category)}
-                            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                                selectedCategory === category
-                                    ? 'bg-[#17B7C7] text-white'
-                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                        >
-                            {category}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Custom Item Form */}
-                {showCustomForm && (
-                    <div className="mb-6 p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-                        <h5 className="font-semibold text-gray-900 mb-4">Add Custom Item</h5>
-                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Item Name</label>
-                                <input
-                                    type="text"
-                                    placeholder="Large Bookshelf"
-                                    value={customForm.name}
-                                    onChange={(e) => setCustomForm(prev => ({ ...prev, name: e.target.value }))}
-                                    className="w-full px-4 py-3 bg-gray-200 border-0 rounded-full text-gray-900 placeholder-gray-500 font-medium focus:bg-white focus:ring-2 focus:ring-[#17B7C7] focus:outline-none transition-all duration-200 shadow-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Length (cm)</label>
-                                <input
-                                    type="number"
-                                    placeholder="120"
-                                    value={customForm.length}
-                                    onChange={(e) => setCustomForm(prev => ({ ...prev, length: e.target.value }))}
-                                    className="w-full px-4 py-3 bg-gray-200 border-0 rounded-full text-gray-900 placeholder-gray-500 font-medium focus:bg-white focus:ring-2 focus:ring-[#17B7C7] focus:outline-none transition-all duration-200 shadow-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Width (cm)</label>
-                                <input
-                                    type="number"
-                                    placeholder="80"
-                                    value={customForm.width}
-                                    onChange={(e) => setCustomForm(prev => ({ ...prev, width: e.target.value }))}
-                                    className="w-full px-4 py-3 bg-gray-200 border-0 rounded-full text-gray-900 placeholder-gray-500 font-medium focus:bg-white focus:ring-2 focus:ring-[#17B7C7] focus:outline-none transition-all duration-200 shadow-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Height (cm)</label>
-                                <input
-                                    type="number"
-                                    placeholder="180"
-                                    value={customForm.height}
-                                    onChange={(e) => setCustomForm(prev => ({ ...prev, height: e.target.value }))}
-                                    className="w-full px-4 py-3 bg-gray-200 border-0 rounded-full text-gray-900 placeholder-gray-500 font-medium focus:bg-white focus:ring-2 focus:ring-[#17B7C7] focus:outline-none transition-all duration-200 shadow-sm"
-                                />
+            {/* Room-by-Room Survey Interface */}
+            <div className="p-3 sm:p-4 lg:p-6 bg-gray-50 border-t border-gray-200">
+                {/* Room Navigation Tabs */}
+                <RoomNavigationTabs 
+                    rooms={rooms}
+                    currentRoomIndex={currentRoomIndex}
+                    furnitureDatabase={furnitureDatabase}
+                    customItems={customItems}
+                    onRoomSelect={goToRoom}
+                />
+                
+                {/* Current Room Survey */}
+                {rooms[currentRoomIndex] && (
+                    <div className="bg-white rounded-lg sm:rounded-xl border border-gray-200 shadow-sm p-3 sm:p-4 lg:p-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+                            <h4 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">
+                                {rooms[currentRoomIndex].name}
+                            </h4>
+                            <div className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">
+                                Room {currentRoomIndex + 1} of {rooms.length}
                             </div>
                         </div>
-                        <div className="flex gap-3 mt-4">
-                            <button
-                                onClick={addCustomItem}
-                                className="bg-[#17B7C7] text-white px-6 py-3 rounded-full text-sm font-semibold hover:bg-[#139AAA] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                            >
-                                Add Item
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setShowCustomForm(false);
-                                    setCustomForm({ name: '', length: '', width: '', height: '' });
-                                }}
-                                className="bg-gray-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                        </div>
+                        
+                        {/* Preset Items for Current Room */}
+                        <PresetItemsList 
+                            items={getPresetItemsForRoom(rooms[currentRoomIndex].name)}
+                            getItemQuantity={getItemQuantity}
+                            onIncrement={incrementItem}
+                            onDecrement={decrementItem}
+                        />
+                        
+                        {/* Dropdown for All Items */}
+                        <ItemDropdown 
+                            items={getAllItemsSorted()}
+                            onItemSelect={incrementItem}
+                        />
+                        
+                        {/* Items Added to Current Room */}
+                        <RoomItemsList 
+                            items={rooms[currentRoomIndex].items}
+                            furnitureDatabase={furnitureDatabase}
+                            customItems={customItems}
+                        />
+                        
+                        {/* Navigation Buttons */}
+                        <RoomNavigationButtons 
+                            currentRoomIndex={currentRoomIndex}
+                            totalRooms={rooms.length}
+                            onPrevious={goToPreviousRoom}
+                            onNext={goToNextRoom}
+                        />
                     </div>
                 )}
-
-                {/* Furniture Grid - Modern Design */}
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {filteredItems.map(item => (
-                        <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-4 hover:border-[#17B7C7] hover:shadow-md transition-all duration-200 cursor-pointer group"
-                             onClick={() => openRoomSelectionModal(item)}>
-                            <div className="text-center">
-                                <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-200">{item.icon}</div>
-                                <h5 className="font-semibold text-gray-900 text-xs mb-2 line-clamp-2">{item.name}</h5>
-                                <p className="text-xs text-[#17B7C7] font-medium">{item.volume}m³</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
             </div>
 
+            {/* Custom Item Form */}
+            <CustomItemForm onAddItem={addCustomItem} />
+
             {/* Unassigned Items */}
-            {unassignedItems.length > 0 && (
-                <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">� Unassigned Items</h4>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                            <p className="text-sm font-medium text-gray-700">
-                                Items not assigned to any room
-                            </p>
-                            <span className="text-sm text-gray-600 font-medium">
-                                {unassignedItems.reduce((total, unassignedItem) => {
-                                    const item = [...furnitureDatabase, ...customItems].find(f => f.id === unassignedItem.itemId);
-                                    return total + (item ? item.volume * unassignedItem.quantity : 0);
-                                }, 0).toFixed(1)}m³ total
-                            </span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                            {unassignedItems.map(unassignedItem => {
-                                const item = [...furnitureDatabase, ...customItems].find(f => f.id === unassignedItem.itemId);
-                                if (!item) return null;
-                                
-                                return (
-                                    <div key={unassignedItem.itemId} className="flex items-center justify-between bg-white px-3 py-2 rounded border border-blue-200">
-                                        <span className="text-sm text-gray-700 flex items-center gap-1">
-                                            <span className="text-base">{item.icon}</span>
-                                            <span>{item.name}</span>
-                                            <span className="text-gray-500">×{unassignedItem.quantity}</span>
-                                        </span>
-                                        <div className="flex items-center space-x-2">
-                                            <span className="text-xs text-gray-500 font-medium">
-                                                {(item.volume * unassignedItem.quantity).toFixed(1)}m³
-                                            </span>
-                                            <button
-                                                onClick={() => removeUnassignedItem(unassignedItem.itemId)}
-                                                className="text-red-600 hover:text-red-800 text-sm hover:bg-red-100 w-6 h-6 rounded flex items-center justify-center transition-colors"
-                                                title="Remove one item"
-                                            >
-                                                −
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
+            {calculateTotalVolume() > 0 && (
+                <UnassignedItemsList 
+                    unassignedItems={unassignedItems}
+                    furnitureDatabase={furnitureDatabase}
+                    customItems={customItems}
+                    onRemoveItem={removeUnassignedItem}
+                />
             )}
 
             {/* Room Selection Modal */}
-            {roomSelectionModal.isOpen && roomSelectionModal.selectedItem && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-200">
-                        <h3 className="text-xl font-bold text-gray-900 mb-6">
-                            Add {roomSelectionModal.selectedItem.name}
-                        </h3>
-                        
-                        <div className="mb-6">
-                            <label className="block text-sm font-semibold text-gray-800 mb-3">Quantity</label>
-                            <input
-                                type="number"
-                                min="1"
-                                value={itemQuantity}
-                                onChange={(e) => setItemQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-[#17B7C7] focus:border-[#17B7C7] focus:bg-white outline-none transition-all duration-200"
-                            />
-                        </div>
-                        
-                        <div className="mb-8">
-                            <p className="text-sm font-semibold text-gray-800 mb-4">Select room or add without room:</p>
-                            <div className="space-y-3">
-                                {rooms.map(room => (
-                                    <button
-                                        key={room.id}
-                                        onClick={() => {
-                                            addItemToRoom(room.id, roomSelectionModal.selectedItem!.id, itemQuantity);
-                                            closeRoomSelectionModal();
-                                        }}
-                                        className="w-full text-left px-4 py-3 bg-gray-50 text-gray-900 font-medium hover:bg-[#17B7C7] hover:text-white rounded-xl transition-all duration-200 border border-gray-200 hover:border-[#17B7C7]"
-                                    >
-                                        🏠 {room.name}
-                                    </button>
-                                ))}
-                                <button
-                                    onClick={() => {
-                                        addItemUnassigned(roomSelectionModal.selectedItem!.id, itemQuantity);
-                                        closeRoomSelectionModal();
-                                    }}
-                                    className="w-full text-left px-4 py-3 bg-blue-50 text-blue-900 font-medium hover:bg-blue-100 rounded-xl transition-all duration-200 border border-blue-200 hover:border-blue-300"
-                                >
-                                    📦 Add without room
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={closeRoomSelectionModal}
-                                className="px-6 py-3 bg-gray-600 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <RoomSelectionModal 
+                isOpen={roomSelectionModal.isOpen}
+                selectedItem={roomSelectionModal.selectedItem}
+                rooms={rooms}
+                onClose={closeRoomSelectionModal}
+                onAddToRoom={addItemToRoom}
+                onAddUnassigned={addItemUnassigned}
+            />
 
             {/* Truck Recommendations */}
-            {calculateTotalVolume() > 0 && (
-                <div className="p-6 bg-white border-t border-gray-200">
-                    <h4 className="text-xl font-bold text-gray-700 mb-6">Truck Size Recommendations</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {truckSizes.map(truck => {
-                            const isRecommended = truck.volume >= calculateTotalVolume() && 
-                                                (truckSizes.find(t => t.volume >= calculateTotalVolume())?.name === truck.name);
-                            
-                            return (
-                                <div 
-                                    key={truck.name}
-                                    className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                                        isRecommended 
-                                            ? 'border-[#17B7C7] bg-blue-50 shadow-lg transform scale-105' 
-                                            : truck.volume < calculateTotalVolume()
-                                                ? 'border-red-200 bg-red-50 opacity-60'
-                                                : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
-                                    }`}
-                                >
-                                    <div className="text-center">
-                                        <div className="text-3xl mb-3">{truck.icon}</div>
-                                        <h5 className="font-semibold text-gray-900 text-sm mb-2">
-                                            {truck.name}
-                                            {isRecommended && <span className="text-[#17B7C7] ml-1 text-lg">✓</span>}
-                                        </h5>
-                                        <p className="text-xs text-gray-600 mb-1 font-medium">{truck.volume}m³ capacity</p>
-                                        <p className="text-xs text-gray-500 mb-2">{truck.description}</p>
-                                        <p className="text-sm font-bold text-gray-900">{truck.price}</p>
-                                        {isRecommended && (
-                                            <p className="text-xs text-[#17B7C7] font-semibold mt-2">Recommended</p>
-                                        )}
-                                        {truck.volume < calculateTotalVolume() && (
-                                            <p className="text-xs text-red-600 mt-2 font-medium">Too small</p>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
+            <TruckRecommendations 
+                truckSizes={truckSizes}
+                totalVolume={calculateTotalVolume()}
+            />
                     </div>
                 </div>
             </div>
