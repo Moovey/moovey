@@ -24,6 +24,7 @@ export default function RoomNavigationTabs({
                         return total + (item ? item.volume * quantity : 0);
                     }, 0);
                     const itemCount = Object.values(room.items).reduce((sum, qty) => sum + qty, 0);
+                    const boxCount = room.boxCount || 0;
                     
                     return (
                         <button
@@ -37,10 +38,19 @@ export default function RoomNavigationTabs({
                         >
                             <div className="flex flex-col items-center">
                                 <span className="whitespace-nowrap">{room.name}</span>
-                                {itemCount > 0 && (
-                                    <span className="text-[10px] sm:text-xs opacity-75 whitespace-nowrap">
-                                        {itemCount} items ({roomVolume.toFixed(1)}m³)
-                                    </span>
+                                {(itemCount > 0 || boxCount > 0) && (
+                                    <div className="flex flex-col items-center">
+                                        {itemCount > 0 && (
+                                            <span className="text-[10px] sm:text-xs opacity-75 whitespace-nowrap">
+                                                {itemCount} items ({roomVolume.toFixed(1)}m³)
+                                            </span>
+                                        )}
+                                        {boxCount > 0 && (
+                                            <span className="text-[10px] sm:text-xs opacity-75 whitespace-nowrap">
+                                                📦 {boxCount} boxes
+                                            </span>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </button>

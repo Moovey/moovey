@@ -12,6 +12,7 @@ import CustomItemForm from './volume-calculator/CustomItemForm';
 import UnassignedItemsList from './volume-calculator/UnassignedItemsList';
 import RoomSelectionModal from './volume-calculator/RoomSelectionModal';
 import TruckRecommendations from './volume-calculator/TruckRecommendations';
+import BoxEstimator from './volume-calculator/BoxEstimator';
 
 interface FurnitureItem {
     id: string;
@@ -26,6 +27,7 @@ interface Room {
     id: string;
     name: string;
     items: { [itemId: string]: number }; // itemId: quantity
+    boxCount?: number; // Number of boxes estimated for this room
 }
 
 interface TruckSize {
@@ -343,9 +345,53 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         return total;
     };
 
+    // Calculate box volume with improved estimation
+    const calculateBoxVolume = (): { totalBoxes: number; estimatedVolumeM3: number; warning: string | null } => {
+        const BUFFERED_BOX_VOLUME = 0.14; // 5 cubic feet in m³ (buffered from standard 4 cu ft)
+        
+        let totalBoxes = 0;
+        rooms.forEach(room => {
+            totalBoxes += room.boxCount || 0;
+        });
+
+        const estimatedVolumeM3 = totalBoxes * BUFFERED_BOX_VOLUME;
+        const furnitureVolume = calculateTotalVolume();
+        const totalVolume = furnitureVolume + estimatedVolumeM3;
+        
+        let warning = null;
+        
+        if (totalBoxes > 0 && furnitureVolume > 0) {
+            const boxPercentage = (estimatedVolumeM3 / totalVolume) * 100;
+            
+            if (boxPercentage < 25) {
+                warning = `⚠️ Warning: Your box estimate (${boxPercentage.toFixed(0)}% of total volume) seems low. Most moves require boxes to be 25-30% of total volume. Consider adding more boxes.`;
+            }
+        }
+
+        return {
+            totalBoxes,
+            estimatedVolumeM3,
+            warning
+        };
+    };
+
+    // Calculate total volume including boxes
+    const calculateTotalVolumeWithBoxes = (): number => {
+        const furnitureVolume = calculateTotalVolume();
+        const boxData = calculateBoxVolume();
+        return furnitureVolume + boxData.estimatedVolumeM3;
+    };
+
+    // Update box count for a room
+    const updateRoomBoxCount = (roomId: string, boxCount: number) => {
+        setRooms(prev => prev.map(room => 
+            room.id === roomId ? { ...room, boxCount: Math.max(0, boxCount) } : room
+        ));
+    };
+
     // Get recommended truck
     const getRecommendedTruck = (): TruckSize => {
-        const totalVolume = calculateTotalVolume();
+        const totalVolume = calculateTotalVolumeWithBoxes();
         const truck = truckSizes.find(truck => truck.volume >= totalVolume) || truckSizes[truckSizes.length - 1];
         return truck;
     };
@@ -520,7 +566,8 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         // Clear items from all rooms but keep the room structure
         setRooms(prev => prev.map(room => ({
             ...room,
-            items: {}
+            items: {},
+            boxCount: 0
         })));
         setCustomItems([]);
         setUnassignedItems([]);
@@ -537,33 +584,49 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
 
     // Get calculation results for saving
     const getCalculationResults = () => {
-        const totalVolume = calculateTotalVolume();
+        const furnitureVolume = calculateTotalVolume();
+        const boxData = calculateBoxVolume();
+        const totalVolume = furnitureVolume + boxData.estimatedVolumeM3;
         const recommendedTruck = getRecommendedTruck();
+        const BUFFERED_BOX_VOLUME = 0.14; // 5 cubic feet in m³
         
         return {
             totalVolume: totalVolume,
+            furnitureVolume: furnitureVolume,
+            boxVolume: boxData.estimatedVolumeM3,
+            totalBoxes: boxData.totalBoxes,
+            boxWarning: boxData.warning,
             recommendedTruck: {
                 name: recommendedTruck.name,
                 volume: recommendedTruck.volume,
                 price: recommendedTruck.price,
                 description: recommendedTruck.description
             },
-            roomBreakdown: rooms.map(room => ({
-                name: room.name,
-                items: Object.entries(room.items).map(([itemId, quantity]) => {
-                    const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
-                    return item ? {
-                        name: item.name,
-                        quantity: quantity,
-                        volume: item.volume * quantity,
-                        category: item.category
-                    } : null;
-                }).filter(Boolean),
-                totalVolume: Object.entries(room.items).reduce((total, [itemId, quantity]) => {
+            roomBreakdown: rooms.map(room => {
+                const roomBoxCount = room.boxCount || 0;
+                const roomBoxVolume = roomBoxCount * BUFFERED_BOX_VOLUME;
+                const roomFurnitureVolume = Object.entries(room.items).reduce((total, [itemId, quantity]) => {
                     const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
                     return total + (item ? item.volume * quantity : 0);
-                }, 0)
-            }))
+                }, 0);
+                
+                return {
+                    name: room.name,
+                    boxCount: roomBoxCount,
+                    boxVolume: roomBoxVolume,
+                    items: Object.entries(room.items).map(([itemId, quantity]) => {
+                        const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
+                        return item ? {
+                            name: item.name,
+                            quantity: quantity,
+                            volume: item.volume * quantity,
+                            category: item.category
+                        } : null;
+                    }).filter(Boolean),
+                    furnitureVolume: roomFurnitureVolume,
+                    totalVolume: roomFurnitureVolume + roomBoxVolume
+                };
+            })
         };
     };
 
@@ -624,8 +687,12 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
 
             {/* Summary Cards */}
             <VolumeSummaryCards 
-                totalVolume={calculateTotalVolume()} 
-                recommendedTruck={getRecommendedTruck()} 
+                totalVolume={calculateTotalVolumeWithBoxes()} 
+                furnitureVolume={calculateTotalVolume()}
+                boxVolume={calculateBoxVolume().estimatedVolumeM3}
+                totalBoxes={calculateBoxVolume().totalBoxes}
+                recommendedTruck={getRecommendedTruck()}
+                boxWarning={calculateBoxVolume().warning}
             />
 
             {/* Room-by-Room Survey Interface */}
@@ -650,6 +717,13 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                                 Room {currentRoomIndex + 1} of {rooms.length}
                             </div>
                         </div>
+
+                        {/* Box Estimator */}
+                        <BoxEstimator 
+                            roomName={rooms[currentRoomIndex].name}
+                            boxCount={rooms[currentRoomIndex].boxCount || 0}
+                            onBoxCountChange={(count) => updateRoomBoxCount(rooms[currentRoomIndex].id, count)}
+                        />
                         
                         {/* Preset Items for Current Room */}
                         <PresetItemsList 
@@ -709,7 +783,7 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
             {/* Truck Recommendations */}
             <TruckRecommendations 
                 truckSizes={truckSizes}
-                totalVolume={calculateTotalVolume()}
+                totalVolume={calculateTotalVolumeWithBoxes()}
             />
                     </div>
                 </div>

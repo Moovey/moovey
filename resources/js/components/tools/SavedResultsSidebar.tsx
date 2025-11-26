@@ -193,6 +193,16 @@ export default function SavedResultsSidebar({ toolType, className = '', initialS
                                             <p className="text-sm font-bold text-blue-600">
                                                 Total Volume: {result.results.totalVolume?.toFixed(1)} m³
                                             </p>
+                                            <div className="flex gap-3 mt-1">
+                                                <p className="text-xs text-gray-600">
+                                                    Furniture: {result.results.furnitureVolume?.toFixed(1) || '0.0'} m³
+                                                </p>
+                                                {result.results.totalBoxes > 0 && (
+                                                    <p className="text-xs text-blue-600 font-medium">
+                                                        📦 {result.results.totalBoxes} boxes ({result.results.boxVolume?.toFixed(1) || '0.0'} m³)
+                                                    </p>
+                                                )}
+                                            </div>
                                             <p className="text-xs text-blue-600 font-medium mt-1">
                                                 {result.results.recommendedTruck?.name || 'No truck'}
                                             </p>
@@ -205,7 +215,14 @@ export default function SavedResultsSidebar({ toolType, className = '', initialS
                                                     <p className="text-xs font-medium text-gray-700">Rooms & Items:</p>
                                                     {result.results.roomBreakdown.map((room: any, idx: number) => (
                                                         <div key={idx} className="text-xs text-gray-600">
-                                                            <p className="font-medium text-gray-700">{room.name}:</p>
+                                                            <p className="font-medium text-gray-700">
+                                                                {room.name}
+                                                                {room.boxCount > 0 && (
+                                                                    <span className="text-blue-600 ml-1">
+                                                                        (📦 {room.boxCount} boxes - {room.boxVolume?.toFixed(2) || '0.00'} m³)
+                                                                    </span>
+                                                                )}
+                                                            </p>
                                                             <div className="ml-2 mt-1 mb-2">
                                                                 {room.items?.slice(0, 4).map((item: any, itemIdx: number) => (
                                                                     <div key={itemIdx} className="text-xs text-gray-500">

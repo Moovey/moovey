@@ -11,6 +11,7 @@ export interface Room {
     id: string;
     name: string;
     items: { [itemId: string]: number }; // itemId: quantity
+    boxCount?: number; // Number of boxes estimated for this room
 }
 
 export interface TruckSize {
