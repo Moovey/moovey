@@ -78,6 +78,14 @@ class SavedToolResultController extends Controller
 
         $savedToolResult->delete();
 
+        // Check if the request came from the detail page
+        $referer = request()->header('referer');
+        if ($referer && str_contains($referer, '/saved-results/' . $savedToolResult->id)) {
+            // If coming from detail page, redirect to saved results index
+            return redirect()->route('saved-results.index')->with('success', 'Saved result deleted successfully!');
+        }
+
+        // Otherwise, go back to previous page (for list deletions)
         return back()->with('success', 'Saved result deleted successfully!');
     }
 

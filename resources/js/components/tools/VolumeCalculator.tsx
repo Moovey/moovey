@@ -29,6 +29,7 @@ interface Room {
     items: { [itemId: string]: number }; // itemId: quantity
     autoFragileBoxCount?: number; // Automatically calculated fragile boxes based on fragile items
     autoRegularBoxCount?: number; // Automatically calculated regular boxes based on boxable items
+    selectedBoxSize?: BoxSize; // Box size selected for this room
 }
 
 interface TruckSize {
@@ -49,6 +50,12 @@ interface RoomSelectionModal {
     selectedItem: FurnitureItem | null;
 }
 
+interface BoxSize {
+    name: string;
+    volume: number; // in cubic meters
+    description: string;
+}
+
 interface VolumeCalculatorProps {
     initialSavedResults?: any[];
 }
@@ -65,6 +72,12 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         'Garden': ['garden_bench', 'garden_chair', 'garden_table', 'portable_bbq', 'mower_elec', 'parasol', 'garden_ornament'],
         'Garage': ['bicycle', 'child_bicycle', 'tool_case', 'ladder', 'workbench', 'pack_2']
     };
+
+    // Define available box sizes
+    const boxSizes: BoxSize[] = [
+        { name: 'Medium', volume: 0.19, description: '45×35×30cm - Standard moving box' },
+        { name: 'Large', volume: 0.35, description: '61×46×41cm - Large moving box' }
+    ];
 
     // Comprehensive furniture database matching Mercia Movers survey items
     const furnitureDatabase: FurnitureItem[] = [
@@ -335,19 +348,20 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
     ];
 
     const [rooms, setRooms] = useState<Room[]>([
-        { id: '1', name: 'Hallway', items: {} },
-        { id: '2', name: 'Lounge', items: {} },
-        { id: '3', name: 'Kitchen', items: {} },
-        { id: '4', name: 'Dining Room', items: {} },
-        { id: '5', name: 'Bedroom 1', items: {} },
-        { id: '6', name: 'Loft', items: {} },
-        { id: '7', name: 'Garden', items: {} },
-        { id: '8', name: 'Garage', items: {} }
+        { id: '1', name: 'Hallway', items: {}, selectedBoxSize: boxSizes[0] },
+        { id: '2', name: 'Lounge', items: {}, selectedBoxSize: boxSizes[0] },
+        { id: '3', name: 'Kitchen', items: {}, selectedBoxSize: boxSizes[0] },
+        { id: '4', name: 'Dining Room', items: {}, selectedBoxSize: boxSizes[0] },
+        { id: '5', name: 'Bedroom 1', items: {}, selectedBoxSize: boxSizes[0] },
+        { id: '6', name: 'Loft', items: {}, selectedBoxSize: boxSizes[0] },
+        { id: '7', name: 'Garden', items: {}, selectedBoxSize: boxSizes[0] },
+        { id: '8', name: 'Garage', items: {}, selectedBoxSize: boxSizes[0] }
     ]);
 
     const [currentRoomIndex, setCurrentRoomIndex] = useState<number>(0);
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [customItems, setCustomItems] = useState<FurnitureItem[]>([]);
+    const [selectedBoxSize, setSelectedBoxSize] = useState<BoxSize>(boxSizes[0]); // Default to Medium
     
     // New state for unassigned items and modal
     const [unassignedItems, setUnassignedItems] = useState<UnassignedItem[]>([]);
@@ -403,7 +417,7 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         autoFragileBoxCount: number;
         totalFragileBoxCount: number;
     } => {
-        const BUFFERED_BOX_VOLUME = 0.14; // 5 cubic feet in m³ (buffered from standard 4 cu ft)
+        const SELECTED_BOX_VOLUME = selectedBoxSize.volume;
         const BOXABLE_ITEM_THRESHOLD = 0.14; // Items smaller than this can potentially fit in boxes
         
         let regularBoxCount = 0;
@@ -411,6 +425,7 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         
         // Calculate automatic fragile boxes and regular box counts
         rooms.forEach(room => {
+            const ROOM_BOX_VOLUME = room.selectedBoxSize?.volume || selectedBoxSize.volume;
             
             // Calculate automatic regular boxes for boxable non-fragile items
             let regularBoxableVolume = 0;
@@ -421,7 +436,7 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                 }
             });
             
-            const roomAutoRegularBoxes = Math.ceil(regularBoxableVolume / BUFFERED_BOX_VOLUME);
+            const roomAutoRegularBoxes = Math.ceil(regularBoxableVolume / ROOM_BOX_VOLUME);
             regularBoxCount += roomAutoRegularBoxes;
             room.autoRegularBoxCount = roomAutoRegularBoxes;
             
@@ -431,7 +446,9 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                 if (fragileItems.includes(itemId)) {
                     const packingRequirement = fragileItemPackingMap[itemId];
                     if (packingRequirement) {
-                        fragileBoxesNeeded += packingRequirement * quantity;
+                        // Adjust packing requirement based on room's selected box size
+                        const adjustedPacking = (packingRequirement * 0.14) / ROOM_BOX_VOLUME;
+                        fragileBoxesNeeded += adjustedPacking * quantity;
                     }
                 }
             });
@@ -452,19 +469,32 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                     // Handle fragile items
                     const packingRequirement = fragileItemPackingMap[unassignedItem.itemId];
                     if (packingRequirement) {
-                        autoFragileBoxCount += Math.ceil(packingRequirement * unassignedItem.quantity);
+                        const adjustedPacking = (packingRequirement * 0.14) / SELECTED_BOX_VOLUME;
+                        autoFragileBoxCount += Math.ceil(adjustedPacking * unassignedItem.quantity);
                     }
                 } else if (item.volume < BOXABLE_ITEM_THRESHOLD) {
                     // Handle regular boxable items
                     const itemVolume = item.volume * unassignedItem.quantity;
-                    regularBoxCount += Math.ceil(itemVolume / BUFFERED_BOX_VOLUME);
+                    regularBoxCount += Math.ceil(itemVolume / SELECTED_BOX_VOLUME);
                 }
             }
         });
 
         const totalFragileBoxCount = autoFragileBoxCount;
         const totalAllBoxes = regularBoxCount + totalFragileBoxCount;
-        const estimatedVolumeM3 = totalAllBoxes * BUFFERED_BOX_VOLUME;
+        
+        // Calculate estimated volume using room-specific box sizes
+        let estimatedVolumeM3 = 0;
+        rooms.forEach(room => {
+            const roomBoxVolume = room.selectedBoxSize?.volume || selectedBoxSize.volume;
+            const roomTotalBoxes = (room.autoRegularBoxCount || 0) + (room.autoFragileBoxCount || 0);
+            estimatedVolumeM3 += roomTotalBoxes * roomBoxVolume;
+        });
+        
+        // Add unassigned items volume
+        const unassignedBoxVolume = (regularBoxCount - rooms.reduce((sum, room) => sum + (room.autoRegularBoxCount || 0), 0)) + 
+                                   (autoFragileBoxCount - rooms.reduce((sum, room) => sum + (room.autoFragileBoxCount || 0), 0));
+        estimatedVolumeM3 += unassignedBoxVolume * selectedBoxSize.volume;
         
         // Calculate only "boxable" furniture volume (items < 0.14m³)
         let boxableFurnitureVolume = 0;
@@ -487,7 +517,7 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
             }
         });
         
-        const totalBoxableVolume = boxableFurnitureVolume + (regularBoxCount * BUFFERED_BOX_VOLUME);
+        const totalBoxableVolume = boxableFurnitureVolume + (regularBoxCount * SELECTED_BOX_VOLUME);
         
         let warning = null;
         
@@ -541,6 +571,13 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
     const updateRoomName = (roomId: string, newName: string) => {
         setRooms(prev => prev.map(room => 
             room.id === roomId ? { ...room, name: newName } : room
+        ));
+    };
+    
+    // Update room box size
+    const updateRoomBoxSize = (roomId: string, boxSize: BoxSize) => {
+        setRooms(prev => prev.map(room => 
+            room.id === roomId ? { ...room, selectedBoxSize: boxSize } : room
         ));
     };
 
@@ -713,7 +750,7 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         const boxData = calculateBoxVolume();
         const totalVolume = furnitureVolume + boxData.estimatedVolumeM3;
         const recommendedTruck = getRecommendedTruck();
-        const BUFFERED_BOX_VOLUME = 0.14; // 5 cubic feet in m³
+        const CURRENT_BOX_VOLUME = selectedBoxSize.volume;
         
         return {
             totalVolume: totalVolume,
@@ -730,10 +767,11 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                 description: recommendedTruck.description
             },
             roomBreakdown: rooms.map(room => {
+                const roomBoxSize = room.selectedBoxSize || boxSizes[0];
                 const roomRegularBoxCount = room.autoRegularBoxCount || 0;
                 const roomFragileBoxCount = room.autoFragileBoxCount || 0;
                 const roomTotalBoxCount = roomRegularBoxCount + roomFragileBoxCount;
-                const roomBoxVolume = roomTotalBoxCount * BUFFERED_BOX_VOLUME;
+                const roomBoxVolume = roomTotalBoxCount * roomBoxSize.volume;
                 const roomFurnitureVolume = Object.entries(room.items).reduce((total, [itemId, quantity]) => {
                     const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
                     return total + (item ? item.volume * quantity : 0);
@@ -745,6 +783,11 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                     regularBoxCount: roomRegularBoxCount,
                     fragileBoxCount: roomFragileBoxCount,
                     boxVolume: roomBoxVolume,
+                    boxSize: {
+                        name: roomBoxSize.name,
+                        volume: roomBoxSize.volume,
+                        description: roomBoxSize.description
+                    },
                     items: Object.entries(room.items).map(([itemId, quantity]) => {
                         const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
                         return item ? {
@@ -847,8 +890,30 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                             <h4 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">
                                 {rooms[currentRoomIndex].name}
                             </h4>
-                            <div className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">
-                                Room {currentRoomIndex + 1} of {rooms.length}
+                            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4">
+                                {/* Room Box Size Selector */}
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                                    <label className="text-xs font-medium text-gray-600 whitespace-nowrap">
+                                        📦 Box Size:
+                                    </label>
+                                    <select 
+                                        value={rooms[currentRoomIndex].selectedBoxSize?.name || boxSizes[0].name}
+                                        onChange={(e) => {
+                                            const selected = boxSizes.find(box => box.name === e.target.value);
+                                            if (selected) updateRoomBoxSize(rooms[currentRoomIndex].id, selected);
+                                        }}
+                                        className="px-2 py-1 text-xs text-gray-900 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+                                    >
+                                        {boxSizes.map(box => (
+                                            <option key={box.name} value={box.name} className="text-gray-900">
+                                                {box.name} ({box.volume}m³)
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">
+                                    Room {currentRoomIndex + 1} of {rooms.length}
+                                </div>
                             </div>
                         </div>
 
@@ -871,7 +936,7 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                                     </div>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2 italic">
-                                    💡 Boxes are automatically calculated based on your furniture. Fragile items get special protective packing.
+                                    💡 Boxes are automatically calculated using {rooms[currentRoomIndex].selectedBoxSize?.name || 'Medium'} boxes ({rooms[currentRoomIndex].selectedBoxSize?.volume || boxSizes[0].volume}m³) for this room.
                                 </p>
                             </div>
                         </div>

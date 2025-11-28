@@ -239,6 +239,13 @@ export default function SavedResultsSidebar({ toolType, className = '', initialS
                                                                 <span className="font-medium text-gray-700">{room.name}</span>
                                                                 <span className="text-xs text-gray-600">{room.totalVolume?.toFixed(1) || '0.0'} m³</span>
                                                             </div>
+                                                            {room.boxSize && (
+                                                                <div className="mt-0.5">
+                                                                    <span className="text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
+                                                                        📦 {room.boxSize.name} ({room.boxSize.volume}m³)
+                                                                    </span>
+                                                                </div>
+                                                            )}
                                                             {(room.regularBoxCount > 0 || room.fragileBoxCount > 0) && (
                                                                 <div className="flex gap-3 mt-0.5">
                                                                     {room.regularBoxCount > 0 && (

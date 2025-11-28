@@ -36,10 +36,10 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                     draggable: true
                 });
                 
-                // Redirect after showing toast
-                setTimeout(() => {
-                    router.visit('/saved-results');
-                }, 1500);
+                // Immediately redirect to saved results page
+                router.visit('/saved-results', {
+                    replace: true // This prevents the deleted page from appearing in browser history
+                });
             },
             onError: (errors) => {
                 console.error('Delete failed:', errors);
@@ -259,35 +259,121 @@ export default function SavedResultDetail({ savedResult }: SavedResultDetailProp
                 <p className="text-2xl font-bold mb-2">
                     {results.totalVolume?.toFixed(1) || 'N/A'} m³
                 </p>
-                <div className="flex items-center gap-2 text-lg">
+                <div className="flex items-center gap-2 text-lg mb-3">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                     <span>{results.recommendedTruck?.name || 'N/A'} - £{results.recommendedTruck?.price || 'N/A'}</span>
                 </div>
+                
+                {/* Volume Breakdown */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="bg-white/10 rounded p-2">
+                        <div className="text-white/80">Furniture Volume</div>
+                        <div className="text-lg font-semibold">{results.furnitureVolume?.toFixed(1) || '0.0'} m³</div>
+                    </div>
+                    <div className="bg-white/10 rounded p-2">
+                        <div className="text-white/80">Box Volume</div>
+                        <div className="text-lg font-semibold">{results.boxVolume?.toFixed(1) || '0.0'} m³</div>
+                    </div>
+                </div>
             </div>
+
+            {/* Box Summary */}
+            {(results.regularBoxes > 0 || results.fragileBoxes > 0) && (
+                <div className="bg-white border rounded-lg p-6">
+                    <h4 className="font-semibold text-gray-900 mb-4">Box Summary</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                                <span className="font-medium text-blue-900">Regular Boxes</span>
+                            </div>
+                            <p className="text-2xl font-bold text-blue-600">{results.regularBoxes || 0}</p>
+                        </div>
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                <span className="font-medium text-orange-900">Fragile Boxes</span>
+                            </div>
+                            <p className="text-2xl font-bold text-orange-600">{results.fragileBoxes || 0}</p>
+                        </div>
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                                <span className="font-medium text-gray-900">Total Boxes</span>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-600">{results.totalBoxes || 0}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Room Breakdown */}
             {results.roomBreakdown && (
                 <div className="bg-white border rounded-lg p-6">
                     <h4 className="font-semibold text-gray-900 mb-4">Room Breakdown</h4>
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         {results.roomBreakdown.map((room: any, index: number) => (
-                            <div key={index} className="border-l-4 border-[#17B7C7] pl-4">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h5 className="font-medium text-gray-900">{room.name}</h5>
+                            <div key={index} className="border border-gray-200 rounded-lg p-4">
+                                <div className="flex justify-between items-center mb-3">
+                                    <h5 className="text-lg font-medium text-gray-900">{room.name}</h5>
                                     <span className="text-sm font-semibold text-[#17B7C7]">
                                         {room.totalVolume?.toFixed(1) || '0'} m³
                                     </span>
                                 </div>
-                                {room.items && room.items.length > 0 && (
-                                    <div className="space-y-1">
-                                        {room.items.map((item: any, itemIndex: number) => (
-                                            <div key={itemIndex} className="flex justify-between text-sm text-gray-800">
-                                                <span className="font-medium">{item.name} x{item.quantity}</span>
-                                                <span className="font-semibold">{item.volume?.toFixed(1) || '0'} m³</span>
+                                
+                                {/* Box Size Badge */}
+                                {room.boxSize && (
+                                    <div className="mb-3">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                                            📦 {room.boxSize.name} ({room.boxSize.volume}m³) - {room.boxSize.description}
+                                        </span>
+                                    </div>
+                                )}
+                                
+                                {/* Room Box Counts */}
+                                {(room.regularBoxCount > 0 || room.fragileBoxCount > 0) && (
+                                    <div className="flex gap-4 mb-3">
+                                        {room.regularBoxCount > 0 && (
+                                            <div className="flex items-center text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                                </svg>
+                                                <span className="font-medium">Regular: {room.regularBoxCount}</span>
                                             </div>
-                                        ))}
+                                        )}
+                                        {room.fragileBoxCount > 0 && (
+                                            <div className="flex items-center text-sm text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                                </svg>
+                                                <span className="font-medium">Fragile: {room.fragileBoxCount}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                
+                                {/* Room Items */}
+                                {room.items && room.items.length > 0 && (
+                                    <div className="space-y-2">
+                                        <h6 className="text-sm font-medium text-gray-700">Items in this room:</h6>
+                                        <div className="bg-gray-50 rounded p-3 space-y-1 max-h-40 overflow-y-auto">
+                                            {room.items.map((item: any, itemIndex: number) => (
+                                                <div key={itemIndex} className="flex justify-between text-sm">
+                                                    <span className="text-gray-800">
+                                                        • {item.name} {item.quantity > 1 ? `(${item.quantity}x)` : ''}
+                                                    </span>
+                                                    <span className="font-medium text-gray-600">{item.volume?.toFixed(1) || '0'} m³</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>
