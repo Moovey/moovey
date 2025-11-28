@@ -193,13 +193,27 @@ export default function SavedResultsSidebar({ toolType, className = '', initialS
                                             <p className="text-sm font-bold text-blue-600">
                                                 Total Volume: {result.results.totalVolume?.toFixed(1)} m³
                                             </p>
-                                            <div className="flex gap-3 mt-1">
+                                            <div className="space-y-1 mt-1">
                                                 <p className="text-xs text-gray-600">
                                                     Furniture: {result.results.furnitureVolume?.toFixed(1) || '0.0'} m³
                                                 </p>
+                                                {(result.results.regularBoxes > 0 || result.results.fragileBoxes > 0) && (
+                                                    <div className="flex gap-4">
+                                                        {result.results.regularBoxes > 0 && (
+                                                            <p className="text-xs text-blue-600">
+                                                                📦 Regular: {result.results.regularBoxes} boxes
+                                                            </p>
+                                                        )}
+                                                        {result.results.fragileBoxes > 0 && (
+                                                            <p className="text-xs text-orange-600">
+                                                                🔍 Fragile: {result.results.fragileBoxes} boxes
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
                                                 {result.results.totalBoxes > 0 && (
-                                                    <p className="text-xs text-blue-600 font-medium">
-                                                        📦 {result.results.totalBoxes} boxes ({result.results.boxVolume?.toFixed(1) || '0.0'} m³)
+                                                    <p className="text-xs text-gray-500">
+                                                        Total Box Volume: {result.results.boxVolume?.toFixed(1) || '0.0'} m³
                                                     </p>
                                                 )}
                                             </div>
@@ -215,14 +229,20 @@ export default function SavedResultsSidebar({ toolType, className = '', initialS
                                                     <p className="text-xs font-medium text-gray-700">Rooms & Items:</p>
                                                     {result.results.roomBreakdown.map((room: any, idx: number) => (
                                                         <div key={idx} className="text-xs text-gray-600">
-                                                            <p className="font-medium text-gray-700">
-                                                                {room.name}
-                                                                {room.boxCount > 0 && (
-                                                                    <span className="text-blue-600 ml-1">
-                                                                        (📦 {room.boxCount} boxes - {room.boxVolume?.toFixed(2) || '0.00'} m³)
-                                                                    </span>
-                                                                )}
-                                                            </p>
+                                                            <div className="flex justify-between items-start">
+                                                                <span className="font-medium text-gray-700">{room.name}</span>
+                                                                <span className="text-xs text-gray-600">{room.totalVolume?.toFixed(1) || '0.0'} m³</span>
+                                                            </div>
+                                                            {(room.regularBoxCount > 0 || room.fragileBoxCount > 0) && (
+                                                                <div className="flex gap-3 mt-0.5">
+                                                                    {room.regularBoxCount > 0 && (
+                                                                        <span className="text-xs text-blue-600">📦 {room.regularBoxCount}</span>
+                                                                    )}
+                                                                    {room.fragileBoxCount > 0 && (
+                                                                        <span className="text-xs text-orange-600">🔍 {room.fragileBoxCount}</span>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                             <div className="ml-2 mt-1 mb-2">
                                                                 {room.items?.slice(0, 4).map((item: any, itemIdx: number) => (
                                                                     <div key={itemIdx} className="text-xs text-gray-500">

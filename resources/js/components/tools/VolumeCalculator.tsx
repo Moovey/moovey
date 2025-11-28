@@ -12,7 +12,7 @@ import CustomItemForm from './volume-calculator/CustomItemForm';
 import UnassignedItemsList from './volume-calculator/UnassignedItemsList';
 import RoomSelectionModal from './volume-calculator/RoomSelectionModal';
 import TruckRecommendations from './volume-calculator/TruckRecommendations';
-import BoxEstimator from './volume-calculator/BoxEstimator';
+
 
 interface FurnitureItem {
     id: string;
@@ -27,7 +27,8 @@ interface Room {
     id: string;
     name: string;
     items: { [itemId: string]: number }; // itemId: quantity
-    boxCount?: number; // Number of boxes estimated for this room
+    autoFragileBoxCount?: number; // Automatically calculated fragile boxes based on fragile items
+    autoRegularBoxCount?: number; // Automatically calculated regular boxes based on boxable items
 }
 
 interface TruckSize {
@@ -56,12 +57,12 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
     // Define preset items for each room type
     const presetRoomItems: { [roomName: string]: string[] } = {
         'Hallway': ['hall_table', 'small_table', 'mirror_small', 'picture_small', 'lamp_floor', 'stool'],
-        'Lounge': ['sofa_3seater', 'armchair_medium', 'coffee_table', 'tv_stand', 'bookcase_small', 'cabinet_small', 'rug_large'],
-        'Kitchen': ['table_breakfast', 'dining_chair', 'fridge_freezer', 'washing_machine', 'microwave', 'freezer_chest'],
-        'Dining Room': ['dining_table_medium', 'dining_chair', 'sideboard_medium', 'welsh_dresser', 'rug_small', 'chair_breakfast'],
-        'Bedroom 1': ['bed_divan_double', 'wardrobe_double', 'chest_drawers_med', 'bedside_cabinet', 'dressing_table', 'bedroom_chair'],
+        'Lounge': ['sofa_3seater', 'armchair_medium', 'coffee_table', 'tv_flat_large', 'glass_cabinet', 'cabinet_small', 'rug_large', 'lamp_table', 'ornament'],
+        'Kitchen': ['table_breakfast', 'dining_chair', 'fridge_freezer', 'washing_machine', 'microwave', 'kettle', 'toaster', 'wine_rack'],
+        'Dining Room': ['dining_table_medium', 'dining_chair', 'sideboard_medium', 'china_cabinet', 'picture_large', 'vase'],
+        'Bedroom 1': ['bed_divan_double', 'wardrobe_double', 'chest_drawers_med', 'bedside_cabinet', 'dressing_table', 'bedroom_chair', 'mirror_large', 'lamp_table'],
         'Loft': ['pack_2', 'pack_6', 'suitcases', 'trunk', 'archive_boxes', 'boxed_3cuft'],
-        'Garden': ['garden_bench', 'garden_chair', 'garden_table', 'portable_bbq', 'mower_elec', 'parasol'],
+        'Garden': ['garden_bench', 'garden_chair', 'garden_table', 'portable_bbq', 'mower_elec', 'parasol', 'garden_ornament'],
         'Garage': ['bicycle', 'child_bicycle', 'tool_case', 'ladder', 'workbench', 'pack_2']
     };
 
@@ -274,8 +275,56 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         { id: 'dehumidifier', name: 'Dehumidifier', volume: 0.5, category: 'Miscellaneous', icon: '💧', image: '/images/tools-item/dehumidifier.jpg' },
         { id: 'air_con_unit', name: 'Air Con Unit', volume: 0.8, category: 'Miscellaneous', icon: '❄️', image: '/images/tools-item/aircon-unit.jpg' },
         { id: 'stool', name: 'Stool', volume: 0.4, category: 'Miscellaneous', icon: '🪑', image: '/images/tools-item/stool.jpg' },
-        { id: 'sundry_cuft', name: 'Sundry Cuft', volume: 0.028, category: 'Miscellaneous', icon: '📦' }
+        { id: 'sundry_cuft', name: 'Sundry Cuft', volume: 0.028, category: 'Miscellaneous', icon: '📦' },
+        
+        // Additional fragile items
+        { id: 'wine_rack', name: 'Wine Rack', volume: 0.5, category: 'Kitchen', icon: '🍷', image: '/images/tools-item/wine-rack.jpg' },
+        { id: 'glass_cabinet', name: 'Glass Cabinet', volume: 1.2, category: 'Living Room', icon: '🪟', image: '/images/tools-item/glass-cabinet.jpg' },
+        { id: 'china_cabinet', name: 'China Cabinet', volume: 1.5, category: 'Dining Room', icon: '🏺', image: '/images/tools-item/china-cabinet.jpg' },
+        { id: 'vase', name: 'Vase', volume: 0.1, category: 'Miscellaneous', icon: '🏺', image: '/images/tools-item/vase.jpg' },
+        { id: 'ornament', name: 'Ornament', volume: 0.05, category: 'Miscellaneous', icon: '🗿', image: '/images/tools-item/ornament.jpg' }
     ];
+
+    // List of fragile items with realistic packing requirements
+    const fragileItemPackingMap: { [key: string]: number } = {
+        // Mirrors and Pictures (need flat packing with padding)
+        'mirror_small': 0.5,        // Small mirror needs half a box with padding
+        'mirror_large': 1.0,        // Large mirror needs 1 full box with padding
+        'picture_small': 0.25,      // Small pictures can share boxes
+        'picture_large': 0.5,       // Large pictures need half a box
+        
+        // TVs and Monitors (need custom boxes with foam)
+        'tv_flat_small': 0.7,       // Small TV with protective foam
+        'tv_flat_large': 1.5,       // Large TV needs 1.5 boxes with padding
+        'tv_tube_small': 1.0,       // Tube TVs are heavier, need more protection
+        'tv_tube_large': 2.0,       // Large tube TVs need 2 boxes worth of protection
+        'computer_monitor': 0.7,     // Monitor with protective padding
+        'monitor_flat': 0.5,        // Flat monitor with padding
+        
+        // Lamps (awkward shapes need careful packing)
+        'lamp_floor': 0.8,          // Floor lamp with shade protection
+        'lamp_table': 0.3,          // Table lamp can share box space
+        
+        // Kitchen appliances (medium protection needed)
+        'microwave': 0.8,           // Microwave with padding
+        'toaster': 0.3,             // Small appliance
+        'kettle': 0.25,             // Small appliance
+        'blender': 0.3,             // Small appliance
+        'coffee_machine': 0.4,      // Medium appliance
+        
+        // Glass furniture and cabinets
+        'wine_rack': 0.6,           // Wine rack with glass protection
+        'glass_cabinet': 1.2,       // Glass panels need careful packing
+        'china_cabinet': 1.5,       // Large glass cabinet with dishes
+        
+        // Small decorative items (can be grouped)
+        'vase': 0.2,                // Vases can be packed together
+        'ornament': 0.15,           // Small ornaments can share boxes
+        'garden_ornament': 0.4      // Garden ornaments need some protection
+    };
+
+    // List of fragile items that require special packing
+    const fragileItems = Object.keys(fragileItemPackingMap);
 
     const truckSizes: TruckSize[] = [
         { name: 'Small Van', volume: 10, description: 'Studio apartment or 1-bedroom', icon: '🚐', price: '£80-120' },
@@ -345,56 +394,113 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         return total;
     };
 
-    // Calculate box volume with improved estimation
-    const calculateBoxVolume = (): { totalBoxes: number; estimatedVolumeM3: number; warning: string | null } => {
+    // Calculate box volume with automatic fragile box calculation
+    const calculateBoxVolume = (): { 
+        totalBoxes: number; 
+        estimatedVolumeM3: number; 
+        warning: string | null;
+        regularBoxCount: number;
+        autoFragileBoxCount: number;
+        totalFragileBoxCount: number;
+    } => {
         const BUFFERED_BOX_VOLUME = 0.14; // 5 cubic feet in m³ (buffered from standard 4 cu ft)
         const BOXABLE_ITEM_THRESHOLD = 0.14; // Items smaller than this can potentially fit in boxes
         
-        let totalBoxes = 0;
+        let regularBoxCount = 0;
+        let autoFragileBoxCount = 0;
+        
+        // Calculate automatic fragile boxes and regular box counts
         rooms.forEach(room => {
-            totalBoxes += room.boxCount || 0;
+            
+            // Calculate automatic regular boxes for boxable non-fragile items
+            let regularBoxableVolume = 0;
+            Object.entries(room.items).forEach(([itemId, quantity]) => {
+                const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
+                if (item && item.volume < BOXABLE_ITEM_THRESHOLD && !fragileItems.includes(itemId)) {
+                    regularBoxableVolume += item.volume * quantity;
+                }
+            });
+            
+            const roomAutoRegularBoxes = Math.ceil(regularBoxableVolume / BUFFERED_BOX_VOLUME);
+            regularBoxCount += roomAutoRegularBoxes;
+            room.autoRegularBoxCount = roomAutoRegularBoxes;
+            
+            // Calculate automatic fragile boxes based on realistic packing needs
+            let fragileBoxesNeeded = 0;
+            Object.entries(room.items).forEach(([itemId, quantity]) => {
+                if (fragileItems.includes(itemId)) {
+                    const packingRequirement = fragileItemPackingMap[itemId];
+                    if (packingRequirement) {
+                        fragileBoxesNeeded += packingRequirement * quantity;
+                    }
+                }
+            });
+            
+            // Round up to nearest whole box
+            const roomAutoFragileBoxes = Math.ceil(fragileBoxesNeeded);
+            autoFragileBoxCount += roomAutoFragileBoxes;
+            
+            // Update room with auto fragile box count
+            room.autoFragileBoxCount = roomAutoFragileBoxes;
         });
 
-        const estimatedVolumeM3 = totalBoxes * BUFFERED_BOX_VOLUME;
+        // Also check unassigned items for regular and fragile items
+        unassignedItems.forEach(unassignedItem => {
+            const item = [...furnitureDatabase, ...customItems].find(f => f.id === unassignedItem.itemId);
+            if (item) {
+                if (fragileItems.includes(unassignedItem.itemId)) {
+                    // Handle fragile items
+                    const packingRequirement = fragileItemPackingMap[unassignedItem.itemId];
+                    if (packingRequirement) {
+                        autoFragileBoxCount += Math.ceil(packingRequirement * unassignedItem.quantity);
+                    }
+                } else if (item.volume < BOXABLE_ITEM_THRESHOLD) {
+                    // Handle regular boxable items
+                    const itemVolume = item.volume * unassignedItem.quantity;
+                    regularBoxCount += Math.ceil(itemVolume / BUFFERED_BOX_VOLUME);
+                }
+            }
+        });
+
+        const totalFragileBoxCount = autoFragileBoxCount;
+        const totalAllBoxes = regularBoxCount + totalFragileBoxCount;
+        const estimatedVolumeM3 = totalAllBoxes * BUFFERED_BOX_VOLUME;
         
         // Calculate only "boxable" furniture volume (items < 0.14m³)
         let boxableFurnitureVolume = 0;
         
-        // Volume from rooms
+        // Volume from rooms (excluding fragile items since they're auto-calculated)
         rooms.forEach(room => {
             Object.entries(room.items).forEach(([itemId, quantity]) => {
                 const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
-                if (item && item.volume < BOXABLE_ITEM_THRESHOLD) {
+                if (item && item.volume < BOXABLE_ITEM_THRESHOLD && !fragileItems.includes(itemId)) {
                     boxableFurnitureVolume += item.volume * quantity;
                 }
             });
         });
         
-        // Volume from unassigned items
+        // Volume from unassigned items (excluding fragile items since they're auto-calculated)
         unassignedItems.forEach(unassignedItem => {
             const item = [...furnitureDatabase, ...customItems].find(f => f.id === unassignedItem.itemId);
-            if (item && item.volume < BOXABLE_ITEM_THRESHOLD) {
+            if (item && item.volume < BOXABLE_ITEM_THRESHOLD && !fragileItems.includes(unassignedItem.itemId)) {
                 boxableFurnitureVolume += item.volume * unassignedItem.quantity;
             }
         });
         
-        const totalBoxableVolume = boxableFurnitureVolume + estimatedVolumeM3;
+        const totalBoxableVolume = boxableFurnitureVolume + (regularBoxCount * BUFFERED_BOX_VOLUME);
         
         let warning = null;
         
-        // Only show warning if there are boxes and boxable furniture items
-        if (totalBoxes > 0 && boxableFurnitureVolume > 0) {
-            const boxPercentage = (estimatedVolumeM3 / totalBoxableVolume) * 100;
-            
-            if (boxPercentage < 25) {
-                warning = `⚠️ Warning: Your box estimate (${boxPercentage.toFixed(0)}% of boxable items) seems low. Most moves require boxes to be 25-30% of total volume for smaller items. Consider adding more boxes.`;
-            }
-        }
+        // No warning message needed for automatic calculation
+        warning = null;
 
         return {
-            totalBoxes,
+            totalBoxes: totalAllBoxes,
             estimatedVolumeM3,
-            warning
+            warning,
+            regularBoxCount,
+            autoFragileBoxCount,
+            totalFragileBoxCount
         };
     };
 
@@ -405,12 +511,9 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         return furnitureVolume + boxData.estimatedVolumeM3;
     };
 
-    // Update box count for a room
-    const updateRoomBoxCount = (roomId: string, boxCount: number) => {
-        setRooms(prev => prev.map(room => 
-            room.id === roomId ? { ...room, boxCount: Math.max(0, boxCount) } : room
-        ));
-    };
+
+
+
 
     // Get recommended truck
     const getRecommendedTruck = (): TruckSize => {
@@ -589,8 +692,7 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         // Clear items from all rooms but keep the room structure
         setRooms(prev => prev.map(room => ({
             ...room,
-            items: {},
-            boxCount: 0
+            items: {}
         })));
         setCustomItems([]);
         setUnassignedItems([]);
@@ -618,6 +720,8 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
             furnitureVolume: furnitureVolume,
             boxVolume: boxData.estimatedVolumeM3,
             totalBoxes: boxData.totalBoxes,
+            regularBoxes: boxData.regularBoxCount,
+            fragileBoxes: boxData.totalFragileBoxCount,
             boxWarning: boxData.warning,
             recommendedTruck: {
                 name: recommendedTruck.name,
@@ -626,8 +730,10 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                 description: recommendedTruck.description
             },
             roomBreakdown: rooms.map(room => {
-                const roomBoxCount = room.boxCount || 0;
-                const roomBoxVolume = roomBoxCount * BUFFERED_BOX_VOLUME;
+                const roomRegularBoxCount = room.autoRegularBoxCount || 0;
+                const roomFragileBoxCount = room.autoFragileBoxCount || 0;
+                const roomTotalBoxCount = roomRegularBoxCount + roomFragileBoxCount;
+                const roomBoxVolume = roomTotalBoxCount * BUFFERED_BOX_VOLUME;
                 const roomFurnitureVolume = Object.entries(room.items).reduce((total, [itemId, quantity]) => {
                     const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
                     return total + (item ? item.volume * quantity : 0);
@@ -635,7 +741,9 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                 
                 return {
                     name: room.name,
-                    boxCount: roomBoxCount,
+                    boxCount: roomTotalBoxCount,
+                    regularBoxCount: roomRegularBoxCount,
+                    fragileBoxCount: roomFragileBoxCount,
                     boxVolume: roomBoxVolume,
                     items: Object.entries(room.items).map(([itemId, quantity]) => {
                         const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
@@ -714,6 +822,9 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                 furnitureVolume={calculateTotalVolume()}
                 boxVolume={calculateBoxVolume().estimatedVolumeM3}
                 totalBoxes={calculateBoxVolume().totalBoxes}
+                regularBoxes={calculateBoxVolume().regularBoxCount}
+                fragileBoxes={calculateBoxVolume().totalFragileBoxCount}
+                autoFragileBoxes={calculateBoxVolume().autoFragileBoxCount}
                 recommendedTruck={getRecommendedTruck()}
                 boxWarning={calculateBoxVolume().warning}
             />
@@ -741,12 +852,29 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
                             </div>
                         </div>
 
-                        {/* Box Estimator */}
-                        <BoxEstimator 
-                            roomName={rooms[currentRoomIndex].name}
-                            boxCount={rooms[currentRoomIndex].boxCount || 0}
-                            onBoxCountChange={(count) => updateRoomBoxCount(rooms[currentRoomIndex].id, count)}
-                        />
+                        {/* Box Calculation Info */}
+                        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="text-center">
+                                <h5 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">
+                                    📦 Box Calculation for {rooms[currentRoomIndex].name}
+                                </h5>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div className="bg-blue-100 p-2 rounded">
+                                        <div className="font-medium text-blue-900">Regular Boxes</div>
+                                        <div className="text-lg font-bold text-blue-700">{rooms[currentRoomIndex].autoRegularBoxCount || 0}</div>
+                                        <div className="text-xs text-blue-600">Auto-calculated for small items</div>
+                                    </div>
+                                    <div className="bg-orange-100 p-2 rounded">
+                                        <div className="font-medium text-orange-900">Fragile Boxes</div>
+                                        <div className="text-lg font-bold text-orange-700">{rooms[currentRoomIndex].autoFragileBoxCount || 0}</div>
+                                        <div className="text-xs text-orange-600">Auto-calculated for fragile items</div>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2 italic">
+                                    💡 Boxes are automatically calculated based on your furniture. Fragile items get special protective packing.
+                                </p>
+                            </div>
+                        </div>
                         
                         {/* Preset Items for Current Room */}
                         <PresetItemsList 

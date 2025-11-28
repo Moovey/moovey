@@ -5,6 +5,9 @@ interface VolumeSummaryCardsProps {
     furnitureVolume: number;
     boxVolume: number;
     totalBoxes: number;
+    regularBoxes?: number;
+    fragileBoxes?: number;
+    autoFragileBoxes?: number;
     recommendedTruck: TruckSize;
     boxWarning?: string | null;
 }
@@ -14,12 +17,15 @@ export default function VolumeSummaryCards({
     furnitureVolume,
     boxVolume,
     totalBoxes,
+    regularBoxes,
+    fragileBoxes,
+    autoFragileBoxes,
     recommendedTruck,
     boxWarning
 }: VolumeSummaryCardsProps) {
     return (
         <div className="p-3 sm:p-4 lg:p-6 bg-white">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
                 <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
                     <p className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 sm:mb-2">Total Volume</p>
                     <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
@@ -34,12 +40,22 @@ export default function VolumeSummaryCards({
                 </div>
 
                 <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 sm:mb-2">📦 Total Boxes</p>
+                    <p className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 sm:mb-2">📦 Regular Boxes</p>
                     <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-900">
-                        {totalBoxes}
+                        {regularBoxes || 0}
                     </p>
-                    <p className="text-xs sm:text-sm text-gray-500">
-                        {boxVolume > 0 ? `${boxVolume.toFixed(2)}m³` : 'No boxes added'}
+                    <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
+                        {((regularBoxes || 0) * 0.14).toFixed(2)}m³
+                    </p>
+                </div>
+
+                <div className="text-center p-3 sm:p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <p className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 sm:mb-2">🔍 Fragile Boxes</p>
+                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-orange-900">
+                        {(fragileBoxes || 0)}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
+                        {((fragileBoxes || 0) * 0.14).toFixed(2)}m³
                     </p>
                 </div>
                 
