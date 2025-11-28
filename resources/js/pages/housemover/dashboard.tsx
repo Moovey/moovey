@@ -374,6 +374,7 @@ export default function Dashboard({
             '🔍': 'search',
             '💰': 'money',
             '📄': 'legal',
+            '📝': 'legal',
             '📦': 'box',
             '🚚': 'truck',
             '🏡': 'settling',
