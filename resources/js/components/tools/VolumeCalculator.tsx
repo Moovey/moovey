@@ -348,6 +348,7 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
     // Calculate box volume with improved estimation
     const calculateBoxVolume = (): { totalBoxes: number; estimatedVolumeM3: number; warning: string | null } => {
         const BUFFERED_BOX_VOLUME = 0.14; // 5 cubic feet in m³ (buffered from standard 4 cu ft)
+        const BOXABLE_ITEM_THRESHOLD = 0.14; // Items smaller than this can potentially fit in boxes
         
         let totalBoxes = 0;
         rooms.forEach(room => {
@@ -355,16 +356,38 @@ export default function VolumeCalculator({ initialSavedResults }: VolumeCalculat
         });
 
         const estimatedVolumeM3 = totalBoxes * BUFFERED_BOX_VOLUME;
-        const furnitureVolume = calculateTotalVolume();
-        const totalVolume = furnitureVolume + estimatedVolumeM3;
+        
+        // Calculate only "boxable" furniture volume (items < 0.14m³)
+        let boxableFurnitureVolume = 0;
+        
+        // Volume from rooms
+        rooms.forEach(room => {
+            Object.entries(room.items).forEach(([itemId, quantity]) => {
+                const item = [...furnitureDatabase, ...customItems].find(f => f.id === itemId);
+                if (item && item.volume < BOXABLE_ITEM_THRESHOLD) {
+                    boxableFurnitureVolume += item.volume * quantity;
+                }
+            });
+        });
+        
+        // Volume from unassigned items
+        unassignedItems.forEach(unassignedItem => {
+            const item = [...furnitureDatabase, ...customItems].find(f => f.id === unassignedItem.itemId);
+            if (item && item.volume < BOXABLE_ITEM_THRESHOLD) {
+                boxableFurnitureVolume += item.volume * unassignedItem.quantity;
+            }
+        });
+        
+        const totalBoxableVolume = boxableFurnitureVolume + estimatedVolumeM3;
         
         let warning = null;
         
-        if (totalBoxes > 0 && furnitureVolume > 0) {
-            const boxPercentage = (estimatedVolumeM3 / totalVolume) * 100;
+        // Only show warning if there are boxes and boxable furniture items
+        if (totalBoxes > 0 && boxableFurnitureVolume > 0) {
+            const boxPercentage = (estimatedVolumeM3 / totalBoxableVolume) * 100;
             
             if (boxPercentage < 25) {
-                warning = `⚠️ Warning: Your box estimate (${boxPercentage.toFixed(0)}% of total volume) seems low. Most moves require boxes to be 25-30% of total volume. Consider adding more boxes.`;
+                warning = `⚠️ Warning: Your box estimate (${boxPercentage.toFixed(0)}% of boxable items) seems low. Most moves require boxes to be 25-30% of total volume for smaller items. Consider adding more boxes.`;
             }
         }
 
