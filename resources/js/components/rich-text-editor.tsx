@@ -1,7 +1,6 @@
 import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
@@ -47,6 +46,12 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
+                // Disable extensions that we'll configure separately to avoid duplicates
+                dropcursor: false,
+                gapcursor: false,
+                link: false, // Disable StarterKit's basic link to use our custom Link configuration
+                underline: false, // Disable StarterKit's underline to use our separate Underline extension
+                // Configure the ones we want to keep from StarterKit
                 heading: {
                     HTMLAttributes: {
                         class: 'text-gray-900 font-bold',
@@ -83,6 +88,8 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
             Gapcursor,
             Link.configure({
                 openOnClick: false,
+                autolink: false,
+                linkOnPaste: false,
                 HTMLAttributes: {
                     class: 'text-blue-600 underline',
                 },
@@ -343,10 +350,118 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
     };
 
     const addLink = () => {
-        const url = window.prompt('Enter the URL');
-        if (url) {
-            editor?.chain().focus().setLink({ href: url }).run();
+        const { from, to } = editor.state.selection;
+        const selectedText = editor.state.doc.textBetween(from, to);
+        
+        // Check if text is selected
+        if (selectedText.trim() === '' || from === to) {
+            alert('Please select some text first to add a link');
+            return;
         }
+        
+        const url = window.prompt('Enter the URL');
+        if (url && url.trim()) {
+            // Validate URL format
+            try {
+                new URL(url.startsWith('http') ? url : `https://${url}`);
+                const finalUrl = url.startsWith('http') ? url : `https://${url}`;
+                
+                // Apply link only to the exact selection range
+                editor?.chain()
+                    .focus()
+                    .setTextSelection({ from, to })
+                    .setLink({ href: finalUrl })
+                    .setTextSelection(to) // Move cursor to end of link
+                    .run();
+            } catch (error) {
+                alert('Please enter a valid URL (e.g., https://example.com)');
+            }
+        }
+    };
+
+    const removeLink = () => {
+        if (!editor) {
+            console.error('Editor not available');
+            alert('Editor not ready. Please try again.');
+            return;
+        }
+        
+        console.log('Remove link called');
+        console.log('Editor isActive(link):', editor.isActive('link'));
+        console.log('Selection:', editor.state.selection);
+        
+        const { from, to } = editor.state.selection;
+        
+        // Check if we're currently in a link
+        if (editor.isActive('link')) {
+            console.log('Link is active, attempting to remove...');
+            // Method 1: Try standard unsetLink
+            const success = editor.chain().focus().unsetLink().run();
+            console.log('Standard unsetLink success:', success);
+            if (success) {
+                console.log('Link removed successfully');
+                return;
+            }
+        }
+        
+        // Method 2: Check if there's a link mark in the current selection/position
+        const linkMark = editor.state.schema.marks.link;
+        if (!linkMark) {
+            console.error('Link mark not found in schema');
+            alert('Link extension not properly loaded');
+            return;
+        }
+        
+        const doc = editor.state.doc;
+        let hasLink = false;
+        let linkStart = from;
+        let linkEnd = to;
+        
+        // Find the full extent of the link
+        doc.nodesBetween(Math.max(0, from - 1), Math.min(doc.content.size, to + 1), (node, pos) => {
+            if (node.marks) {
+                node.marks.forEach(mark => {
+                    if (mark.type === linkMark) {
+                        hasLink = true;
+                        linkStart = Math.min(linkStart, pos);
+                        linkEnd = Math.max(linkEnd, pos + node.nodeSize);
+                    }
+                });
+            }
+        });
+        
+        console.log('Has link in range:', hasLink, 'from', linkStart, 'to', linkEnd);
+        
+        if (hasLink) {
+            // Select the entire link and remove it
+            const success = editor.chain()
+                .focus()
+                .setTextSelection({ from: linkStart, to: linkEnd })
+                .unsetLink()
+                .run();
+            
+            console.log('Extended selection unlink success:', success);
+            if (success) {
+                console.log('Link removed using extended selection');
+                return;
+            }
+        }
+        
+        // Method 3: Try extendMarkRange approach
+        try {
+            console.log('Trying extendMarkRange approach...');
+            const success = editor.chain().focus().extendMarkRange('link').unsetLink().run();
+            console.log('ExtendMarkRange success:', success);
+            if (success) {
+                console.log('Link removed using extendMarkRange');
+                return;
+            }
+        } catch (e) {
+            console.error('extendMarkRange method failed:', e);
+        }
+        
+        console.log('No link removal method succeeded');
+        alert('No link found at cursor position. Please place your cursor within a link to remove it.');
     };
 
     const addTaskButton = () => {
@@ -675,8 +790,19 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
                     className={`px-3 py-1 text-sm font-medium rounded ${
                         editor.isActive('link') ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
                     }`}
+                    title="Add link to selected text"
                 >
                     🔗 Link
+                </button>
+                <button
+                    type="button"
+                    onClick={removeLink}
+                    className={`px-3 py-1 text-sm font-medium rounded ${
+                        editor?.isActive('link') ? 'bg-red-100 text-red-800 hover:bg-red-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                    }`}
+                    title="Remove link from selected text - Place cursor within a link and click"
+                >
+                    🔗❌ Unlink
                 </button>
 
                 <div className="w-px h-6 bg-gray-300 mx-1"></div>
