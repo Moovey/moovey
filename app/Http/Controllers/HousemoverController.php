@@ -251,6 +251,7 @@ class HousemoverController extends Controller
                 'id' => (string) $business->id,
                 'name' => $business->name,
                 'avatar' => '🏢',
+                'logo_url' => $business->logo_path ? \Illuminate\Support\Facades\Storage::url($business->logo_path) : null,
                 'businessType' => $business->user->name ?? 'Service Provider',
                 'location' => 'UK',
                 'rating' => 4.5,
