@@ -249,6 +249,37 @@ export default function IndividualLessonView({
         router.visit(`/academy/stage/${encodeURIComponent(stage)}`);
     };
 
+    const getFreshCSRFToken = async () => {
+        try {
+            // Make a simple GET request to any page to refresh session and get new CSRF token
+            const response = await fetch(window.location.href, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'text/html',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (response.ok) {
+                const html = await response.text();
+                // Extract CSRF token from the response HTML
+                const tokenMatch = html.match(/<meta name="csrf-token" content="([^"]+)"/);
+                if (tokenMatch && tokenMatch[1]) {
+                    // Update the meta tag with the new token
+                    const metaTag = document.querySelector('meta[name="csrf-token"]');
+                    if (metaTag) {
+                        metaTag.setAttribute('content', tokenMatch[1]);
+                    }
+                    return tokenMatch[1];
+                }
+            }
+        } catch (error) {
+            // Silently handle CSRF token refresh failures
+        }
+        return null;
+    };
+
     const handleMarkComplete = async (retryCount = 0) => {
         const MAX_RETRIES = 2;
         
@@ -265,20 +296,13 @@ export default function IndividualLessonView({
         setIsMarkingComplete(true);
 
         try {
-            // Get fresh CSRF token
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
-                             (window as any).mooveyConfig?.csrfToken || '';
+            // Get CSRF token from meta tag
+            let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             
-            if (!csrfToken && retryCount === 0) {
-                console.warn('No CSRF token found, attempting to refresh...');
-                // Try to refresh CSRF token by making a simple GET request first
-                await fetch('/api/csrf-refresh', { 
-                    method: 'GET', 
-                    credentials: 'same-origin' 
-                }).catch(() => {});
-                
-                // Retry with potentially refreshed token
-                return handleMarkComplete(retryCount + 1);
+            // If no token found, try to get it from window object or config
+            if (!csrfToken) {
+                csrfToken = (window as any).mooveyConfig?.csrfToken || 
+                           (window as any).Laravel?.csrfToken || '';
             }
 
             const response = await fetch(`/api/lessons/${lesson.id}/complete`, {
@@ -314,12 +338,16 @@ export default function IndividualLessonView({
             } else {
                 // Handle specific error cases
                 if (response.status === 419 && retryCount < MAX_RETRIES) {
-                    // CSRF token mismatch - retry with fresh token
-                    console.warn('CSRF token mismatch, retrying...');
-                    setTimeout(() => {
-                        handleMarkComplete(retryCount + 1);
-                    }, 500);
-                    return;
+                    // CSRF token mismatch - get fresh token and retry
+                    const freshToken = await getFreshCSRFToken();
+                    if (freshToken) {
+                        setTimeout(() => {
+                            handleMarkComplete(retryCount + 1);
+                        }, 500);
+                        return;
+                    } else {
+                        throw new Error('CSRF token expired. Please refresh the page and try again.');
+                    }
                 }
                 
                 if (response.status === 422) {
