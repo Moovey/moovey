@@ -42,7 +42,13 @@ class BusinessController extends Controller
             abort(403, 'Business access required');
         }
         $profile = \App\Models\BusinessProfile::firstOrCreate(['user_id' => Auth::id()]);
-        $logoUrl = $profile->logo_path ? \Illuminate\Support\Facades\Storage::url($profile->logo_path) : null;
+        // Generate URL - use Storage::url() which works with Laravel Cloud when properly configured
+        $logoUrl = null;
+        if ($profile->logo_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($profile->logo_path)) {
+            // Build URL from config for maximum compatibility
+            $publicDiskUrl = rtrim(config('filesystems.disks.public.url'), '/');
+            $logoUrl = $publicDiskUrl . '/' . $profile->logo_path;
+        }
         return Inertia::render('business/services', [
             'profile' => [
                 'name' => $profile->name,

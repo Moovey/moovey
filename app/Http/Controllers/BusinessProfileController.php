@@ -45,7 +45,8 @@ class BusinessProfileController extends Controller
         ]);
 
         $file = $request->file('logo');
-        $path = $file->store('business-logos', 'public');
+        // Store with public visibility
+        $path = $file->store('business-logos', ['disk' => 'public', 'visibility' => 'public']);
 
         $profile = BusinessProfile::firstOrCreate(['user_id' => $user->id]);
         // delete old if exists
