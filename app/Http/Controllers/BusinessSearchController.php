@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BusinessProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class BusinessSearchController extends Controller
 {
@@ -115,6 +116,14 @@ class BusinessSearchController extends Controller
         $business = BusinessProfile::with('user:id,name,email')
             ->findOrFail($id);
 
+        // Check if the current user has saved this business
+        $isSaved = false;
+        if (Auth::check()) {
+            $isSaved = \App\Models\SavedProvider::where('user_id', Auth::id())
+                ->where('business_profile_id', $business->id)
+                ->exists();
+        }
+
         // Transform the data for the profile view
         $profile = [
             'id' => $business->id,
@@ -135,6 +144,7 @@ class BusinessSearchController extends Controller
             ],
             'portfolio' => [], // Empty for now, can be implemented later
             'reviews' => $this->getMockReviews(), // Mock reviews for demonstration
+            'is_saved' => $isSaved,
         ];
 
         return inertia('business-profile', compact('profile'));

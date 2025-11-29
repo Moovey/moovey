@@ -1,5 +1,6 @@
-import React from 'react';
-import { Head } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, useForm } from '@inertiajs/react';
+import { toast } from 'react-toastify';
 import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
 
@@ -16,6 +17,7 @@ interface BusinessProfileProps {
         verified: boolean;
         response_time: string;
         availability: string;
+        is_saved?: boolean;
         contact?: {
             email?: string;
             phone?: string;
@@ -38,6 +40,47 @@ interface BusinessProfileProps {
 }
 
 export default function BusinessProfileView({ profile }: BusinessProfileProps) {
+    const [isSaved, setIsSaved] = useState(profile.is_saved || false);
+
+    // Inertia form for saving provider
+    const saveForm = useForm({
+        business_profile_id: profile.id,
+    });
+
+    // Inertia form for unsaving provider
+    const unsaveForm = useForm({});
+
+    const handleSave = () => {
+        if (isSaved) {
+            // Unsave
+            unsaveForm.delete(`/api/saved-providers/${profile.id}`, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setIsSaved(false);
+                    toast.success('Business removed from saved list');
+                },
+                onError: (errors) => {
+                    console.error('Error removing business:', errors);
+                    toast.error('Failed to remove business. Please try again.');
+                },
+            });
+        } else {
+            // Save
+            saveForm.post('/api/saved-providers', {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setIsSaved(true);
+                    toast.success('Business saved successfully!');
+                },
+                onError: (errors) => {
+                    console.error('Error saving business:', errors);
+                    toast.error('Failed to save business. Please try again.');
+                },
+            });
+        }
+    };
+
+    const isSaving = saveForm.processing || unsaveForm.processing;
     return (
         <>
             <Head title={`${profile.name} - Business Profile`} />
@@ -202,8 +245,16 @@ export default function BusinessProfileView({ profile }: BusinessProfileProps) {
                                         <button className="w-full border-2 border-[#17B7C7] text-[#17B7C7] px-6 py-3 rounded-lg font-semibold hover:bg-[#17B7C7] hover:text-white transition-colors">
                                             Get Quote
                                         </button>
-                                        <button className="w-full text-gray-600 border border-gray-300 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                                            Save Business
+                                        <button 
+                                            onClick={handleSave}
+                                            disabled={isSaving}
+                                            className={`w-full px-6 py-3 rounded-lg font-medium transition-colors ${
+                                                isSaved
+                                                    ? 'bg-green-100 text-green-700 border border-green-300 hover:bg-green-200'
+                                                    : 'text-gray-600 border border-gray-300 hover:bg-gray-50'
+                                            } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            {isSaving ? 'Saving...' : isSaved ? 'Saved ✓' : 'Save Business'}
                                         </button>
                                     </div>
 
