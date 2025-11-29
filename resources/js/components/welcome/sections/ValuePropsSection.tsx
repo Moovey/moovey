@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from '@inertiajs/react';
 import type { ValuePropsectionProps } from '@/types/welcome';
 
 const ValuePropCard: React.FC<{ prop: any }> = ({ prop }) => {
@@ -74,12 +75,12 @@ const ValuePropCard: React.FC<{ prop: any }> = ({ prop }) => {
             <p className="text-gray-600 mb-6 leading-relaxed">
                 {prop.description}
             </p>
-            <a 
+            <Link 
                 href={prop.link}
                 className={`bg-${prop.color === 'blue' ? '[#17B7C7] hover:bg-[#139AAA]' : prop.color + '-500 hover:bg-' + prop.color + '-600'} text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 inline-block`}
             >
                 {prop.linkText}
-            </a>
+            </Link>
         </div>
     );
 };
