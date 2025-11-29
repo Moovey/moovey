@@ -125,9 +125,12 @@ export default function SavedProvidersSection({ savedProviders, onContactProvide
                                         >
                                             Contact
                                         </button>
-                                        <button className="bg-white text-[#00BCD4] border border-[#00BCD4] px-3 py-1 rounded-lg text-xs hover:bg-[#00BCD4] hover:text-white transition-colors">
+                                        <Link 
+                                            href={`/business-profile/${provider.id}`}
+                                            className="bg-white text-[#00BCD4] border border-[#00BCD4] px-3 py-1 rounded-lg text-xs hover:bg-[#00BCD4] hover:text-white transition-colors text-center"
+                                        >
                                             Profile
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
                             </div>
