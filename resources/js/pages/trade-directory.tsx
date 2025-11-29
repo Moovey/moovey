@@ -38,7 +38,22 @@ const ARTICLES = [
     { title: "Moving Day Checklist: Don't Forget These Essentials", description: "A comprehensive checklist to ensure nothing gets overlooked on your big moving day.", image: "boxes" }
 ];
 
-export default function TradeDirectory() {
+interface TradeDirectoryProps {
+    recommendedServices?: Array<{
+        name: string;
+        status: string;
+        icon: string;
+        priority: string;
+    }>;
+    activeSection?: number;
+    isAuthenticated?: boolean;
+}
+
+export default function TradeDirectory({ 
+    recommendedServices: recommendedServicesFromProps = RECOMMENDED_SERVICES,
+    activeSection = 1,
+    isAuthenticated = false 
+}: TradeDirectoryProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLocation, setSelectedLocation] = useState('Your Location');
     const [selectedService, setSelectedService] = useState('I\'m looking for a...');
@@ -64,7 +79,8 @@ export default function TradeDirectory() {
 
     const serviceProviders = DEFAULT_SERVICE_PROVIDERS;
 
-    const recommendedServices = RECOMMENDED_SERVICES;
+    // Use recommended services from backend if authenticated, otherwise use defaults
+    const recommendedServices = isAuthenticated ? recommendedServicesFromProps : RECOMMENDED_SERVICES;
 
     // Optimized search handler with caching
     const handleSearch = useCallback(async (searchParams: {
@@ -106,6 +122,26 @@ export default function TradeDirectory() {
         
         handleSearch(searchParams, page);
     }, [handleSearch, searchQuery, selectedLocation, selectedService, ratingFilter]);
+
+    // Handle recommended service click to trigger search
+    const handleServiceClick = useCallback((serviceName: string) => {
+        // Update the selected service
+        setSelectedService(serviceName);
+        
+        // Scroll to search section
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Trigger search with the selected service
+        const searchParams = {
+            query: serviceName,
+            location: selectedLocation,
+            service: serviceName,
+            rating: ratingFilter,
+            keywords: serviceName
+        };
+        
+        handleSearch(searchParams, 1);
+    }, [selectedLocation, ratingFilter, handleSearch]);
 
     // Preload default providers on mount
     useEffect(() => {
@@ -171,7 +207,12 @@ export default function TradeDirectory() {
 
                 {/* Lazy-loaded Recommended Services Section */}
                 <Suspense fallback={<div className="h-32 bg-gray-100 animate-pulse" />}>
-                    <LazyRecommendedServices recommendedServices={recommendedServices} />
+                    <LazyRecommendedServices 
+                        recommendedServices={recommendedServices} 
+                        activeSection={activeSection}
+                        isAuthenticated={isAuthenticated}
+                        onServiceClick={handleServiceClick}
+                    />
                 </Suspense>
 
                 {/* Optimized Search Results Section */}

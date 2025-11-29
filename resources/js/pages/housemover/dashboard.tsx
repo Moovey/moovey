@@ -123,6 +123,7 @@ interface DashboardProps {
     };
   };
   personalDetails?: PersonalDetails;
+  activeSection?: number;
 }
 
 // Cache for API responses
@@ -167,7 +168,8 @@ export default function Dashboard({
         movingDate: '',
         contactInfo: '',
         emergencyContact: ''
-    }
+    },
+    activeSection = 2
 }: DashboardProps) {
     // Get initial tab from URL parameter or default to 'overview'
     const getInitialTab = (): 'overview' => {
@@ -176,7 +178,8 @@ export default function Dashboard({
     };
 
     const [activeTab, setActiveTab] = useState<'overview'>(getInitialTab());
-    const [activeStage, setActiveStage] = useState<number>(2);
+    // Initialize activeStage from database - synced with move-details page
+    const [activeStage, setActiveStage] = useState<number>(activeSection);
     
     // Performance optimization states
     const [isInitialLoading, setIsInitialLoading] = useState(true);

@@ -25,6 +25,7 @@ class UserMoveDetail extends Model
         'key_dates',
         'recommended_task_states',
         'custom_tasks',
+        'active_section',
     ];
 
     protected $casts = [

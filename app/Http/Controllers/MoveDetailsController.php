@@ -64,6 +64,7 @@ class MoveDetailsController extends Controller
                 ],
                 'recommendedTaskStates' => $details->recommended_task_states ?? [],
                 'customTasks' => $grouped,
+                'activeSection' => $details->active_section ?? 1,
             ],
         ]);
     }
@@ -82,6 +83,7 @@ class MoveDetailsController extends Controller
             'propertyRequirements' => 'nullable|string',
             'solicitorContact' => 'nullable|string|max:255',
             'keyDates' => 'nullable|string',
+            'activeSection' => 'nullable|integer|min:1|max:9',
         ]);
 
         $details->fill([
@@ -94,6 +96,7 @@ class MoveDetailsController extends Controller
             'property_requirements' => $validated['propertyRequirements'] ?? $details->property_requirements,
             'solicitor_contact' => $validated['solicitorContact'] ?? $details->solicitor_contact,
             'key_dates' => $validated['keyDates'] ?? $details->key_dates,
+            'active_section' => $validated['activeSection'] ?? $details->active_section,
         ])->save();
 
         return response()->json([

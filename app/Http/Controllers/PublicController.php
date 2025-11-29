@@ -491,7 +491,91 @@ class PublicController extends Controller
      */
     public function tradeDirectory(): Response
     {
-        return Inertia::render('trade-directory');
+        $user = Auth::user();
+        $recommendedServices = [];
+        
+        // Get user's active section from move details if authenticated
+        $activeSection = 1; // Default to first section
+        if ($user) {
+            $moveDetails = \App\Models\UserMoveDetail::where('user_id', $user->id)->first();
+            $activeSection = $moveDetails->active_section ?? 1;
+        }
+        
+        // Map active section to recommended services based on journey stage
+        $servicesBySection = [
+            1 => [ // Planning & Budgeting
+                ['name' => 'Estate Agent', 'status' => 'recommended', 'icon' => '🏠', 'priority' => 'High Priority'],
+                ['name' => 'Mortgage Broker', 'status' => 'recommended', 'icon' => '💰', 'priority' => 'High Priority'],
+                ['name' => 'Solicitor', 'status' => 'recommended', 'icon' => '⚖️', 'priority' => 'Recommended'],
+                ['name' => 'Surveyor', 'status' => 'optional', 'icon' => '📋', 'priority' => 'May be needed'],
+                ['name' => 'Financial Advisor', 'status' => 'optional', 'icon' => '💼', 'priority' => 'Optional'],
+            ],
+            2 => [ // Sell/Prep Current Home
+                ['name' => 'Estate Agent', 'status' => 'recommended', 'icon' => '🏠', 'priority' => 'High Priority'],
+                ['name' => 'Home Staging', 'status' => 'optional', 'icon' => '✨', 'priority' => 'Recommended'],
+                ['name' => 'Cleaning Service', 'status' => 'recommended', 'icon' => '🧹', 'priority' => 'High Priority'],
+                ['name' => 'Handyman', 'status' => 'optional', 'icon' => '🔧', 'priority' => 'May be needed'],
+                ['name' => 'Photographer', 'status' => 'optional', 'icon' => '📷', 'priority' => 'Optional'],
+            ],
+            3 => [ // Find New Property
+                ['name' => 'Estate Agent', 'status' => 'recommended', 'icon' => '🏠', 'priority' => 'High Priority'],
+                ['name' => 'Mortgage Broker', 'status' => 'recommended', 'icon' => '💰', 'priority' => 'High Priority'],
+                ['name' => 'Surveyor', 'status' => 'recommended', 'icon' => '📋', 'priority' => 'Recommended'],
+                ['name' => 'Solicitor', 'status' => 'recommended', 'icon' => '⚖️', 'priority' => 'High Priority'],
+                ['name' => 'Home Inspector', 'status' => 'optional', 'icon' => '🔍', 'priority' => 'May be needed'],
+            ],
+            4 => [ // Secure Finances
+                ['name' => 'Mortgage Broker', 'status' => 'recommended', 'icon' => '💰', 'priority' => 'High Priority'],
+                ['name' => 'Financial Advisor', 'status' => 'recommended', 'icon' => '💼', 'priority' => 'Recommended'],
+                ['name' => 'Insurance Broker', 'status' => 'recommended', 'icon' => '🛡️', 'priority' => 'High Priority'],
+                ['name' => 'Solicitor', 'status' => 'optional', 'icon' => '⚖️', 'priority' => 'May be needed'],
+                ['name' => 'Accountant', 'status' => 'optional', 'icon' => '📊', 'priority' => 'Optional'],
+            ],
+            5 => [ // Legal & Admin
+                ['name' => 'Solicitor', 'status' => 'recommended', 'icon' => '⚖️', 'priority' => 'High Priority'],
+                ['name' => 'Surveyor', 'status' => 'recommended', 'icon' => '📋', 'priority' => 'High Priority'],
+                ['name' => 'Home Inspector', 'status' => 'recommended', 'icon' => '🔍', 'priority' => 'Recommended'],
+                ['name' => 'Notary', 'status' => 'optional', 'icon' => '📝', 'priority' => 'May be needed'],
+                ['name' => 'Insurance Broker', 'status' => 'optional', 'icon' => '🛡️', 'priority' => 'Optional'],
+            ],
+            6 => [ // Packing & Removal
+                ['name' => 'Moving Company', 'status' => 'recommended', 'icon' => '🚚', 'priority' => 'High Priority'],
+                ['name' => 'Packing Service', 'status' => 'recommended', 'icon' => '📦', 'priority' => 'High Priority'],
+                ['name' => 'Storage', 'status' => 'optional', 'icon' => '🏢', 'priority' => 'May be needed'],
+                ['name' => 'Cleaning Service', 'status' => 'recommended', 'icon' => '🧹', 'priority' => 'Recommended'],
+                ['name' => 'Handyman', 'status' => 'optional', 'icon' => '🔧', 'priority' => 'Optional'],
+            ],
+            7 => [ // Move Day Execution
+                ['name' => 'Moving Company', 'status' => 'recommended', 'icon' => '🚚', 'priority' => 'High Priority'],
+                ['name' => 'Cleaning Service', 'status' => 'recommended', 'icon' => '🧹', 'priority' => 'High Priority'],
+                ['name' => 'Utility Setup', 'status' => 'recommended', 'icon' => '⚡', 'priority' => 'High Priority'],
+                ['name' => 'Locksmith', 'status' => 'optional', 'icon' => '🔑', 'priority' => 'Recommended'],
+                ['name' => 'Pet Care', 'status' => 'optional', 'icon' => '🐕', 'priority' => 'Optional'],
+            ],
+            8 => [ // Settling In
+                ['name' => 'Utility Setup', 'status' => 'recommended', 'icon' => '⚡', 'priority' => 'High Priority'],
+                ['name' => 'Internet Provider', 'status' => 'recommended', 'icon' => '📡', 'priority' => 'High Priority'],
+                ['name' => 'Cleaning Service', 'status' => 'optional', 'icon' => '🧹', 'priority' => 'Recommended'],
+                ['name' => 'Handyman', 'status' => 'recommended', 'icon' => '🔧', 'priority' => 'May be needed'],
+                ['name' => 'Interior Designer', 'status' => 'optional', 'icon' => '🎨', 'priority' => 'Optional'],
+            ],
+            9 => [ // Post Move Integration
+                ['name' => 'Utility Setup', 'status' => 'optional', 'icon' => '⚡', 'priority' => 'Final Check'],
+                ['name' => 'Internet Provider', 'status' => 'optional', 'icon' => '📡', 'priority' => 'Final Check'],
+                ['name' => 'Local Services', 'status' => 'recommended', 'icon' => '🏪', 'priority' => 'Recommended'],
+                ['name' => 'Home Security', 'status' => 'optional', 'icon' => '🔒', 'priority' => 'Optional'],
+                ['name' => 'Gardener', 'status' => 'optional', 'icon' => '🌱', 'priority' => 'Optional'],
+            ],
+        ];
+        
+        // Get recommended services for the user's current section
+        $recommendedServices = $servicesBySection[$activeSection] ?? $servicesBySection[1];
+        
+        return Inertia::render('trade-directory', [
+            'recommendedServices' => $recommendedServices,
+            'activeSection' => $activeSection,
+            'isAuthenticated' => $user !== null,
+        ]);
     }
 
     /**

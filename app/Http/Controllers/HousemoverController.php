@@ -88,6 +88,7 @@ class HousemoverController extends Controller
             'taskStats' => $taskStats,
             'academyProgress' => $academyProgress,
             'personalDetails' => $personalDetails,
+            'activeSection' => $moveDetails->active_section ?? 1,
         ]);
     }
 
@@ -165,7 +166,9 @@ class HousemoverController extends Controller
         }
 
         return Inertia::render('housemover/move-details', [
-            'moveDetails' => $personal,
+            'moveDetails' => array_merge($personal, [
+                'activeSection' => $details->active_section ?? 1,
+            ]),
             'taskData' => [
                 'recommendedTaskStates' => $details->recommended_task_states ?? [],
                 'customTasks' => $grouped,

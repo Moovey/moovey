@@ -55,7 +55,7 @@ interface MoveSection {
 
 interface MoveDetailsProps {
     auth: { user: { name: string; email?: string } };
-    moveDetails?: Partial<PersonalDetails> & { movingType?: PersonalDetails['movingType'] };
+    moveDetails?: Partial<PersonalDetails> & { movingType?: PersonalDetails['movingType']; activeSection?: number };
     taskData?: {
         recommendedTaskStates?: Record<string, Record<string, { completed: boolean; completedDate?: string }>>;
         customTasks?: Record<string, Array<SectionTask>>;
@@ -143,8 +143,8 @@ export default function MoveDetails({ auth, moveDetails, taskData }: MoveDetails
         { id: 9, name: 'Post Move Integration', shortName: 'Integration', description: 'Complete address changes and community integration', icon: 'sparkle' },
     ];
 
-    // UI state
-    const [activeSection, setActiveSection] = useState<number>(1);
+    // UI state - initialize from database or default to 1
+    const [activeSection, setActiveSection] = useState<number>(moveDetails?.activeSection ?? 1);
     const [saving, setSaving] = useState(false);
     const [showCustomTaskInput, setShowCustomTaskInput] = useState(false);
     const [newCustomTask, setNewCustomTask] = useState('');
@@ -160,7 +160,7 @@ export default function MoveDetails({ auth, moveDetails, taskData }: MoveDetails
         setCollapsedCategories(prev => ({ ...prev, [category]: !prev[category] }));
     };
 
-    // Restore last active section, but allow query param override (e.g., ?section=1)
+    // Allow query param override (e.g., ?section=1) - database value already set as initial state
     useEffect(() => {
         try {
             const url = new URL(window.location.href);
@@ -169,11 +169,8 @@ export default function MoveDetails({ auth, moveDetails, taskData }: MoveDetails
                 const num = parseInt(qp, 10);
                 if (!Number.isNaN(num) && num >= 1 && num <= 9) {
                     setActiveSection(num);
-                    return; // prioritize explicit query param
                 }
             }
-            const stored = localStorage.getItem('moveDetails.activeSection');
-            if (stored) setActiveSection(parseInt(stored, 10) || 1);
         } catch {/* noop */}
     }, []);
 
@@ -274,9 +271,27 @@ export default function MoveDetails({ auth, moveDetails, taskData }: MoveDetails
         });
     }, [taskData]);
 
-    // Persist active section
+    // Persist active section to database
     useEffect(() => {
-        try { localStorage.setItem('moveDetails.activeSection', String(activeSection)); } catch {/* noop */}
+        const saveActiveSection = async () => {
+            try {
+                await fetch('/api/move-details', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({ activeSection }),
+                });
+                // Also keep localStorage as fallback for immediate UI sync
+                localStorage.setItem('moveDetails.activeSection', String(activeSection));
+            } catch (e) {
+                // Silently fail - localStorage serves as fallback
+                try { localStorage.setItem('moveDetails.activeSection', String(activeSection)); } catch {/* noop */}
+            }
+        };
+        saveActiveSection();
     }, [activeSection]);
 
     // Progress calculations now include: custom tasks + academy tasks assigned to the section
