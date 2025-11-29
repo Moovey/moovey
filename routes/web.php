@@ -16,6 +16,7 @@ use App\Http\Controllers\MoveDetailsController;
 use App\Http\Controllers\ChainCheckerController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\AgentFormController;
+use App\Http\Controllers\SavedProviderController;
 
 // Test routes for debugging
 require_once __DIR__ . '/test.php';
@@ -116,6 +117,12 @@ Route::middleware('auth')->group(function () {
     
     // User Profile Update
     Route::patch('/api/user/profile', [\App\Http\Controllers\UserProfileController::class, 'update'])->name('api.user.profile.update');
+    
+    // Saved Providers API Routes
+    Route::post('/api/saved-providers', [\App\Http\Controllers\SavedProviderController::class, 'store'])->name('api.saved-providers.store');
+    Route::delete('/api/saved-providers/{businessProfileId}', [\App\Http\Controllers\SavedProviderController::class, 'destroy'])->name('api.saved-providers.destroy');
+    Route::get('/api/saved-providers', [\App\Http\Controllers\SavedProviderController::class, 'index'])->name('api.saved-providers.index');
+    Route::get('/api/saved-providers/check/{businessProfileId}', [\App\Http\Controllers\SavedProviderController::class, 'check'])->name('api.saved-providers.check');
     
     // User Profile Get
     Route::get('/api/user/{user}/profile', [\App\Http\Controllers\UserProfileController::class, 'apiShow'])->name('api.user.profile.show');

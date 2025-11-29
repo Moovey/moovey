@@ -579,9 +579,17 @@ class PublicController extends Controller
             ->with('user:id,name,email')
             ->latest() // Order by newest first
             ->paginate($perPage)
-            ->through(function ($business) {
+            ->through(function ($business) use ($user) {
                 // Generate a consistent mock rating based on business ID for demo purposes
                 $mockRating = (($business->id % 3) + 3); // Will generate 3, 4, or 5 based on ID
+                
+                // Check if this business is saved by the current user
+                $isSaved = false;
+                if ($user) {
+                    $isSaved = \App\Models\SavedProvider::where('user_id', $user->id)
+                        ->where('business_profile_id', $business->id)
+                        ->exists();
+                }
                 
                 return [
                     'id' => $business->id,
@@ -595,6 +603,7 @@ class PublicController extends Controller
                     'verified' => rand(0, 1) === 1, // Mock verification status
                     'response_time' => 'Usually responds within ' . rand(1, 4) . ' hours',
                     'availability' => 'Available: ' . (rand(0, 1) ? 'Weekdays and Weekends' : 'Weekdays only'),
+                    'is_saved' => $isSaved,
                 ];
             });
         

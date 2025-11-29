@@ -81,7 +81,33 @@ interface SavedProvider {
     notes?: string;
 }
 
-export default function Connections() {
+interface PaginationLinks {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedSavedProviders {
+    current_page: number;
+    data: SavedProvider[];
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: PaginationLinks[];
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+}
+
+interface ConnectionsProps {
+    savedProviders: PaginatedSavedProviders;
+}
+
+export default function Connections({ savedProviders }: ConnectionsProps) {
     const { taskData } = useMoveProgress();
 
     const [communityMembers] = useState<CommunityMember[]>([
@@ -289,52 +315,7 @@ export default function Connections() {
         }
     ]);
 
-    const [savedProviders] = useState<SavedProvider[]>([
-        {
-            id: '1',
-            name: 'Swift Relocations Ltd',
-            avatar: '🚚',
-            businessType: 'Moving Company',
-            location: 'Manchester',
-            rating: 4.8,
-            reviewCount: 156,
-            verified: true,
-            services: ['Full Service Moving', 'Packing', 'Storage', 'Insurance'],
-            availability: 'Available: Next 2 weeks',
-            responseTime: 'Usually responds within 2 hours',
-            savedDate: '2 days ago',
-            notes: 'Highly recommended by previous customers'
-        },
-        {
-            id: '2',
-            name: 'ClearView Professional Cleaning',
-            avatar: '🧽',
-            businessType: 'Cleaning Service',
-            location: 'Manchester',
-            rating: 4.9,
-            reviewCount: 203,
-            verified: true,
-            services: ['Deep Cleaning', 'Move-in/out', 'Regular Service'],
-            availability: 'Available: Weekdays and Sundays',
-            responseTime: 'Usually responds within 3 hours',
-            savedDate: '1 week ago',
-            notes: 'Excellent reviews for move-out cleaning'
-        },
-        {
-            id: '3',
-            name: 'Manchester Storage Solutions',
-            avatar: '🏢',
-            businessType: 'Storage Facility',
-            location: 'Manchester',
-            rating: 4.6,
-            reviewCount: 143,
-            verified: true,
-            services: ['Self Storage', 'Climate Controlled', 'Business Storage'],
-            availability: 'Available: 24/7 Access',
-            responseTime: 'Usually responds within 1 hour',
-            savedDate: '3 days ago'
-        }
-    ]);
+    // Remove the hardcoded savedProviders state - now using initialSavedProviders from backend
 
     // Business connections data for the service categories grid
     const [businessConnections] = useState([
@@ -536,7 +517,7 @@ export default function Connections() {
                     />
                     <NetworkStatsSection 
                         totalConnections={12}
-                        savedProvidersCount={savedProviders.length}
+                        savedProvidersCount={savedProviders.total}
                         activeChats={8}
                         pendingRequests={connectionRequests.length}
                     />

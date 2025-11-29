@@ -1,6 +1,7 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import { useState, useCallback, useMemo } from 'react';
+import { toast } from 'react-toastify';
 import { tradeDirectoryCache } from '@/hooks/useTradeDirectoryCache';
 
 interface ServiceProvider {
@@ -15,6 +16,7 @@ interface ServiceProvider {
     verified: boolean;
     response_time: string;
     availability: string;
+    is_saved?: boolean;
 }
 
 interface OptimizedSearchResultsProps {
@@ -31,6 +33,15 @@ interface OptimizedSearchResultsProps {
 const ServiceProviderCard = ({ provider }: { provider: ServiceProvider }) => {
     const [imageError, setImageError] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [isSaved, setIsSaved] = useState(provider.is_saved || false);
+
+    // Inertia form for saving provider
+    const saveForm = useForm({
+        business_profile_id: provider.id,
+    });
+
+    // Inertia form for unsaving provider
+    const unsaveForm = useForm({});
 
     const handleImageLoad = useCallback(() => {
         setImageLoaded(true);
@@ -40,6 +51,48 @@ const ServiceProviderCard = ({ provider }: { provider: ServiceProvider }) => {
         setImageError(true);
         setImageLoaded(true);
     }, []);
+
+    // Handle save provider with Inertia
+    const handleSaveProvider = useCallback(() => {
+        saveForm.post('/api/saved-providers', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsSaved(true);
+                toast.success('Provider saved successfully!');
+                // Cache this provider for quick access later
+                tradeDirectoryCache.set(`provider-${provider.id}`, provider);
+            },
+            onError: (errors) => {
+                console.error('Error saving provider:', errors);
+                toast.error('Failed to save provider. Please try again.');
+            },
+        });
+    }, [saveForm, provider]);
+
+    // Handle unsave provider with Inertia
+    const handleUnsaveProvider = useCallback(() => {
+        unsaveForm.delete(`/api/saved-providers/${provider.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsSaved(false);
+                toast.success('Provider removed from saved list');
+            },
+            onError: (errors) => {
+                console.error('Error removing provider:', errors);
+                toast.error('Failed to remove provider. Please try again.');
+            },
+        });
+    }, [unsaveForm, provider.id]);
+
+    const handleToggleSave = useCallback(() => {
+        if (isSaved) {
+            handleUnsaveProvider();
+        } else {
+            handleSaveProvider();
+        }
+    }, [isSaved, handleSaveProvider, handleUnsaveProvider]);
+
+    const isSaving = saveForm.processing || unsaveForm.processing;
 
     // Memoize service icon based on services - Professional SVG icons
     const serviceIcon = useMemo(() => {
@@ -200,13 +253,15 @@ const ServiceProviderCard = ({ provider }: { provider: ServiceProvider }) => {
                             Get Quote
                         </button>
                         <button 
-                            className="flex-1 text-xs sm:text-sm text-gray-600 hover:text-[#17B7C7] transition-colors py-1"
-                            onClick={() => {
-                                // Cache this provider for quick access later
-                                tradeDirectoryCache.set(`provider-${provider.id}`, provider);
-                            }}
+                            className={`flex-1 text-xs sm:text-sm transition-colors py-1 font-medium ${
+                                isSaved 
+                                    ? 'text-[#17B7C7]' 
+                                    : 'text-gray-600 hover:text-[#17B7C7]'
+                            } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            onClick={handleToggleSave}
+                            disabled={isSaving}
                         >
-                            Save
+                            {isSaving ? 'Saving...' : isSaved ? 'Saved ✓' : 'Save'}
                         </button>
                     </div>
                 </div>

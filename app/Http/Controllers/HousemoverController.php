@@ -236,7 +236,37 @@ class HousemoverController extends Controller
      */
     public function connections(): Response
     {
-        return Inertia::render('housemover/connections');
+        // Get user's saved providers with business profile data - paginated
+        $savedProvidersQuery = \App\Models\SavedProvider::where('user_id', Auth::id())
+            ->with(['businessProfile.user'])
+            ->latest();
+
+        // Paginate with 2 items per page
+        $savedProvidersPaginator = $savedProvidersQuery->paginate(2);
+
+        $savedProviders = $savedProvidersPaginator->through(function ($savedProvider) {
+            $business = $savedProvider->businessProfile;
+            
+            return [
+                'id' => (string) $business->id,
+                'name' => $business->name,
+                'avatar' => '🏢',
+                'businessType' => $business->user->name ?? 'Service Provider',
+                'location' => 'UK',
+                'rating' => 4.5,
+                'reviewCount' => 0,
+                'verified' => $business->plan === 'premium',
+                'services' => $business->services ?? [],
+                'availability' => 'Available',
+                'responseTime' => 'Usually responds within 24 hours',
+                'savedDate' => $savedProvider->created_at->diffForHumans(),
+                'notes' => $savedProvider->notes,
+            ];
+        });
+
+        return Inertia::render('housemover/connections', [
+            'savedProviders' => $savedProviders,
+        ]);
     }
 
     /**

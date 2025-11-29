@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 
 interface SavedProvider {
     id: string;
@@ -16,12 +16,42 @@ interface SavedProvider {
     notes?: string;
 }
 
+interface PaginationLinks {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedData {
+    current_page: number;
+    data: SavedProvider[];
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: PaginationLinks[];
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+}
+
 interface SavedProvidersSectionProps {
-    savedProviders: SavedProvider[];
+    savedProviders: PaginatedData;
     onContactProvider: (providerId: string) => void;
 }
 
 export default function SavedProvidersSection({ savedProviders, onContactProvider }: SavedProvidersSectionProps) {
+    const handlePageChange = (url: string | null) => {
+        if (url) {
+            router.get(url, {}, {
+                preserveState: true,
+                preserveScroll: true,
+            });
+        }
+    };
     return (
         <div className="col-span-12 lg:col-span-8">
             <div className="bg-white rounded-3xl p-6 shadow-lg h-full">
@@ -43,9 +73,9 @@ export default function SavedProvidersSection({ savedProviders, onContactProvide
                     </Link>
                 </div>
 
-                {savedProviders.length > 0 ? (
+                {savedProviders.data.length > 0 ? (
                     <div className="space-y-4">
-                        {savedProviders.slice(0, 2).map((provider) => (
+                        {savedProviders.data.map((provider) => (
                             <div key={provider.id} className="bg-[#E0F7FA] border-2 border-[#00BCD4] rounded-2xl p-4 shadow-md">
                                 <div className="grid grid-cols-4 gap-4 items-center">
                                     {/* Provider Info - Compact */}
@@ -103,10 +133,43 @@ export default function SavedProvidersSection({ savedProviders, onContactProvide
                             </div>
                         ))}
                         
-                        {savedProviders.length > 2 && (
-                            <div className="text-center pt-3">
-                                <button className="text-[#00BCD4] font-medium hover:text-[#00ACC1] transition-colors text-sm">
-                                    View All {savedProviders.length} Saved Providers →
+                        {savedProviders.last_page > 1 && (
+                            <div className="flex justify-center items-center gap-2 pt-4">
+                                <button
+                                    onClick={() => handlePageChange(savedProviders.prev_page_url)}
+                                    disabled={!savedProviders.prev_page_url}
+                                    className="p-2 text-gray-600 hover:text-[#00BCD4] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                                
+                                {savedProviders.links
+                                    .filter(link => link.label !== '&laquo; Previous' && link.label !== 'Next &raquo;')
+                                    .map((link, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => handlePageChange(link.url)}
+                                            disabled={!link.url}
+                                            className={`w-10 h-10 rounded-full font-medium transition-colors ${
+                                                link.active
+                                                    ? 'bg-[#00BCD4] text-white'
+                                                    : 'text-gray-600 hover:bg-gray-100'
+                                            } ${!link.url ? 'cursor-not-allowed' : ''}`}
+                                        >
+                                            {link.label}
+                                        </button>
+                                    ))}
+                                
+                                <button
+                                    onClick={() => handlePageChange(savedProviders.next_page_url)}
+                                    disabled={!savedProviders.next_page_url}
+                                    className="p-2 text-gray-600 hover:text-[#00BCD4] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
                                 </button>
                             </div>
                         )}
