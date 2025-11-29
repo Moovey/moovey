@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from '@inertiajs/react';
 import { useState, useCallback, useMemo } from 'react';
 import { tradeDirectoryCache } from '@/hooks/useTradeDirectoryCache';
@@ -40,16 +41,73 @@ const ServiceProviderCard = ({ provider }: { provider: ServiceProvider }) => {
         setImageLoaded(true);
     }, []);
 
-    // Memoize service icon based on services
+    // Memoize service icon based on services - Professional SVG icons
     const serviceIcon = useMemo(() => {
-        if (!provider.services?.length) return '🏢';
+        const iconColor = "#FFFFFF";
+        
+        if (!provider.services?.length) {
+            // Default - Building icon
+            return (
+                <svg className="w-8 h-8" fill="none" stroke={iconColor} viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11M20 10v11M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01M16 17h.01" />
+                </svg>
+            );
+        }
         
         const services = provider.services.map(s => s.toLowerCase());
-        if (services.some(s => s.includes('moving') || s.includes('removal'))) return '🚚';
-        if (services.some(s => s.includes('packing'))) return '📦';
-        if (services.some(s => s.includes('cleaning'))) return '🧽';
-        if (services.some(s => s.includes('storage'))) return '📁';
-        return '🏢';
+        
+        // Moving/Removal services - Truck icon
+        if (services.some(s => s.includes('moving') || s.includes('removal') || s.includes('transport'))) {
+            return (
+                <svg className="w-8 h-8" fill="none" stroke={iconColor} viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8m0 0v6m0-6a2 2 0 012 2v4m-2-6a2 2 0 00-2-2H8a2 2 0 00-2 2m0 0v6m0-6h8m-8 6H4m4 0v4m0-4h8m0 0v4m0-4h4m-12 4h.01M16 17h.01" />
+                </svg>
+            );
+        }
+        
+        // Packing services - Box icon
+        if (services.some(s => s.includes('packing') || s.includes('box'))) {
+            return (
+                <svg className="w-8 h-8" fill="none" stroke={iconColor} viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+            );
+        }
+        
+        // Cleaning services - Sparkles icon
+        if (services.some(s => s.includes('cleaning') || s.includes('clean'))) {
+            return (
+                <svg className="w-8 h-8" fill="none" stroke={iconColor} viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+            );
+        }
+        
+        // Storage services - Archive icon
+        if (services.some(s => s.includes('storage') || s.includes('warehouse'))) {
+            return (
+                <svg className="w-8 h-8" fill="none" stroke={iconColor} viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+            );
+        }
+        
+        // Handyman/Repair services - Wrench icon
+        if (services.some(s => s.includes('handyman') || s.includes('repair') || s.includes('maintenance'))) {
+            return (
+                <svg className="w-8 h-8" fill="none" stroke={iconColor} viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            );
+        }
+        
+        // Default - Building icon
+        return (
+            <svg className="w-8 h-8" fill="none" stroke={iconColor} viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11M20 10v11M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01M16 17h.01" />
+            </svg>
+        );
     }, [provider.services]);
 
     // Memoize rating stars
@@ -121,9 +179,7 @@ const ServiceProviderCard = ({ provider }: { provider: ServiceProvider }) => {
                                 />
                             </>
                         ) : (
-                            <span className="text-white text-xl sm:text-2xl">
-                                {serviceIcon}
-                            </span>
+                            serviceIcon
                         )}
                     </div>
                 </div>

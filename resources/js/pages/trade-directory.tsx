@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
@@ -38,6 +38,30 @@ const ARTICLES = [
     { title: "Moving Day Checklist: Don't Forget These Essentials", description: "A comprehensive checklist to ensure nothing gets overlooked on your big moving day.", image: "boxes" }
 ];
 
+interface ServiceProvider {
+    id: number;
+    name: string;
+    description: string;
+    services: string[];
+    logo_url: string | null;
+    plan: string;
+    user_name: string;
+    rating: number;
+    verified: boolean;
+    response_time: string;
+    availability: string;
+}
+
+interface PaginatedData<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number;
+    to: number;
+}
+
 interface TradeDirectoryProps {
     recommendedServices?: Array<{
         name: string;
@@ -47,12 +71,14 @@ interface TradeDirectoryProps {
     }>;
     activeSection?: number;
     isAuthenticated?: boolean;
+    serviceProviders?: PaginatedData<ServiceProvider>;
 }
 
 export default function TradeDirectory({ 
     recommendedServices: recommendedServicesFromProps = RECOMMENDED_SERVICES,
     activeSection = 1,
-    isAuthenticated = false 
+    isAuthenticated = false,
+    serviceProviders: serviceProvidersFromProps
 }: TradeDirectoryProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLocation, setSelectedLocation] = useState('Your Location');
@@ -77,7 +103,15 @@ export default function TradeDirectory({
 
     const locations = LOCATIONS;
 
-    const serviceProviders = DEFAULT_SERVICE_PROVIDERS;
+    // Use service providers from Inertia props or fallback to defaults
+    const serviceProviders = serviceProvidersFromProps?.data ?? DEFAULT_SERVICE_PROVIDERS;
+    const paginationData = serviceProvidersFromProps ? {
+        currentPage: serviceProvidersFromProps.current_page,
+        lastPage: serviceProvidersFromProps.last_page,
+        total: serviceProvidersFromProps.total,
+        from: serviceProvidersFromProps.from,
+        to: serviceProvidersFromProps.to
+    } : null;
 
     // Use recommended services from backend if authenticated, otherwise use defaults
     const recommendedServices = isAuthenticated ? recommendedServicesFromProps : RECOMMENDED_SERVICES;
@@ -267,6 +301,17 @@ export default function TradeDirectory({
                         <OptimizedSearchResults 
                             serviceProviders={serviceProviders}
                             loading={loading}
+                            currentPage={paginationData?.currentPage}
+                            totalPages={paginationData?.lastPage}
+                            total={paginationData?.total}
+                            onPageChange={(page) => {
+                                // Use Inertia router for SPA navigation with pagination
+                                router.get(window.location.pathname, { page }, { 
+                                    preserveState: true,
+                                    preserveScroll: false,
+                                    only: ['serviceProviders']
+                                });
+                            }}
                         />
                     </Suspense>
                 )}

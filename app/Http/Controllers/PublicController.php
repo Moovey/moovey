@@ -489,7 +489,7 @@ class PublicController extends Controller
     /**
      * Display the trade directory page.
      */
-    public function tradeDirectory(): Response
+    public function tradeDirectory(Request $request): Response
     {
         $user = Auth::user();
         $recommendedServices = [];
@@ -571,10 +571,38 @@ class PublicController extends Controller
         // Get recommended services for the user's current section
         $recommendedServices = $servicesBySection[$activeSection] ?? $servicesBySection[1];
         
+        // Fetch latest business profiles with pagination
+        $perPage = 5; // Number of businesses per page
+        $businesses = \App\Models\BusinessProfile::query()
+            ->whereNotNull('name')
+            ->where('name', '!=', '')
+            ->with('user:id,name,email')
+            ->latest() // Order by newest first
+            ->paginate($perPage)
+            ->through(function ($business) {
+                // Generate a consistent mock rating based on business ID for demo purposes
+                $mockRating = (($business->id % 3) + 3); // Will generate 3, 4, or 5 based on ID
+                
+                return [
+                    'id' => $business->id,
+                    'name' => $business->name,
+                    'description' => $business->description,
+                    'services' => $business->services ?? [],
+                    'logo_url' => $business->logo_path ? Storage::url($business->logo_path) : null,
+                    'plan' => $business->plan ?? 'basic',
+                    'user_name' => $business->user->name ?? 'Business Owner',
+                    'rating' => $mockRating,
+                    'verified' => rand(0, 1) === 1, // Mock verification status
+                    'response_time' => 'Usually responds within ' . rand(1, 4) . ' hours',
+                    'availability' => 'Available: ' . (rand(0, 1) ? 'Weekdays and Weekends' : 'Weekdays only'),
+                ];
+            });
+        
         return Inertia::render('trade-directory', [
             'recommendedServices' => $recommendedServices,
             'activeSection' => $activeSection,
             'isAuthenticated' => $user !== null,
+            'serviceProviders' => $businesses, // Paginated business profiles
         ]);
     }
 
