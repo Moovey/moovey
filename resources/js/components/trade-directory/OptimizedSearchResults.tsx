@@ -43,6 +43,12 @@ const ServiceProviderCard = ({ provider }: { provider: ServiceProvider }) => {
     // Inertia form for unsaving provider
     const unsaveForm = useForm({});
 
+    // Inertia form for connecting with business
+    const connectForm = useForm({
+        business_profile_id: provider.id,
+        message: '',
+    });
+
     const handleImageLoad = useCallback(() => {
         setImageLoaded(true);
     }, []);
@@ -92,7 +98,25 @@ const ServiceProviderCard = ({ provider }: { provider: ServiceProvider }) => {
         }
     }, [isSaved, handleSaveProvider, handleUnsaveProvider]);
 
+    // Handle connect with business
+    const handleConnect = useCallback(() => {
+        connectForm.post('/api/messages/connect-business', {
+            onSuccess: () => {
+                toast.success('Connected! Opening conversation...');
+                // Dispatch event to notify MessageDropdown and other components
+                window.dispatchEvent(new CustomEvent('conversationUpdated'));
+                // Inertia will handle the redirect automatically
+            },
+            onError: (errors) => {
+                console.error('Error connecting:', errors);
+                const errorMessage = (errors as any)?.message || 'Failed to connect. Please try again.';
+                toast.error(errorMessage);
+            },
+        });
+    }, [connectForm]);
+
     const isSaving = saveForm.processing || unsaveForm.processing;
+    const isConnecting = connectForm.processing;
 
     // Memoize service icon based on services - Professional SVG icons
     const serviceIcon = useMemo(() => {
@@ -239,8 +263,12 @@ const ServiceProviderCard = ({ provider }: { provider: ServiceProvider }) => {
 
                 {/* Action Buttons */}
                 <div className="space-y-2 sm:space-y-3 lg:order-2">
-                    <button className="w-full bg-[#17B7C7] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors text-sm sm:text-base">
-                        Connect
+                    <button 
+                        className="w-full bg-[#17B7C7] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleConnect}
+                        disabled={isConnecting}
+                    >
+                        {isConnecting ? 'Connecting...' : 'Connect'}
                     </button>
                     <Link 
                         href={`/business-profile/${provider.id}`}

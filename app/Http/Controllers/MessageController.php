@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use App\Models\BusinessProfile;
+use App\Models\CustomerLead;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -387,8 +389,9 @@ class MessageController extends Controller
             ->with([
                 'userOne:id,name,avatar',
                 'userTwo:id,name,avatar',
-                'messages' => function ($query) {
-                    $query->latest()->limit(1);
+                'messages' => function ($query) use ($user) {
+                    // Prioritize showing received messages over sent messages
+                    $query->latest()->limit(10);
                 }
             ])
             ->orderBy('last_message_at', 'desc')
@@ -399,7 +402,10 @@ class MessageController extends Controller
                 
                 $latestMessage = null;
                 if ($conversation->messages->isNotEmpty()) {
-                    $message = $conversation->messages->first();
+                    // First, try to find the latest received message (from the other user)
+                    $receivedMessage = $conversation->messages->firstWhere('sender_id', '!=', $user->id);
+                    // If no received message, fall back to any latest message
+                    $message = $receivedMessage ?? $conversation->messages->first();
                     $content = $message->content;
                     
                     // Check if this is an item context message
@@ -465,5 +471,69 @@ class MessageController extends Controller
             'success' => true,
             'message' => 'Messages marked as read'
         ]);
+    }
+
+    /**
+     * Connect a housemover with a business - starts conversation and creates lead
+     */
+    public function connectWithBusiness(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'business_profile_id' => 'required|exists:business_profiles,id',
+                'message' => 'nullable|string|max:500',
+            ]);
+
+            $customer = Auth::user();
+            $businessProfile = BusinessProfile::with('user')->findOrFail($validated['business_profile_id']);
+            $businessOwner = $businessProfile->user;
+
+            // Check if trying to connect with self
+            if ($businessOwner->id === $customer->id) {
+                return back()->withErrors(['message' => 'You cannot connect with your own business']);
+            }
+
+            // Start or get existing conversation
+            $userOneId = min($customer->id, $businessOwner->id);
+            $userTwoId = max($customer->id, $businessOwner->id);
+
+            $conversation = Conversation::firstOrCreate([
+                'user_one_id' => $userOneId,
+                'user_two_id' => $userTwoId
+            ]);
+
+            // Create or update lead
+            $lead = CustomerLead::updateOrCreate(
+                [
+                    'business_profile_id' => $businessProfile->id,
+                    'customer_id' => $customer->id,
+                ],
+                [
+                    'conversation_id' => $conversation->id,
+                    'status' => 'new',
+                    'contacted_at' => now(),
+                ]
+            );
+
+            // Send initial message if provided
+            $initialMessage = $validated['message'] ?? "Hi! I'm interested in your services and would like to discuss my moving needs.";
+            
+            $message = Message::create([
+                'conversation_id' => $conversation->id,
+                'sender_id' => $customer->id,
+                'content' => $initialMessage,
+            ]);
+
+            // Update conversation's last message time
+            $conversation->update(['last_message_at' => now()]);
+
+            // Redirect to the conversation with success message
+            return redirect()->route('messages.show', $conversation->id)
+                ->with('success', 'Connected successfully! You can now message this business.');
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        } catch (\Exception $e) {
+            return back()->withErrors(['message' => 'Failed to connect: ' . $e->getMessage()]);
+        }
     }
 }

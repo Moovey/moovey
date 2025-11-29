@@ -30,7 +30,35 @@ class BusinessController extends Controller
             abort(403, 'Business access required');
         }
         
-    return Inertia::render('business/leads');
+        $businessProfile = \App\Models\BusinessProfile::where('user_id', Auth::id())->first();
+        
+        $leads = [];
+        if ($businessProfile) {
+            $leads = \App\Models\CustomerLead::where('business_profile_id', $businessProfile->id)
+                ->with(['customer', 'conversation'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($lead) {
+                    return [
+                        'id' => $lead->id,
+                        'customer' => [
+                            'id' => $lead->customer->id,
+                            'name' => $lead->customer->name,
+                            'email' => $lead->customer->email,
+                            'avatar' => $lead->customer->avatar_url,
+                        ],
+                        'status' => $lead->status,
+                        'conversation_id' => $lead->conversation_id,
+                        'contacted_at' => $lead->contacted_at?->diffForHumans(),
+                        'created_at' => $lead->created_at->diffForHumans(),
+                        'notes' => $lead->notes,
+                    ];
+                });
+        }
+        
+        return Inertia::render('business/leads', [
+            'leads' => $leads,
+        ]);
     }
 
     /**

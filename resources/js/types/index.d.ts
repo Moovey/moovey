@@ -28,6 +28,7 @@ export interface SharedData {
     auth: Auth;
     ziggy: Config & { location: string };
     sidebarOpen: boolean;
+    unreadMessageCount?: number;
     [key: string]: unknown;
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { toast } from 'react-toastify';
+import type { SharedData } from '@/types';
 
 interface Conversation {
     id: number;
@@ -21,18 +22,54 @@ interface Conversation {
 export default function MessageDropdown() {
     const [isOpen, setIsOpen] = useState(false);
     const [conversations, setConversations] = useState<Conversation[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { props } = usePage<SharedData>();
+    const unreadCount = props.unreadMessageCount ?? 0;
+    const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Function to refresh message count via Inertia
+    const refreshMessageCount = () => {
+        router.reload({ only: ['unreadMessageCount'] });
+    };
 
     useEffect(() => {
-        fetchUnreadCount();
+        // Initial load of unread count
+        refreshMessageCount();
         
-        // Set up polling for real-time updates
-        const interval = setInterval(fetchUnreadCount, 30000); // Check every 30 seconds
+        // Set up aggressive polling for real-time updates
+        pollIntervalRef.current = setInterval(() => {
+            refreshMessageCount();
+        }, 3000); // Check every 3 seconds
         
-        return () => clearInterval(interval);
-    }, []);
+        // Listen for custom message events from other components
+        const handleMessageSent = () => {
+            refreshMessageCount();
+            if (isOpen) {
+                fetchConversations();
+            }
+        };
+
+        const handleMessageReceived = () => {
+            refreshMessageCount();
+            if (isOpen) {
+                fetchConversations();
+            }
+        };
+
+        window.addEventListener('messageSent', handleMessageSent);
+        window.addEventListener('messageReceived', handleMessageReceived);
+        window.addEventListener('conversationUpdated', handleMessageSent);
+        
+        return () => {
+            if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+            }
+            window.removeEventListener('messageSent', handleMessageSent);
+            window.removeEventListener('messageReceived', handleMessageReceived);
+            window.removeEventListener('conversationUpdated', handleMessageSent);
+        };
+    }, [isOpen]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -45,25 +82,18 @@ export default function MessageDropdown() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const fetchUnreadCount = async () => {
-        try {
-            const response = await fetch('/api/messages/unread-count', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                credentials: 'same-origin',
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setUnreadCount(data.unread_count);
-            }
-        } catch (error) {
-            console.error('Failed to fetch unread message count:', error);
+    // Refresh conversations when dropdown opens
+    useEffect(() => {
+        if (isOpen) {
+            fetchConversations();
+            // Also refresh while dropdown is open
+            const openInterval = setInterval(() => {
+                fetchConversations();
+            }, 5000);
+            
+            return () => clearInterval(openInterval);
         }
-    };
+    }, [isOpen]);
 
     const fetchConversations = async () => {
         if (isLoading) return;
@@ -84,6 +114,8 @@ export default function MessageDropdown() {
                 const data = await response.json();
                 if (data.success && data.conversations) {
                     setConversations(data.conversations.slice(0, 5)); // Show only first 5
+                    // Dispatch event to notify message count might have changed
+                    window.dispatchEvent(new CustomEvent('conversationsLoaded'));
                 }
             } else {
                 throw new Error('Failed to fetch conversations');
@@ -98,9 +130,7 @@ export default function MessageDropdown() {
 
     const handleDropdownToggle = () => {
         setIsOpen(!isOpen);
-        if (!isOpen && conversations.length === 0) {
-            fetchConversations();
-        }
+        // Conversations will be fetched automatically via useEffect when isOpen changes
     };
 
     const handleConversationClick = (conversationId: number) => {
@@ -237,7 +267,13 @@ export default function MessageDropdown() {
                                                 </div>
                                                 
                                                 {conversation.latest_message && (
-                                                    <p className={`text-sm mt-1 truncate ${conversation.unread_count > 0 ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+                                                    <p className={`text-sm mt-1 truncate ${
+                                                        !conversation.latest_message.is_from_me && conversation.unread_count > 0 
+                                                            ? 'text-gray-900 font-semibold' 
+                                                            : conversation.unread_count > 0 
+                                                            ? 'text-gray-900 font-medium'
+                                                            : 'text-gray-600'
+                                                    }`}>
                                                         {conversation.latest_message.is_from_me ? 'You: ' : ''}
                                                         {truncateMessage(conversation.latest_message.content, 35)}
                                                     </p>

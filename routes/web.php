@@ -133,6 +133,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/messages', [\App\Http\Controllers\MessageController::class, 'store'])->name('api.messages.store');
     Route::post('/api/messages/conversation/start', [\App\Http\Controllers\MessageController::class, 'startConversation'])->name('api.messages.start-conversation');
     Route::post('/api/messages/send', [\App\Http\Controllers\MessageController::class, 'sendMarketplaceMessage'])->name('api.messages.send-marketplace');
+    Route::post('/api/messages/connect-business', [\App\Http\Controllers\MessageController::class, 'connectWithBusiness'])->name('api.messages.connect-business');
     Route::get('/api/messages/unread-count', [\App\Http\Controllers\MessageController::class, 'getUnreadCount'])->name('api.messages.unread-count');
     Route::get('/api/messages/conversations-preview', [\App\Http\Controllers\MessageController::class, 'conversationsPreview'])->name('api.messages.conversations-preview');
     Route::patch('/api/messages/conversations/{conversation}/mark-as-read', [\App\Http\Controllers\MessageController::class, 'markAsRead'])->name('api.messages.mark-as-read');

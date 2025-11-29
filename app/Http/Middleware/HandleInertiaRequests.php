@@ -39,6 +39,18 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        // Get unread message count for authenticated users
+        $unreadMessageCount = 0;
+        if ($request->user()) {
+            $unreadMessageCount = \App\Models\Message::whereHas('conversation', function ($query) use ($request) {
+                $query->where('user_one_id', $request->user()->id)
+                      ->orWhere('user_two_id', $request->user()->id);
+            })
+            ->where('sender_id', '!=', $request->user()->id)
+            ->where('is_read', false)
+            ->count();
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -51,6 +63,7 @@ class HandleInertiaRequests extends Middleware
                 'location' => $request->url(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'unreadMessageCount' => $unreadMessageCount,
         ];
     }
 }

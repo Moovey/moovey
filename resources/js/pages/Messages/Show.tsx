@@ -70,7 +70,15 @@ export default function ConversationShow({ conversation, messages: initialMessag
                 only: ['messages'],
                 onSuccess: (page: any) => {
                     if (page.props.messages && page.props.messages.length > messages.length) {
-                        setMessages(page.props.messages);
+                        const newMessages = page.props.messages;
+                        setMessages(newMessages);
+                        
+                        // Check if the new message is from the other user
+                        const latestMessage = newMessages[newMessages.length - 1];
+                        if (latestMessage && !latestMessage.is_from_me) {
+                            // New message received from other user - notify other components
+                            window.dispatchEvent(new CustomEvent('messageReceived'));
+                        }
                     }
                 }
             });
@@ -125,6 +133,12 @@ export default function ConversationShow({ conversation, messages: initialMessag
                     position: 'bottom-right',
                     autoClose: 2000,
                 });
+                
+                // Dispatch custom event to notify other components (like MessageDropdown)
+                window.dispatchEvent(new CustomEvent('messageSent'));
+                
+                // Also refresh Inertia shared props for unread count
+                router.reload({ only: ['unreadMessageCount'] });
             } else {
                 throw new Error(data.message || 'Failed to send message');
             }
