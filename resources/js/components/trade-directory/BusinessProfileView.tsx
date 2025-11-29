@@ -1,3 +1,4 @@
+import React from 'react';
 import { Head } from '@inertiajs/react';
 import GlobalHeader from '@/components/global-header';
 import WelcomeFooter from '@/components/welcome/welcome-footer';
@@ -55,13 +56,29 @@ export default function BusinessProfileView({ profile }: BusinessProfileProps) {
                                         {profile.logo_url ? (
                                             <img src={profile.logo_url} alt={`${profile.name} logo`} className="w-full h-full object-cover" />
                                         ) : (
-                                            <span className="text-white text-2xl sm:text-3xl">
-                                                {profile.services?.some(s => s.toLowerCase().includes('moving') || s.toLowerCase().includes('removal')) ? '🚚' :
-                                                 profile.services?.some(s => s.toLowerCase().includes('packing')) ? '📦' :
-                                                 profile.services?.some(s => s.toLowerCase().includes('cleaning')) ? '🧽' :
-                                                 profile.services?.some(s => s.toLowerCase().includes('storage')) ? '📁' :
-                                                 '🏢'}
-                                            </span>
+                                            <>
+                                                {profile.services?.some(s => s.toLowerCase().includes('moving') || s.toLowerCase().includes('removal')) ? (
+                                                    <svg className="w-10 h-10 sm:w-12 sm:h-12" fill="none" stroke="#FFFFFF" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8m0 0v6m0-6a2 2 0 012 2v4m-2-6a2 2 0 00-2-2H8a2 2 0 00-2 2m0 0v6m0-6h8m-8 6H4m4 0v4m0-4h8m0 0v4m0-4h4m-12 4h.01M16 17h.01" />
+                                                    </svg>
+                                                ) : profile.services?.some(s => s.toLowerCase().includes('packing')) ? (
+                                                    <svg className="w-10 h-10 sm:w-12 sm:h-12" fill="none" stroke="#FFFFFF" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                                    </svg>
+                                                ) : profile.services?.some(s => s.toLowerCase().includes('cleaning')) ? (
+                                                    <svg className="w-10 h-10 sm:w-12 sm:h-12" fill="none" stroke="#FFFFFF" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                                    </svg>
+                                                ) : profile.services?.some(s => s.toLowerCase().includes('storage')) ? (
+                                                    <svg className="w-10 h-10 sm:w-12 sm:h-12" fill="none" stroke="#FFFFFF" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg className="w-10 h-10 sm:w-12 sm:h-12" fill="none" stroke="#FFFFFF" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11M20 10v11M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01M16 17h.01" />
+                                                    </svg>
+                                                )}
+                                            </>
                                         )}
                                     </div>
 
@@ -76,8 +93,11 @@ export default function BusinessProfileView({ profile }: BusinessProfileProps) {
                                                 <span className="ml-2 text-sm text-gray-600">({profile.rating}/5)</span>
                                             </div>
                                             {profile.verified && (
-                                                <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
-                                                    ✓ Verified
+                                                <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                    Verified
                                                 </span>
                                             )}
                                             {profile.plan === 'premium' && (
@@ -106,7 +126,9 @@ export default function BusinessProfileView({ profile }: BusinessProfileProps) {
                                             {profile.services.map((service, idx) => (
                                                 <div key={idx} className="bg-gray-50 p-4 rounded-lg border">
                                                     <div className="flex items-center gap-3">
-                                                        <span className="text-[#17B7C7] text-lg">✓</span>
+                                                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="#17B7C7" viewBox="0 0 24 24" strokeWidth={3}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                        </svg>
                                                         <span className="font-medium text-gray-900">{service}</span>
                                                     </div>
                                                 </div>
@@ -189,22 +211,31 @@ export default function BusinessProfileView({ profile }: BusinessProfileProps) {
                                     <div className="mt-6 pt-6 border-t border-gray-200">
                                         <div className="space-y-3">
                                             <div className="flex items-center gap-3 text-sm">
-                                                <span className="text-gray-400">⏱️</span>
+                                                <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
                                                 <span className="text-gray-700">{profile.response_time}</span>
                                             </div>
                                             <div className="flex items-center gap-3 text-sm">
-                                                <span className="text-gray-400">📅</span>
+                                                <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
                                                 <span className="text-gray-700">{profile.availability}</span>
                                             </div>
                                             {profile.contact?.phone && (
                                                 <div className="flex items-center gap-3 text-sm">
-                                                    <span className="text-gray-400">📞</span>
+                                                    <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                                    </svg>
                                                     <span className="text-gray-700">{profile.contact.phone}</span>
                                                 </div>
                                             )}
                                             {profile.contact?.address && (
                                                 <div className="flex items-center gap-3 text-sm">
-                                                    <span className="text-gray-400">📍</span>
+                                                    <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
                                                     <span className="text-gray-700">{profile.contact.address}</span>
                                                 </div>
                                             )}
