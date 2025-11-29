@@ -498,7 +498,7 @@ class PublicController extends Controller
         $activeSection = 1; // Default to first section
         if ($user) {
             $moveDetails = \App\Models\UserMoveDetail::where('user_id', $user->id)->first();
-            $activeSection = $moveDetails->active_section ?? 1;
+            $activeSection = $moveDetails ? ($moveDetails->active_section ?? 1) : 1;
         }
         
         // Map active section to recommended services based on journey stage
