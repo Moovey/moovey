@@ -100,17 +100,17 @@ export default function BusinessServices() {
     setError(null);
     const file = e.target.files?.[0];
     if (!file) return;
-    // JPEG only, small size (<= 200 KB)
-    if (!/jpe?g$/i.test(file.name) || (file.type && file.type !== 'image/jpeg')) {
-      setError('Please upload a JPEG (.jpg or .jpeg) logo.');
-      toast.error('Please upload a JPEG (.jpg or .jpeg) logo.');
+    // PNG, JPEG, or JPG formats
+    if (!/\.(jpe?g|png)$/i.test(file.name) || (file.type && !['image/jpeg', 'image/png'].includes(file.type))) {
+      setError('Please upload a PNG, JPEG, or JPG logo.');
+      toast.error('Please upload a PNG, JPEG, or JPG logo.');
       e.target.value = '';
       return;
     }
-    const maxBytes = 200 * 1024;
+    const maxBytes = 2 * 1024 * 1024; // 2MB
     if (file.size > maxBytes) {
-      setError('Logo too large. Please upload a JPEG under 200 KB.');
-      toast.error('Logo too large. Please upload a JPEG under 200 KB.');
+      setError('Logo too large. Please upload an image under 2 MB.');
+      toast.error('Logo too large. Please upload an image under 2 MB.');
       e.target.value = '';
       return;
     }
@@ -261,7 +261,7 @@ export default function BusinessServices() {
             </div>
             Free Basic Listing
           </h2>
-          <p className="text-gray-600 text-sm ml-11">A simple one-line entry: name + short description, and a small JPEG logo.</p>
+          <p className="text-gray-600 text-sm ml-11">A simple one-line entry: name + short description, and a business logo.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -338,12 +338,12 @@ export default function BusinessServices() {
               </div>
             </div>
             <div>
-              <Label htmlFor="biz-logo" className="text-gray-700 font-medium">Small Logo (JPEG)</Label>
+              <Label htmlFor="biz-logo" className="text-gray-700 font-medium">Business Logo</Label>
               <div className="mt-2 flex items-center gap-3">
                 <input
                   id="biz-logo"
                   type="file"
-                  accept="image/jpeg"
+                  accept="image/png,image/jpeg,image/jpg"
                   ref={fileInputRef}
                   onChange={onPickLogo}
                   className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#E0F7FA] file:text-[#1A237E] hover:file:bg-[#d3f1f4]"
@@ -352,7 +352,7 @@ export default function BusinessServices() {
                   <Button type="button" className="bg-gray-200 text-gray-700 hover:bg-gray-300" onClick={clearLogo}>Remove</Button>
                 ) : null}
               </div>
-              <div className="text-xs text-gray-500 mt-1">JPEG only • Max 200 KB</div>
+              <div className="text-xs text-gray-500 mt-1">PNG, JPEG, or JPG • Max 2 MB</div>
               {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
             </div>
 

@@ -41,7 +41,7 @@ class BusinessProfileController extends Controller
     {
         $user = Auth::user();
         $request->validate([
-            'logo' => ['required', 'image', 'mimes:jpeg,jpg', 'max:200'], // max:200 KB
+            'logo' => ['required', 'image', 'mimes:jpeg,jpg,png', 'max:2048'], // max:2048 KB (2MB)
         ]);
 
         $file = $request->file('logo');
