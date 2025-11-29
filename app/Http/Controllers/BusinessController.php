@@ -42,12 +42,12 @@ class BusinessController extends Controller
             abort(403, 'Business access required');
         }
         $profile = \App\Models\BusinessProfile::firstOrCreate(['user_id' => Auth::id()]);
-        // Generate URL - use Storage::url() which works with Laravel Cloud when properly configured
+        // Generate URL - use FileController route for serving files (works in Laravel Cloud)
         $logoUrl = null;
         if ($profile->logo_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($profile->logo_path)) {
-            // Build URL from config for maximum compatibility
-            $publicDiskUrl = rtrim(config('filesystems.disks.public.url'), '/');
-            $logoUrl = $publicDiskUrl . '/' . $profile->logo_path;
+            // Use the FileController route pattern: /files/{folder}/{filename}
+            $filename = basename($profile->logo_path);
+            $logoUrl = url('/files/business-logos/' . $filename);
         }
         return Inertia::render('business/services', [
             'profile' => [
