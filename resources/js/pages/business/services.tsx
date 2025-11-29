@@ -55,7 +55,6 @@ const getBusinessServicesIcon = (name: string, className: string = "w-6 h-6") =>
 type BasicListing = {
   name: string;
   description: string;
-  logoDataUrl?: string; // small JPEG stored as data URL for preview/temp persistence
   services: string[];
 };
 
@@ -69,7 +68,6 @@ export default function BusinessServices() {
   const [listing, setListing] = useState<BasicListing>({
     name: initialProfile.name || '',
     description: initialProfile.description || '',
-    logoDataUrl: (initialProfile.logoUrl as string | undefined) || undefined,
     services: (initialProfile.services as string[] | undefined) || [],
   });
   const [saving, setSaving] = useState(false);
@@ -84,7 +82,6 @@ export default function BusinessServices() {
     setListing({
       name: initialProfile.name || '',
       description: initialProfile.description || '',
-      logoDataUrl: (initialProfile.logoUrl as string | undefined) || undefined,
       services: (initialProfile.services as string[] | undefined) || [],
     });
   }, [initialProfile.name, initialProfile.description, (initialProfile as any).logoUrl, (initialProfile as any).services]);
@@ -130,9 +127,14 @@ export default function BusinessServices() {
           preserveScroll: true,
           forceFormData: true,
           onSuccess: () => {
-            // Logo uploaded successfully
+            // Logo uploaded successfully - reload page to get fresh logoUrl
             setSavedAt(new Date().toLocaleTimeString());
             toast.success('Logo uploaded and form saved successfully!');
+            // Reload the page to fetch the updated logo URL from server
+            router.visit(window.location.pathname, {
+              preserveScroll: true,
+              only: ['profile'],
+            });
           },
           onError: () => {
             setError('Failed to upload logo.');
@@ -148,7 +150,21 @@ export default function BusinessServices() {
   };
 
   const clearLogo = () => {
-    setListing((prev) => ({ ...prev, logoDataUrl: undefined }));
+    router.delete('/business/api/profile/logo', {
+      preserveScroll: true,
+      onSuccess: () => {
+        toast.success('Logo removed successfully!');
+        // Reload page to get updated data
+        router.visit(window.location.pathname, {
+          preserveScroll: true,
+          only: ['profile'],
+        });
+      },
+      onError: () => {
+        setError('Failed to remove logo.');
+        toast.error('Failed to remove logo.');
+      },
+    });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -205,7 +221,6 @@ export default function BusinessServices() {
     setListing({
       name: '',
       description: '',
-      logoDataUrl: undefined,
       services: [],
     });
     setCustomService('');
@@ -348,7 +363,7 @@ export default function BusinessServices() {
                   onChange={onPickLogo}
                   className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#E0F7FA] file:text-[#1A237E] hover:file:bg-[#d3f1f4]"
                 />
-                {listing.logoDataUrl ? (
+                {initialProfile.logoUrl ? (
                   <Button type="button" className="bg-gray-200 text-gray-700 hover:bg-gray-300" onClick={clearLogo}>Remove</Button>
                 ) : null}
               </div>
