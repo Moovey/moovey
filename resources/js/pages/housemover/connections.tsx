@@ -1,10 +1,17 @@
-import { Head, Link } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { Head } from '@inertiajs/react';
+import { useState } from 'react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
-import WelcomeFooter from '@/components/welcome/welcome-footer';
 import HousemoverNavigation from '@/components/housemover/HousemoverNavigation';
 import { useMoveProgress } from '@/hooks/useMoveProgress';
+import SavedProvidersSection from '@/components/connections/SavedProvidersSection';
+import ConnectionRequestsSection from '@/components/connections/ConnectionRequestsSection';
+import RecommendedConnectionsSection from '@/components/connections/RecommendedConnectionsSection';
+import NetworkStatsSection from '@/components/connections/NetworkStatsSection';
+import QuickActionsSection from '@/components/connections/QuickActionsSection';
+import BusinessConnectionsGrid from '@/components/connections/BusinessConnectionsGrid';
+import CommunityMembersSection from '@/components/connections/CommunityMembersSection';
+import ProfessionalServicesSection from '@/components/connections/ProfessionalServicesSection';
 
 interface CommunityMember {
     id: string;
@@ -76,7 +83,6 @@ interface SavedProvider {
 
 export default function Connections() {
     const { taskData } = useMoveProgress();
-    const [networkFilter, setNetworkFilter] = useState<'all' | 'community' | 'business' | 'suggestions'>('all');
 
     const [communityMembers] = useState<CommunityMember[]>([
         {
@@ -416,6 +422,88 @@ export default function Connections() {
         // In a real app, this would open the chat interface
     };
 
+    // Service categories data
+    const preMoveServices = [
+        {
+            icon: 'home',
+            title: 'Estate Agents',
+            description: 'Property search & viewings',
+            connected: 0,
+            available: 18,
+            buttonText: 'Find Estate Agents'
+        },
+        {
+            icon: 'currency',
+            title: 'Mortgage Brokers',
+            description: 'Financial advice & mortgages',
+            connected: 0,
+            available: 14,
+            buttonText: 'Find Mortgage Brokers'
+        },
+        {
+            icon: 'scale',
+            title: 'Solicitors',
+            description: 'Legal support & conveyancing',
+            connected: 0,
+            available: 22,
+            buttonText: 'Find Solicitors'
+        }
+    ];
+
+    const moveDayServices = [
+        {
+            icon: 'truck',
+            title: 'Removal Companies',
+            description: 'Professional moving services',
+            connected: 1,
+            available: 35,
+            buttonText: 'Find Removal Companies'
+        },
+        {
+            icon: 'van',
+            title: 'Man & Van',
+            description: 'Small moves & single items',
+            connected: 0,
+            available: 42,
+            buttonText: 'Find Man & Van'
+        },
+        {
+            icon: 'warehouse',
+            title: 'Storage Solutions',
+            description: 'Temporary & long-term storage',
+            connected: 0,
+            available: 28,
+            buttonText: 'Explore Storage'
+        }
+    ];
+
+    const postMoveServices = [
+        {
+            icon: 'sparkles',
+            title: 'Cleaning Services',
+            description: 'End of tenancy & deep cleaning',
+            connected: 0,
+            available: 19,
+            buttonText: 'Find Cleaning Services'
+        },
+        {
+            icon: 'lightning',
+            title: 'Utility Setup',
+            description: 'Gas, electric, broadband & more',
+            connected: 0,
+            available: 25,
+            buttonText: 'Setup Utilities'
+        },
+        {
+            icon: 'tools',
+            title: 'Home Services',
+            description: 'Handyman, decorating & repairs',
+            connected: 0,
+            available: 31,
+            buttonText: 'Find Home Services'
+        }
+    ];
+
     return (
         <DashboardLayout>
             <Head title="Connections" />
@@ -429,610 +517,62 @@ export default function Connections() {
             <div className="max-w-7xl mx-auto">
                 {/* Top Row - Primary Sections */}
                 <div className="grid grid-cols-12 gap-6 mb-6">
-                    
-                    {/* Saved Providers - Primary Large Section (8 columns) */}
-                    <div className="col-span-12 lg:col-span-8">
-                        <div className="bg-white rounded-3xl p-6 shadow-lg h-full">
-                            <div className="flex items-center justify-between mb-6">
-                                <div>
-                                    <h3 className="text-xl font-bold text-[#1A237E] mb-2 flex items-center">
-                                        <span className="mr-2">💾</span>
-                                        Saved Providers
-                                    </h3>
-                                    <p className="text-gray-600 text-sm">Providers you've saved from the Trade Directory</p>
-                                </div>
-                                <Link 
-                                    href="/trade-directory"
-                                    className="bg-[#00BCD4] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#00ACC1] transition-colors shadow-md text-sm"
-                                >
-                                    Browse More
-                                </Link>
-                            </div>
-
-                            {savedProviders.length > 0 ? (
-                                <div className="space-y-4">
-                                    {savedProviders.slice(0, 2).map((provider) => (
-                                        <div key={provider.id} className="bg-[#E0F7FA] border-2 border-[#00BCD4] rounded-2xl p-4 shadow-md">
-                                            <div className="grid grid-cols-4 gap-4 items-center">
-                                                {/* Provider Info - Compact */}
-                                                <div className="col-span-3">
-                                                    <div className="flex items-start space-x-3">
-                                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                                            <span className="text-[#00BCD4] text-xl">{provider.avatar}</span>
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center space-x-2 mb-1">
-                                                                <h5 className="font-semibold text-[#1A237E] text-sm">{provider.name}</h5>
-                                                                {provider.verified && (
-                                                                    <span className="text-green-500 text-xs">✓</span>
-                                                                )}
-                                                            </div>
-                                                            <p className="text-xs text-gray-600 mb-2">{provider.businessType} • {provider.location}</p>
-                                                            <div className="flex items-center space-x-3 mb-2">
-                                                                <div className="flex items-center space-x-1">
-                                                                    <span className="text-yellow-500 text-sm">⭐</span>
-                                                                    <span className="text-sm font-medium">{provider.rating}</span>
-                                                                    <span className="text-xs text-gray-500">({provider.reviewCount})</span>
-                                                                </div>
-                                                                <span className="text-xs text-gray-500">Saved {provider.savedDate}</span>
-                                                            </div>
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {provider.services.slice(0, 3).map((service, index) => (
-                                                                    <span key={index} className="bg-white text-[#1A237E] px-2 py-1 rounded-full text-xs font-medium">
-                                                                        {service}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Quick Actions */}
-                                                <div className="flex flex-col space-y-2">
-                                                    <button
-                                                        onClick={() => handleContactProvider(provider.id)}
-                                                        className="bg-[#00BCD4] text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-[#00ACC1] transition-colors"
-                                                    >
-                                                        Contact
-                                                    </button>
-                                                    <button className="bg-white text-[#00BCD4] border border-[#00BCD4] px-3 py-1 rounded-lg text-xs hover:bg-[#00BCD4] hover:text-white transition-colors">
-                                                        Profile
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    
-                                    {savedProviders.length > 2 && (
-                                        <div className="text-center pt-3">
-                                            <button className="text-[#00BCD4] font-medium hover:text-[#00ACC1] transition-colors text-sm">
-                                                View All {savedProviders.length} Saved Providers →
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="text-center py-8">
-                                    <div className="text-4xl mb-3">📋</div>
-                                    <h4 className="text-lg font-semibold text-gray-700 mb-2">No Saved Providers Yet</h4>
-                                    <p className="text-gray-500 mb-4 text-sm">Browse the Trade Directory to save providers you're interested in.</p>
-                                    <Link
-                                        href="/trade-directory"
-                                        className="inline-flex items-center px-4 py-2 bg-[#00BCD4] text-white rounded-lg font-medium hover:bg-[#00ACC1] transition-colors text-sm"
-                                    >
-                                        <span className="mr-2">🔍</span>
-                                        Browse Trade Directory
-                                    </Link>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Connection Requests - Secondary Section (4 columns) */}
-                    <div className="col-span-12 lg:col-span-4">
-                        <div className="bg-white rounded-3xl p-5 shadow-lg h-full">
-                            <h4 className="text-lg font-semibold text-[#1A237E] mb-4 flex items-center">
-                                <span className="mr-2">📬</span>
-                                Connection Requests
-                                <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">3</span>
-                            </h4>
-                            <div className="space-y-3">
-                                {connectionRequests.slice(0, 3).map((request) => (
-                                    <div key={request.id} className="bg-[#E0F7FA] border border-[#00BCD4] rounded-xl p-3">
-                                        <div className="flex items-start space-x-3">
-                                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                                                <span className="text-[#00BCD4] text-lg">{request.avatar}</span>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h5 className="font-medium text-[#1A237E] text-sm truncate">{request.name.split(' - ')[0]}</h5>
-                                                <p className="text-xs text-gray-600">{request.businessType}</p>
-                                                <div className="flex items-center space-x-1 mt-1">
-                                                    <span className="text-yellow-500 text-xs">⭐</span>
-                                                    <span className="text-xs">{request.rating}</span>
-                                                    <span className="text-xs text-gray-500">({request.reviewCount})</span>
-                                                </div>
-                                                <div className="flex space-x-2 mt-2">
-                                                    <button
-                                                        onClick={() => handleAcceptRequest(request.id)}
-                                                        className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors"
-                                                    >
-                                                        Accept
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeclineRequest(request.id)}
-                                                        className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-400 transition-colors"
-                                                    >
-                                                        Decline
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    <SavedProvidersSection 
+                        savedProviders={savedProviders}
+                        onContactProvider={handleContactProvider}
+                    />
+                    <ConnectionRequestsSection 
+                        connectionRequests={connectionRequests}
+                        onAcceptRequest={handleAcceptRequest}
+                        onDeclineRequest={handleDeclineRequest}
+                    />
                 </div>
 
                 {/* Second Row - Secondary Sections */}
                 <div className="grid grid-cols-12 gap-6 mb-6">
-                    
-                    {/* Recommended Connections - Medium Section (6 columns) */}
-                    <div className="col-span-12 lg:col-span-6">
-                        <div className="bg-white rounded-3xl p-5 shadow-lg h-full">
-                            <h4 className="text-lg font-semibold text-[#1A237E] mb-4 flex items-center">
-                                <span className="mr-2">🎯</span>
-                                Recommended for You
-                            </h4>
-                            <div className="space-y-3">
-                                {recommendedConnections.slice(0, 3).map((connection) => (
-                                    <div key={connection.id} className="bg-[#E0F7FA] border border-[#00BCD4] rounded-xl p-3">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-3">
-                                                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                                                    <span className="text-[#00BCD4] text-lg">{connection.avatar}</span>
-                                                </div>
-                                                <div>
-                                                    <h5 className="font-medium text-[#1A237E] text-sm">{connection.name.split(' - ')[0]}</h5>
-                                                    <p className="text-xs text-gray-600">{connection.businessType} • {connection.location}</p>
-                                                    <div className="flex items-center space-x-2 mt-1">
-                                                        <div className="flex items-center space-x-1">
-                                                            <span className="text-yellow-500 text-xs">⭐</span>
-                                                            <span className="text-xs">{connection.rating}</span>
-                                                        </div>
-                                                        <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">
-                                                            {connection.matchScore}% match
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => handleConnectRecommended(connection.id)}
-                                                className="bg-[#00BCD4] text-white px-3 py-1 rounded text-xs hover:bg-[#00ACC1] transition-colors"
-                                            >
-                                                Connect
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Network Stats - Compact Section (3 columns) */}
-                    <div className="col-span-12 lg:col-span-3">
-                        <div className="bg-white rounded-3xl p-5 shadow-lg h-full">
-                            <h4 className="text-lg font-semibold text-[#1A237E] mb-4 flex items-center">
-                                <span className="mr-2">📊</span>
-                                Your Network
-                            </h4>
-                            <div className="space-y-4">
-                                <div className="text-center">
-                                    <div className="text-2xl font-bold text-[#00BCD4]">12</div>
-                                    <p className="text-xs text-gray-600">Total Connections</p>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-2xl font-bold text-[#1A237E]">{savedProviders.length}</div>
-                                    <p className="text-xs text-gray-600">Saved Providers</p>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-2xl font-bold text-green-600">8</div>
-                                    <p className="text-xs text-gray-600">Active Chats</p>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-2xl font-bold text-red-500">3</div>
-                                    <p className="text-xs text-gray-600">Pending Requests</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Quick Actions - Compact Section (3 columns) */}
-                    <div className="col-span-12 lg:col-span-3">
-                        <div className="bg-white rounded-3xl p-5 shadow-lg h-full">
-                            <h4 className="text-lg font-semibold text-[#1A237E] mb-4 flex items-center">
-                                <span className="mr-2">⚡</span>
-                                Quick Actions
-                            </h4>
-                            <div className="space-y-3">
-                                <Link
-                                    href="/trade-directory"
-                                    className="w-full bg-[#00BCD4] text-white p-3 rounded-lg text-sm font-medium hover:bg-[#00ACC1] transition-colors text-center block"
-                                >
-                                    🔍 Find Providers
-                                </Link>
-                                <Link
-                                    href="/community"
-                                    className="w-full bg-[#1A237E] text-white p-3 rounded-lg text-sm font-medium hover:bg-[#303F9F] transition-colors text-center block"
-                                >
-                                    👥 Join Community
-                                </Link>
-                                <button className="w-full bg-gray-100 text-gray-700 p-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-                                    📨 Send Referral
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <RecommendedConnectionsSection 
+                        recommendedConnections={recommendedConnections}
+                        onConnectRecommended={handleConnectRecommended}
+                    />
+                    <NetworkStatsSection 
+                        totalConnections={12}
+                        savedProvidersCount={savedProviders.length}
+                        activeChats={8}
+                        pendingRequests={connectionRequests.length}
+                    />
+                    <QuickActionsSection />
                 </div>
 
                 {/* Third Row - Service Categories (Condensed Grid) */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-                    {businessConnections.map((connection) => (
-                        <div key={connection.id} className="bg-white rounded-2xl p-4 shadow-md border-2 border-[#E0F7FA] hover:border-[#00BCD4] transition-colors">
-                            <div className="text-center">
-                                <div className="w-12 h-12 bg-[#00BCD4] rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <span className="text-white text-lg">{connection.avatar}</span>
-                                </div>
-                                <h5 className="font-semibold text-[#1A237E] text-sm mb-1">{connection.name.split(' - ')[0]}</h5>
-                                <p className="text-xs text-gray-600 mb-2">{connection.businessType}</p>
-                                <div className="flex items-center justify-center space-x-1 mb-2">
-                                    <span className="text-yellow-500 text-xs">⭐</span>
-                                    <span className="text-xs">{connection.rating}</span>
-                                </div>
-                                <button
-                                    onClick={() => handleChatRequest(connection.id)}
-                                    className="w-full bg-[#00BCD4] text-white py-2 px-3 rounded-lg text-xs font-medium hover:bg-[#00ACC1] transition-colors"
-                                >
-                                    Chat
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <BusinessConnectionsGrid 
+                    businessConnections={businessConnections}
+                    onChatRequest={handleChatRequest}
+                />
 
                 {/* Fourth Row - Community Section */}
-                <div className="bg-white rounded-3xl p-6 shadow-lg">
-                    <div className="flex items-center justify-between mb-6">
-                        <h4 className="text-xl font-semibold text-[#1A237E] flex items-center">
-                            <span className="mr-3">🌍</span>
-                            Community Members
-                        </h4>
-                        <Link
-                            href="/community"
-                            className="bg-[#1A237E] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#303F9F] transition-colors text-sm"
-                        >
-                            View All
-                        </Link>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {communityMembers.slice(0, 8).map((member) => (
-                            <div key={member.id} className="bg-[#E0F7FA] border border-[#00BCD4] rounded-xl p-4">
-                                <div className="flex items-start space-x-3">
-                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                        <span className="text-[#00BCD4] text-lg">{member.avatar}</span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center space-x-2 mb-1">
-                                            <h5 className="font-semibold text-[#1A237E] text-sm truncate">{member.name}</h5>
-                                            {member.isOnline && (
-                                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                            )}
-                                        </div>
-                                        <p className="text-xs text-gray-600 mb-2">{member.businessType}</p>
-                                        <p className="text-xs text-gray-500 mb-3">{member.location}</p>
-                                        <div className="flex space-x-2">
-                                            <button
-                                                onClick={() => handleConnectMember(member.id)}
-                                                className="bg-[#00BCD4] text-white px-3 py-1 rounded text-xs hover:bg-[#00ACC1] transition-colors"
-                                            >
-                                                Connect
-                                            </button>
-                                            <button
-                                                onClick={() => handleChatMember(member.id)}
-                                                className="bg-white text-[#00BCD4] border border-[#00BCD4] px-3 py-1 rounded text-xs hover:bg-[#00BCD4] hover:text-white transition-colors"
-                                            >
-                                                Chat
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                <CommunityMembersSection 
+                    communityMembers={communityMembers}
+                    onConnectMember={handleConnectMember}
+                    onChatMember={handleChatMember}
+                />
 
                 {/* Fifth Row - Professional Services Sections */}
                 <div className="space-y-8 mt-8">
-                    
-                    {/* Pre-Move Services */}
-                    <div className="bg-white rounded-3xl p-6 shadow-lg">
-                        <h4 className="text-xl font-semibold text-[#1A237E] mb-6 flex items-center">
-                            <span className="mr-2">📋</span>
-                            Pre-Move Services
-                        </h4>
-                        <div className="grid md:grid-cols-3 gap-6">
-                            {/* Estate Agents */}
-                            <div className="bg-[#E0F7FA] border-2 border-[#00BCD4] rounded-2xl p-6 shadow-md">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                            <span className="text-[#00BCD4] text-xl">🏠</span>
-                                        </div>
-                                        <div>
-                                            <h5 className="font-semibold text-[#1A237E]">Estate Agents</h5>
-                                            <p className="text-sm text-gray-600">Property search & viewings</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Connected:</span>
-                                        <span className="font-semibold text-[#1A237E]">0</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Available in your area:</span>
-                                        <span className="font-semibold text-[#00BCD4]">18</span>
-                                    </div>
-                                    <button className="w-full bg-[#00BCD4] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[#00ACC1] transition-colors shadow-md">
-                                        Find Estate Agents
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Mortgage Brokers */}
-                            <div className="bg-[#E0F7FA] border-2 border-[#00BCD4] rounded-2xl p-6 shadow-md">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                            <span className="text-[#00BCD4] text-xl">💰</span>
-                                        </div>
-                                        <div>
-                                            <h5 className="font-semibold text-[#1A237E]">Mortgage Brokers</h5>
-                                            <p className="text-sm text-gray-600">Financial advice & mortgages</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Connected:</span>
-                                        <span className="font-semibold text-[#1A237E]">0</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Available:</span>
-                                        <span className="font-semibold text-[#00BCD4]">14</span>
-                                    </div>
-                                    <button className="w-full bg-[#00BCD4] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[#00ACC1] transition-colors shadow-md">
-                                        Find Mortgage Brokers
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Solicitors */}
-                            <div className="bg-[#E0F7FA] border-2 border-[#00BCD4] rounded-2xl p-6 shadow-md">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                            <span className="text-[#00BCD4] text-xl">⚖️</span>
-                                        </div>
-                                        <div>
-                                            <h5 className="font-semibold text-[#1A237E]">Solicitors</h5>
-                                            <p className="text-sm text-gray-600">Legal support & conveyancing</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Connected:</span>
-                                        <span className="font-semibold text-[#1A237E]">0</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Available:</span>
-                                        <span className="font-semibold text-[#00BCD4]">22</span>
-                                    </div>
-                                    <button className="w-full bg-[#00BCD4] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[#00ACC1] transition-colors shadow-md">
-                                        Find Solicitors
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Move Day Services */}
-                    <div className="bg-white rounded-3xl p-6 shadow-lg">
-                        <h4 className="text-xl font-semibold text-[#1A237E] mb-6 flex items-center">
-                            <span className="mr-2">🚚</span>
-                            Move Day Services
-                        </h4>
-                        <div className="grid md:grid-cols-3 gap-6">
-                            {/* Removal Companies */}
-                            <div className="bg-[#E0F7FA] border-2 border-[#00BCD4] rounded-2xl p-6 shadow-md">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                            <span className="text-[#00BCD4] text-xl">📦</span>
-                                        </div>
-                                        <div>
-                                            <h5 className="font-semibold text-[#1A237E]">Removal Companies</h5>
-                                            <p className="text-sm text-gray-600">Professional moving services</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Connected:</span>
-                                        <span className="font-semibold text-[#1A237E]">1</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Available:</span>
-                                        <span className="font-semibold text-[#00BCD4]">35</span>
-                                    </div>
-                                    <button className="w-full bg-[#00BCD4] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[#00ACC1] transition-colors shadow-md">
-                                        Find Removal Companies
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Man & Van Services */}
-                            <div className="bg-[#E0F7FA] border-2 border-[#00BCD4] rounded-2xl p-6 shadow-md">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                            <span className="text-[#00BCD4] text-xl">🚐</span>
-                                        </div>
-                                        <div>
-                                            <h5 className="font-semibold text-[#1A237E]">Man & Van</h5>
-                                            <p className="text-sm text-gray-600">Small moves & single items</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Connected:</span>
-                                        <span className="font-semibold text-[#1A237E]">0</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Available:</span>
-                                        <span className="font-semibold text-[#00BCD4]">42</span>
-                                    </div>
-                                    <button className="w-full bg-[#00BCD4] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[#00ACC1] transition-colors shadow-md">
-                                        Find Man & Van
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Storage Solutions */}
-                            <div className="bg-[#E0F7FA] border-2 border-[#00BCD4] rounded-2xl p-6 shadow-md">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                            <span className="text-[#00BCD4] text-xl">🏪</span>
-                                        </div>
-                                        <div>
-                                            <h5 className="font-semibold text-[#1A237E]">Storage Solutions</h5>
-                                            <p className="text-sm text-gray-600">Temporary & long-term storage</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Connected:</span>
-                                        <span className="font-semibold text-[#1A237E]">0</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Available:</span>
-                                        <span className="font-semibold text-[#00BCD4]">28</span>
-                                    </div>
-                                    <button className="w-full bg-[#00BCD4] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[#00ACC1] transition-colors shadow-md">
-                                        Explore Storage
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Post-Move Services */}
-                    <div className="bg-white rounded-3xl p-6 shadow-lg">
-                        <h4 className="text-xl font-semibold text-[#1A237E] mb-6 flex items-center">
-                            <span className="mr-2">🏡</span>
-                            Post-Move Services
-                        </h4>
-                        <div className="grid md:grid-cols-3 gap-6">
-                            {/* Cleaning Services */}
-                            <div className="bg-[#E0F7FA] border-2 border-[#00BCD4] rounded-2xl p-6 shadow-md">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                            <span className="text-[#00BCD4] text-xl">🧽</span>
-                                        </div>
-                                        <div>
-                                            <h5 className="font-semibold text-[#1A237E]">Cleaning Services</h5>
-                                            <p className="text-sm text-gray-600">End of tenancy & deep cleaning</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Connected:</span>
-                                        <span className="font-semibold text-[#1A237E]">0</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Available:</span>
-                                        <span className="font-semibold text-[#00BCD4]">19</span>
-                                    </div>
-                                    <button className="w-full bg-[#00BCD4] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[#00ACC1] transition-colors shadow-md">
-                                        Find Cleaning Services
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Utility Setup */}
-                            <div className="bg-[#E0F7FA] border-2 border-[#00BCD4] rounded-2xl p-6 shadow-md">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                            <span className="text-[#00BCD4] text-xl">⚡</span>
-                                        </div>
-                                        <div>
-                                            <h5 className="font-semibold text-[#1A237E]">Utility Setup</h5>
-                                            <p className="text-sm text-gray-600">Gas, electric, broadband & more</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Connected:</span>
-                                        <span className="font-semibold text-[#1A237E]">0</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Available providers:</span>
-                                        <span className="font-semibold text-[#00BCD4]">25</span>
-                                    </div>
-                                    <button className="w-full bg-[#00BCD4] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[#00ACC1] transition-colors shadow-md">
-                                        Setup Utilities
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Home Services */}
-                            <div className="bg-[#E0F7FA] border-2 border-[#00BCD4] rounded-2xl p-6 shadow-md">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                            <span className="text-[#00BCD4] text-xl">🔧</span>
-                                        </div>
-                                        <div>
-                                            <h5 className="font-semibold text-[#1A237E]">Home Services</h5>
-                                            <p className="text-sm text-gray-600">Handyman, decorating & repairs</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Connected:</span>
-                                        <span className="font-semibold text-[#1A237E]">0</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Available:</span>
-                                        <span className="font-semibold text-[#00BCD4]">31</span>
-                                    </div>
-                                    <button className="w-full bg-[#00BCD4] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[#00ACC1] transition-colors shadow-md">
-                                        Find Home Services
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <ProfessionalServicesSection 
+                        title="Pre-Move Services"
+                        sectionIcon="📋"
+                        categories={preMoveServices}
+                    />
+                    <ProfessionalServicesSection 
+                        title="Move Day Services"
+                        sectionIcon="🚚"
+                        categories={moveDayServices}
+                    />
+                    <ProfessionalServicesSection 
+                        title="Post-Move Services"
+                        sectionIcon="🏡"
+                        categories={postMoveServices}
+                    />
                 </div>
                 {/* End of Bento Grid Layout */}
             </div>
