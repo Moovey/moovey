@@ -596,7 +596,7 @@ class PublicController extends Controller
                     'name' => $business->name,
                     'description' => $business->description,
                     'services' => $business->services ?? [],
-                    'logo_url' => $business->logo_path ? Storage::url($business->logo_path) : null,
+                    'logo_url' => $business->logo_path ? url('/files/business-logos/' . basename($business->logo_path)) : null,
                     'plan' => $business->plan ?? 'basic',
                     'user_name' => $business->user->name ?? 'Business Owner',
                     'rating' => $mockRating,
