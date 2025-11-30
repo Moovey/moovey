@@ -15,12 +15,18 @@ class Message extends Model
         'sender_id',
         'content',
         'is_read',
-        'read_at'
+        'read_at',
+        'deleted_for',
+        'deleted_for_everyone',
+        'deleted_at'
     ];
 
     protected $casts = [
         'is_read' => 'boolean',
-        'read_at' => 'datetime'
+        'read_at' => 'datetime',
+        'deleted_for' => 'array',
+        'deleted_for_everyone' => 'boolean',
+        'deleted_at' => 'datetime'
     ];
 
     public function conversation(): BelongsTo

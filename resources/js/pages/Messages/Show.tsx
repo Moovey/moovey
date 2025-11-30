@@ -26,6 +26,7 @@ interface Message {
     is_from_me: boolean;
     created_at: string;
     formatted_date: string;
+    can_delete_for_everyone?: boolean;
 }
 
 interface Conversation {
@@ -47,8 +48,11 @@ export default function ConversationShow({ conversation, messages: initialMessag
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [newMessage, setNewMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [hoveredMessageId, setHoveredMessageId] = useState<number | null>(null);
+    const [deleteMenuOpen, setDeleteMenuOpen] = useState<number | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const deleteMenuRef = useRef<HTMLDivElement>(null);
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
@@ -101,6 +105,18 @@ export default function ConversationShow({ conversation, messages: initialMessag
             credentials: 'same-origin',
         }).catch(console.error);
     }, [conversation.id]);
+
+    // Close delete menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (deleteMenuRef.current && !deleteMenuRef.current.contains(event.target as Node)) {
+                setDeleteMenuOpen(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -158,6 +174,70 @@ export default function ConversationShow({ conversation, messages: initialMessag
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSendMessage(e);
+        }
+    };
+
+    const handleDeleteForMe = async (messageId: number) => {
+        try {
+            const response = await fetch(`/api/messages/${messageId}/delete-for-me`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                credentials: 'same-origin',
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setMessages(prev => prev.filter(m => m.id !== messageId));
+                setDeleteMenuOpen(null);
+                toast.success('Message deleted from your view', {
+                    position: 'bottom-right',
+                    autoClose: 2000,
+                });
+            } else {
+                throw new Error(data.message || 'Failed to delete message');
+            }
+        } catch (error) {
+            console.error('Failed to delete message:', error);
+            toast.error('Failed to delete message. Please try again.', {
+                position: 'bottom-right',
+                autoClose: 3000,
+            });
+        }
+    };
+
+    const handleDeleteForEveryone = async (messageId: number) => {
+        try {
+            const response = await fetch(`/api/messages/${messageId}/delete-for-everyone`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                credentials: 'same-origin',
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setMessages(prev => prev.filter(m => m.id !== messageId));
+                setDeleteMenuOpen(null);
+                toast.success('Message deleted for everyone', {
+                    position: 'bottom-right',
+                    autoClose: 2000,
+                });
+            } else {
+                throw new Error(data.message || 'Failed to delete message');
+            }
+        } catch (error: any) {
+            console.error('Failed to delete message:', error);
+            toast.error(error.message || 'Failed to delete message. Please try again.', {
+                position: 'bottom-right',
+                autoClose: 3000,
+            });
         }
     };
 
@@ -316,7 +396,9 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                                             return (
                                                                 <div
                                                                     key={message.id}
-                                                                    className={`flex items-end ${message.is_from_me ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mb-2' : 'mb-1'}`}
+                                                                    className={`flex items-end ${message.is_from_me ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mb-2' : 'mb-1'} group`}
+                                                                    onMouseEnter={() => setHoveredMessageId(message.id)}
+                                                                    onMouseLeave={() => setHoveredMessageId(null)}
                                                                 >
                                                                     {/* Avatar for other user */}
                                                                     {!message.is_from_me && (
@@ -340,6 +422,46 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                                                     )}
                                                                     
                                                                 {/* Message Bubble */}
+                                                                <div className="relative flex items-center gap-1">
+                                                                    {message.is_from_me && hoveredMessageId === message.id && (
+                                                                        <div className="relative" ref={deleteMenuOpen === message.id ? deleteMenuRef : null}>
+                                                                            <button
+                                                                                onClick={() => setDeleteMenuOpen(deleteMenuOpen === message.id ? null : message.id)}
+                                                                                className="p-1 hover:bg-gray-200 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                                                                title="More options"
+                                                                            >
+                                                                                <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                                                                                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                                                                                </svg>
+                                                                            </button>
+                                                                            
+                                                                            {deleteMenuOpen === message.id && (
+                                                                                <div className="absolute right-0 bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[180px]">
+                                                                                    <button
+                                                                                        onClick={() => handleDeleteForMe(message.id)}
+                                                                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                                                                    >
+                                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                                        </svg>
+                                                                                        Delete for me
+                                                                                    </button>
+                                                                                    {message.can_delete_for_everyone && (
+                                                                                        <button
+                                                                                            onClick={() => handleDeleteForEveryone(message.id)}
+                                                                                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                                                        >
+                                                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                                            </svg>
+                                                                                            Delete for everyone
+                                                                                        </button>
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                    
                                                                 {message.is_item_context && message.item_data ? (
                                                                     /* Item Context Message */
                                                                     <div className="max-w-[85%] sm:max-w-xs md:max-w-sm lg:max-w-md bg-blue-50 border border-blue-200 rounded-2xl p-3 sm:p-4">
@@ -383,6 +505,35 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                                                         </p>
                                                                     </div>
                                                                 )}
+                                                                
+                                                                    {!message.is_from_me && hoveredMessageId === message.id && (
+                                                                        <div className="relative" ref={deleteMenuOpen === message.id ? deleteMenuRef : null}>
+                                                                            <button
+                                                                                onClick={() => setDeleteMenuOpen(deleteMenuOpen === message.id ? null : message.id)}
+                                                                                className="p-1 hover:bg-gray-200 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                                                                title="More options"
+                                                                            >
+                                                                                <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                                                                                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                                                                                </svg>
+                                                                            </button>
+                                                                            
+                                                                            {deleteMenuOpen === message.id && (
+                                                                                <div className="absolute left-0 bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[180px]">
+                                                                                    <button
+                                                                                        onClick={() => handleDeleteForMe(message.id)}
+                                                                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                                                                    >
+                                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                                        </svg>
+                                                                                        Delete for me
+                                                                                    </button>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                                 </div>
                                                             );
                                                         })}

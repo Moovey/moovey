@@ -107,6 +107,21 @@ class MessageController extends Controller
         $messages = $conversation->messages()
             ->with('sender:id,name,avatar')
             ->get()
+            ->filter(function ($message) use ($user) {
+                // Filter out messages deleted for everyone
+                if ($message->deleted_for_everyone) {
+                    return false;
+                }
+                
+                // Filter out messages deleted for this specific user
+                $deletedFor = $message->deleted_for ?? [];
+                if (in_array($user->id, $deletedFor)) {
+                    return false;
+                }
+                
+                return true;
+            })
+            ->values() // Reset array keys after filtering
             ->map(function ($message) use ($user) {
                 // Check if this is an item context message
                 $isItemContext = false;
@@ -134,6 +149,7 @@ class MessageController extends Controller
                     'is_from_me' => $message->sender_id === $user->id,
                     'created_at' => $message->created_at->format('g:i A'),
                     'formatted_date' => $message->created_at->format('M j, Y'),
+                    'can_delete_for_everyone' => $message->sender_id === $user->id && $message->created_at->diffInHours(now()) <= 1,
                 ];
             });
 
@@ -535,5 +551,71 @@ class MessageController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['message' => 'Failed to connect: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Delete message for current user only
+     */
+    public function deleteForMe(Request $request, $messageId): JsonResponse
+    {
+        $user = Auth::user();
+        $message = Message::findOrFail($messageId);
+
+        // Verify user is part of the conversation
+        $conversation = $message->conversation;
+        if ($conversation->user_one_id !== $user->id && $conversation->user_two_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        // Add user ID to deleted_for array
+        $deletedFor = $message->deleted_for ?? [];
+        if (!in_array($user->id, $deletedFor)) {
+            $deletedFor[] = $user->id;
+            $message->update(['deleted_for' => $deletedFor]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Message deleted from your view'
+        ]);
+    }
+
+    /**
+     * Delete message for everyone (sender only)
+     */
+    public function deleteForEveryone(Request $request, $messageId): JsonResponse
+    {
+        $user = Auth::user();
+        $message = Message::findOrFail($messageId);
+
+        // Only sender can delete for everyone
+        if ($message->sender_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the sender can delete this message for everyone'
+            ], 403);
+        }
+
+        // Check if message is recent (e.g., within 1 hour for delete for everyone)
+        $hoursSinceSent = $message->created_at->diffInHours(now());
+        if ($hoursSinceSent > 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Messages can only be deleted for everyone within 1 hour of sending'
+            ], 403);
+        }
+
+        $message->update([
+            'deleted_for_everyone' => true,
+            'deleted_at' => now()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Message deleted for everyone'
+        ]);
     }
 }

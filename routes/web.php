@@ -137,6 +137,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/messages/unread-count', [\App\Http\Controllers\MessageController::class, 'getUnreadCount'])->name('api.messages.unread-count');
     Route::get('/api/messages/conversations-preview', [\App\Http\Controllers\MessageController::class, 'conversationsPreview'])->name('api.messages.conversations-preview');
     Route::patch('/api/messages/conversations/{conversation}/mark-as-read', [\App\Http\Controllers\MessageController::class, 'markAsRead'])->name('api.messages.mark-as-read');
+    Route::delete('/api/messages/{message}/delete-for-me', [\App\Http\Controllers\MessageController::class, 'deleteForMe'])->name('api.messages.delete-for-me');
+    Route::delete('/api/messages/{message}/delete-for-everyone', [\App\Http\Controllers\MessageController::class, 'deleteForEveryone'])->name('api.messages.delete-for-everyone');
     
     // Declutter Items API Routes
     Route::apiResource('api/declutter-items', \App\Http\Controllers\DeclutterItemController::class);
