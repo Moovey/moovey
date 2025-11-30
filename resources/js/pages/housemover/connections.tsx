@@ -10,7 +10,6 @@ import ConnectionRequestsSection from '@/components/connections/ConnectionReques
 import RecommendedConnectionsSection from '@/components/connections/RecommendedConnectionsSection';
 import NetworkStatsSection from '@/components/connections/NetworkStatsSection';
 import QuickActionsSection from '@/components/connections/QuickActionsSection';
-import BusinessConnectionsGrid from '@/components/connections/BusinessConnectionsGrid';
 import CommunityMembersSection from '@/components/connections/CommunityMembersSection';
 import ProfessionalServicesSection from '@/components/connections/ProfessionalServicesSection';
 
@@ -126,9 +125,10 @@ interface PaginatedConnectionRequests {
 interface ConnectionsProps {
     savedProviders: PaginatedSavedProviders;
     connectionRequests: PaginatedConnectionRequests;
+    recommendedConnections: RecommendedConnection[];
 }
 
-export default function Connections({ savedProviders, connectionRequests }: ConnectionsProps) {
+export default function Connections({ savedProviders, connectionRequests, recommendedConnections }: ConnectionsProps) {
     const { taskData } = useMoveProgress();
 
     // Listen for friendship updates (when new requests are sent from other pages)
@@ -271,94 +271,8 @@ export default function Connections({ savedProviders, connectionRequests }: Conn
         }
     ]);
 
-    // Remove hardcoded connectionRequests - now using real data from backend props
-
-    const [recommendedConnections] = useState<RecommendedConnection[]>([
-        {
-            id: '1',
-            name: 'Alex Turner - TurnerFinance',
-            avatar: '💰',
-            businessType: 'Mortgage Broker',
-            location: 'Manchester',
-            rating: 4.8,
-            reviewCount: 92,
-            verified: true,
-            recommendationReason: 'Specializes in first-time buyers in your area',
-            matchScore: 94
-        },
-        {
-            id: '2',
-            name: 'Maria Rodriguez - Rodriguez & Associates',
-            avatar: '⚖️',
-            businessType: 'Conveyancing Solicitor',
-            location: 'Manchester',
-            rating: 4.9,
-            reviewCount: 178,
-            verified: true,
-            recommendationReason: 'Highly rated for fast, efficient property transactions',
-            matchScore: 89
-        },
-        {
-            id: '3',
-            name: 'James Mitchell - HomeGuru',
-            avatar: '🔧',
-            businessType: 'Home Inspector',
-            location: 'Greater Manchester',
-            rating: 4.7,
-            reviewCount: 134,
-            verified: true,
-            recommendationReason: 'Recommended by other movers in your network',
-            matchScore: 87
-        }
-    ]);
-
     // Remove the hardcoded savedProviders state - now using initialSavedProviders from backend
-
-    // Business connections data for the service categories grid
-    const [businessConnections] = useState([
-        {
-            id: '1',
-            name: 'Premier Properties',
-            avatar: '🏠',
-            businessType: 'Estate Agent',
-            rating: 4.9
-        },
-        {
-            id: '2',
-            name: 'Thompson Legal',
-            avatar: '⚖️',
-            businessType: 'Solicitor',
-            rating: 4.7
-        },
-        {
-            id: '3',
-            name: 'QuickMove Removals',
-            avatar: '📦',
-            businessType: 'Removal Company',
-            rating: 4.8
-        },
-        {
-            id: '4',
-            name: 'ClearView Cleaning',
-            avatar: '🧹',
-            businessType: 'Cleaning Service',
-            rating: 4.9
-        },
-        {
-            id: '5',
-            name: 'SecureStore',
-            avatar: '🏢',
-            businessType: 'Storage Facility',
-            rating: 4.6
-        },
-        {
-            id: '6',
-            name: 'FastFinance',
-            avatar: '💰',
-            businessType: 'Mortgage Broker',
-            rating: 4.5
-        }
-    ]);
+    // recommendedConnections now comes from backend based on user's active stage
 
     const handleAcceptRequest = async (requestId: string) => {
         const request = connectionRequests.data.find((r: ConnectionRequest) => r.id === requestId);
@@ -431,8 +345,35 @@ export default function Connections({ savedProviders, connectionRequests }: Conn
     };
 
     const handleConnectRecommended = (connectionId: string) => {
-        console.log('Connecting to recommended:', connectionId);
-        // In a real app, this would make an API call to send a connection request
+        const connection = recommendedConnections.find(c => c.id === connectionId);
+        if (!connection) return;
+
+        // Use Inertia router to connect with business and start messaging
+        router.post('/api/messages/connect-business', 
+            { 
+                business_profile_id: connectionId,
+                message: `Hi! I'm interested in your ${connection.businessType} services and would like to discuss my moving needs.`
+            },
+            {
+                onSuccess: () => {
+                    toast.success(`Connected with ${connection.name}! Opening messages...`, {
+                        position: "top-right",
+                        autoClose: 3000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,
+                        draggable: true,
+                    });
+                },
+                onError: (errors) => {
+                    console.error('Error connecting:', errors);
+                    toast.error('Failed to connect with business. Please try again.', {
+                        position: "top-right",
+                        autoClose: 4000,
+                    });
+                }
+            }
+        );
     };
 
     const handleContactProvider = (providerId: string) => {
@@ -443,11 +384,6 @@ export default function Connections({ savedProviders, connectionRequests }: Conn
     const handleRemoveSavedProvider = (providerId: string) => {
         console.log('Removing saved provider:', providerId);
         // In a real app, this would remove the provider from saved list
-    };
-
-    const handleChatRequest = (connectionId: string) => {
-        console.log('Starting chat with business connection:', connectionId);
-        // In a real app, this would open the chat interface
     };
 
     const handleConnectMember = (memberId: string) => {
@@ -580,13 +516,7 @@ export default function Connections({ savedProviders, connectionRequests }: Conn
                     <QuickActionsSection />
                 </div>
 
-                {/* Third Row - Service Categories (Condensed Grid) */}
-                <BusinessConnectionsGrid 
-                    businessConnections={businessConnections}
-                    onChatRequest={handleChatRequest}
-                />
-
-                {/* Fourth Row - Community Section */}
+                {/* Third Row - Community Section */}
                 <CommunityMembersSection 
                     communityMembers={communityMembers}
                     onConnectMember={handleConnectMember}

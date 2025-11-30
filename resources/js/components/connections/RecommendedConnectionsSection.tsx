@@ -29,8 +29,17 @@ export default function RecommendedConnectionsSection({
                     </svg>
                     Recommended for You
                 </h4>
-                <div className="space-y-3">
-                    {recommendedConnections.slice(0, 3).map((connection) => (
+                {recommendedConnections.length === 0 ? (
+                    <div className="text-center py-8">
+                        <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm text-gray-500">No recommendations available at the moment</p>
+                        <p className="text-xs text-gray-400 mt-1">Check back later for personalized suggestions</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {recommendedConnections.slice(0, 3).map((connection) => (
                         <div key={connection.id} className="bg-[#E0F7FA] border border-[#00BCD4] rounded-xl p-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
@@ -69,6 +78,7 @@ export default function RecommendedConnectionsSection({
                         </div>
                     ))}
                 </div>
+                )}
             </div>
         </div>
     );

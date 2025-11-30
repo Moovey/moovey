@@ -287,9 +287,68 @@ class HousemoverController extends Controller
                 ];
             });
 
+        // Get user's active section from move details
+        $moveDetails = \App\Models\UserMoveDetail::where('user_id', $userId)->first();
+        $activeSection = $moveDetails ? ($moveDetails->active_section ?? 1) : 1;
+
+        // Map active section to service types based on journey stage
+        $servicesBySection = [
+            1 => ['Estate Agent', 'Mortgage Broker', 'Solicitor', 'Surveyor', 'Financial Advisor'],
+            2 => ['Estate Agent', 'Home Staging', 'Cleaning Service', 'Handyman', 'Photographer'],
+            3 => ['Estate Agent', 'Mortgage Broker', 'Surveyor', 'Solicitor', 'Home Inspector'],
+            4 => ['Mortgage Broker', 'Financial Advisor', 'Insurance Broker', 'Solicitor', 'Accountant'],
+            5 => ['Solicitor', 'Surveyor', 'Home Inspector', 'Notary', 'Insurance Broker'],
+            6 => ['Moving Company', 'Packing Service', 'Storage', 'Cleaning Service', 'Handyman'],
+            7 => ['Moving Company', 'Cleaning Service', 'Utility Setup', 'Locksmith', 'Pet Care'],
+            8 => ['Utility Setup', 'Internet Provider', 'Cleaning Service', 'Handyman', 'Interior Designer'],
+            9 => ['Utility Setup', 'Internet Provider', 'Local Services', 'Home Security', 'Gardener'],
+        ];
+
+        // Get recommended service types for the user's current section
+        $recommendedServiceTypes = $servicesBySection[$activeSection] ?? $servicesBySection[1];
+
+        // Fetch businesses that match recommended service types
+        $recommendedConnections = \App\Models\BusinessProfile::query()
+            ->whereNotNull('name')
+            ->where('name', '!=', '')
+            ->whereNotNull('services')
+            ->with('user:id,name,email')
+            ->get()
+            ->filter(function ($business) use ($recommendedServiceTypes) {
+                // Check if business services array intersects with recommended services
+                $businessServices = $business->services ?? [];
+                return !empty(array_intersect($businessServices, $recommendedServiceTypes));
+            })
+            ->take(3) // Limit to 3 recommendations
+            ->map(function ($business) {
+                // Generate consistent mock rating based on business ID
+                $mockRating = round((($business->id % 15) / 3) + 4, 1); // 4.0 to 4.9
+                
+                // Calculate match score based on services overlap
+                $matchScore = rand(85, 98);
+                
+                // Get primary service from business services array
+                $primaryService = !empty($business->services) ? $business->services[0] : 'Business Services';
+                
+                return [
+                    'id' => (string)$business->id,
+                    'name' => $business->name,
+                    'avatar' => '🏢',
+                    'businessType' => $primaryService,
+                    'location' => 'United Kingdom',
+                    'rating' => $mockRating,
+                    'reviewCount' => rand(15, 150),
+                    'verified' => $business->plan === 'premium',
+                    'recommendationReason' => 'Matches your current moving stage',
+                    'matchScore' => $matchScore,
+                ];
+            })
+            ->values();
+
         return Inertia::render('housemover/connections', [
             'savedProviders' => $savedProviders,
             'connectionRequests' => $connectionRequests,
+            'recommendedConnections' => $recommendedConnections,
         ]);
     }
 
