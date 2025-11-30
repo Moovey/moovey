@@ -14,11 +14,7 @@ class BusinessController extends Controller
      */
     public function dashboard(): Response
     {
-        if (Auth::user()->role !== 'business') {
-            abort(403, 'Business access required');
-        }
-        
-    return Inertia::render('business/overview');
+        return Inertia::render('business/overview');
     }
 
     /**
@@ -26,35 +22,42 @@ class BusinessController extends Controller
      */
     public function leads(): Response
     {
-        if (Auth::user()->role !== 'business') {
-            abort(403, 'Business access required');
-        }
-        
         $businessProfile = \App\Models\BusinessProfile::where('user_id', Auth::id())->first();
         
-        $leads = [];
-        if ($businessProfile) {
-            $leads = \App\Models\CustomerLead::where('business_profile_id', $businessProfile->id)
-                ->with(['customer', 'conversation'])
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->map(function ($lead) {
-                    return [
-                        'id' => $lead->id,
-                        'customer' => [
-                            'id' => $lead->customer->id,
-                            'name' => $lead->customer->name,
-                            'email' => $lead->customer->email,
-                            'avatar' => $lead->customer->avatar_url,
-                        ],
-                        'status' => $lead->status,
-                        'conversation_id' => $lead->conversation_id,
-                        'contacted_at' => $lead->contacted_at?->diffForHumans(),
-                        'created_at' => $lead->created_at->diffForHumans(),
-                        'notes' => $lead->notes,
-                    ];
-                });
+        if (!$businessProfile) {
+            return Inertia::render('business/leads', [
+                'leads' => [
+                    'data' => [],
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => 5,
+                    'total' => 0,
+                    'from' => null,
+                    'to' => null,
+                ],
+            ]);
         }
+
+        $leads = \App\Models\CustomerLead::where('business_profile_id', $businessProfile->id)
+            ->with(['customer', 'conversation'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(5)
+            ->through(function ($lead) {
+                return [
+                    'id' => $lead->id,
+                    'customer' => [
+                        'id' => $lead->customer->id,
+                        'name' => $lead->customer->name,
+                        'email' => $lead->customer->email,
+                        'avatar' => $lead->customer->avatar_url,
+                    ],
+                    'status' => $lead->status,
+                    'conversation_id' => $lead->conversation_id,
+                    'contacted_at' => $lead->contacted_at?->diffForHumans(),
+                    'created_at' => $lead->created_at->diffForHumans(),
+                    'notes' => $lead->notes,
+                ];
+            });
         
         return Inertia::render('business/leads', [
             'leads' => $leads,
@@ -66,9 +69,6 @@ class BusinessController extends Controller
      */
     public function services(): Response
     {
-        if (Auth::user()->role !== 'business') {
-            abort(403, 'Business access required');
-        }
         $profile = \App\Models\BusinessProfile::firstOrCreate(['user_id' => Auth::id()]);
         // Generate URL - use FileController route for serving files (works in Laravel Cloud)
         $logoUrl = null;
@@ -93,11 +93,7 @@ class BusinessController extends Controller
      */
     public function analytics(): Response
     {
-        if (Auth::user()->role !== 'business') {
-            abort(403, 'Business access required');
-        }
-        
-    return Inertia::render('business/analytics');
+        return Inertia::render('business/analytics');
     }
 
     /**
@@ -105,10 +101,40 @@ class BusinessController extends Controller
      */
     public function profile(): Response
     {
-        if (Auth::user()->role !== 'business') {
-            abort(403, 'Business access required');
-        }
+        return Inertia::render('business/profile');
+    }
+
+    /**
+     * Update lead status.
+     */
+    public function updateLeadStatus(Request $request, $leadId)
+    {
+        $request->validate([
+            'status' => 'required|in:new,contacted,quoted,converted,closed',
+        ]);
+
+        $businessProfile = \App\Models\BusinessProfile::where('user_id', Auth::id())->first();
         
-    return Inertia::render('business/settings');
+        if (!$businessProfile) {
+            return response()->json(['error' => 'Business profile not found'], 404);
+        }
+
+        $lead = \App\Models\CustomerLead::where('id', $leadId)
+            ->where('business_profile_id', $businessProfile->id)
+            ->firstOrFail();
+
+        $lead->update([
+            'status' => $request->status,
+            'contacted_at' => $request->status !== 'new' && !$lead->contacted_at ? now() : $lead->contacted_at,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'lead' => [
+                'id' => $lead->id,
+                'status' => $lead->status,
+                'contacted_at' => $lead->contacted_at?->diffForHumans(),
+            ],
+        ]);
     }
 }

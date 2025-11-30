@@ -356,6 +356,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('profile', [\App\Http\Controllers\BusinessProfileController::class, 'saveBasicListing'])->name('profile.save');
             Route::post('profile/logo', [\App\Http\Controllers\BusinessProfileController::class, 'uploadLogo'])->name('profile.logo');
             Route::delete('profile/logo', [\App\Http\Controllers\BusinessProfileController::class, 'deleteLogo'])->name('profile.logo.delete');
+            Route::patch('leads/{lead}/status', [BusinessController::class, 'updateLeadStatus'])->name('leads.update-status');
         });
     });
 
