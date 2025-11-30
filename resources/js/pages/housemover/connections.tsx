@@ -1,5 +1,6 @@
-import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import EnhancedWelcomeBanner from '@/components/enhanced-welcome-banner';
 import HousemoverNavigation from '@/components/housemover/HousemoverNavigation';
@@ -41,6 +42,7 @@ interface BusinessProvider {
 
 interface ConnectionRequest {
     id: string;
+    friendship_id: number;
     name: string;
     avatar: string;
     businessType: string;
@@ -67,8 +69,10 @@ interface RecommendedConnection {
 
 interface SavedProvider {
     id: string;
+    business_profile_id: number;
     name: string;
     avatar: string;
+    logo_url?: string | null;
     businessType: string;
     location: string;
     rating: number;
@@ -105,10 +109,24 @@ interface PaginatedSavedProviders {
 
 interface ConnectionsProps {
     savedProviders: PaginatedSavedProviders;
+    connectionRequests: ConnectionRequest[];
 }
 
-export default function Connections({ savedProviders }: ConnectionsProps) {
+export default function Connections({ savedProviders, connectionRequests }: ConnectionsProps) {
     const { taskData } = useMoveProgress();
+
+    // Listen for friendship updates (when new requests are sent from other pages)
+    useEffect(() => {
+        const handleFriendshipUpdate = () => {
+            router.reload({ only: ['connectionRequests'] });
+        };
+
+        window.addEventListener('friendshipUpdated', handleFriendshipUpdate);
+        
+        return () => {
+            window.removeEventListener('friendshipUpdated', handleFriendshipUpdate);
+        };
+    }, []);
 
     const [communityMembers] = useState<CommunityMember[]>([
         {
@@ -237,44 +255,7 @@ export default function Connections({ savedProviders }: ConnectionsProps) {
         }
     ]);
 
-    const [connectionRequests] = useState<ConnectionRequest[]>([
-        {
-            id: '1',
-            name: 'Sarah Williams - Premier Properties',
-            avatar: '🏠',
-            businessType: 'Estate Agent',
-            location: 'Manchester',
-            rating: 4.9,
-            reviewCount: 156,
-            verified: true,
-            mutualConnections: 3,
-            requestMessage: 'Hi! I noticed you\'re moving to Manchester. I specialize in the area and would love to help you find your perfect home.'
-        },
-        {
-            id: '2',
-            name: 'David Thompson - Thompson Legal',
-            avatar: '⚖️',
-            businessType: 'Solicitor',
-            location: 'Manchester',
-            rating: 4.7,
-            reviewCount: 89,
-            verified: true,
-            mutualConnections: 2,
-            requestMessage: 'I help families with property purchases in Manchester. Happy to assist with your conveyancing needs.'
-        },
-        {
-            id: '3',
-            name: 'Emma Roberts - QuickMove Removals',
-            avatar: '📦',
-            businessType: 'Removal Company',
-            location: 'Liverpool to Manchester',
-            rating: 4.8,
-            reviewCount: 234,
-            verified: true,
-            mutualConnections: 5,
-            requestMessage: 'We specialize in Liverpool to Manchester moves. Competitive rates and excellent service guaranteed!'
-        }
-    ]);
+    // Remove hardcoded connectionRequests - now using real data from backend props
 
     const [recommendedConnections] = useState<RecommendedConnection[]>([
         {
@@ -363,14 +344,74 @@ export default function Connections({ savedProviders }: ConnectionsProps) {
         }
     ]);
 
-    const handleAcceptRequest = (requestId: string) => {
-        console.log('Accepting connection request:', requestId);
-        // In a real app, this would make an API call to accept the connection
+    const handleAcceptRequest = async (requestId: string) => {
+        const request = connectionRequests.find(r => r.id === requestId);
+        if (!request) return;
+
+        const requesterName = request.name.split(' - ')[0];
+
+        router.post('/api/friendships/accept', 
+            { friend_id: requestId },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Show success notification
+                    toast.success(`You are now connected with ${requesterName}! 🎉`, {
+                        position: "top-right",
+                        autoClose: 4000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,
+                        draggable: true,
+                    });
+                    
+                    // Reload connection requests to update the list
+                    router.reload({ only: ['connectionRequests'] });
+                },
+                onError: (errors) => {
+                    console.error('Error accepting request:', errors);
+                    toast.error('Failed to accept connection request. Please try again.', {
+                        position: "top-right",
+                        autoClose: 4000,
+                    });
+                }
+            }
+        );
     };
 
-    const handleDeclineRequest = (requestId: string) => {
-        console.log('Declining connection request:', requestId);
-        // In a real app, this would make an API call to decline the connection
+    const handleDeclineRequest = async (requestId: string) => {
+        const request = connectionRequests.find(r => r.id === requestId);
+        if (!request) return;
+
+        const requesterName = request.name.split(' - ')[0];
+
+        router.post('/api/friendships/decline', 
+            { friend_id: requestId },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Show info notification
+                    toast.info(`Connection request from ${requesterName} declined`, {
+                        position: "top-right",
+                        autoClose: 3000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,
+                        draggable: true,
+                    });
+                    
+                    // Reload connection requests to update the list
+                    router.reload({ only: ['connectionRequests'] });
+                },
+                onError: (errors) => {
+                    console.error('Error declining request:', errors);
+                    toast.error('Failed to decline connection request. Please try again.', {
+                        position: "top-right",
+                        autoClose: 4000,
+                    });
+                }
+            }
+        );
     };
 
     const handleConnectRecommended = (connectionId: string) => {

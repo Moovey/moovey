@@ -1,5 +1,6 @@
 interface ConnectionRequest {
     id: string;
+    friendship_id: number;
     name: string;
     avatar: string;
     businessType: string;

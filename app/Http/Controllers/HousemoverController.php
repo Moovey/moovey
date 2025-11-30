@@ -224,7 +224,10 @@ class HousemoverController extends Controller
      */
     public function connections(): Response
     {
-        $savedProviders = \App\Models\SavedProvider::where('user_id', Auth::id())
+        $userId = Auth::id();
+        
+        // Get saved providers
+        $savedProviders = \App\Models\SavedProvider::where('user_id', $userId)
             ->with(['businessProfile:id,name,logo_path,plan,services', 'businessProfile.user:id,name'])
             ->latest()
             ->paginate(2)
@@ -248,7 +251,46 @@ class HousemoverController extends Controller
                 'notes' => $savedProvider->notes,
             ]);
 
-        return Inertia::render('housemover/connections', ['savedProviders' => $savedProviders]);
+        // Get pending connection requests (received)
+        $connectionRequests = \App\Models\Friendship::where('friend_id', $userId)
+            ->where('status', 'pending')
+            ->with(['user.profile'])
+            ->latest()
+            ->get()
+            ->map(function($friendship) use ($userId) {
+                $requester = $friendship->user;
+                $profile = $requester->profile;
+                
+                // Count mutual connections
+                $mutualConnections = \App\Models\Friendship::where(function($query) use ($userId) {
+                    $query->where('user_id', $userId)->where('status', 'accepted');
+                })->orWhere(function($query) use ($userId) {
+                    $query->where('friend_id', $userId)->where('status', 'accepted');
+                })->whereHas('user', function($query) use ($requester) {
+                    $query->where('id', $requester->id);
+                })->orWhereHas('friend', function($query) use ($requester) {
+                    $query->where('id', $requester->id);
+                })->count();
+                
+                return [
+                    'id' => (string)$requester->id,
+                    'friendship_id' => $friendship->id,
+                    'name' => $requester->name,
+                    'avatar' => $requester->avatar ?? '👤',
+                    'businessType' => $profile->business_type ?? 'Community Member',
+                    'location' => $profile->location ?? 'United Kingdom',
+                    'rating' => 4.5,
+                    'reviewCount' => 0,
+                    'verified' => $requester->email_verified_at !== null,
+                    'mutualConnections' => $mutualConnections,
+                    'requestMessage' => null,
+                ];
+            });
+
+        return Inertia::render('housemover/connections', [
+            'savedProviders' => $savedProviders,
+            'connectionRequests' => $connectionRequests,
+        ]);
     }
 
     /**

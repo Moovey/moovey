@@ -29,10 +29,13 @@ class FriendshipController extends Controller
         })->first();
 
         if ($existingFriendship) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Friendship request already exists or you are already friends.'
-            ], 400);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Friendship request already exists or you are already friends.'
+                ], 400);
+            }
+            return back()->with('error', 'Friendship request already exists or you are already friends.');
         }
 
         // Create friendship request
@@ -42,10 +45,14 @@ class FriendshipController extends Controller
             'status' => 'pending'
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Friend request sent successfully.'
-        ]);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Friend request sent successfully.'
+            ]);
+        }
+
+        return back()->with('success', 'Friend request sent successfully.');
     }
 
     /**
@@ -67,18 +74,12 @@ class FriendshipController extends Controller
             ->first();
 
         if (!$friendship) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No pending friend request found.'
-            ], 404);
+            return back()->with('error', 'No pending friend request found.');
         }
 
         $friendship->accept();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Friend request accepted.'
-        ]);
+        return back()->with('success', 'Friend request accepted.');
     }
 
     /**
@@ -100,18 +101,12 @@ class FriendshipController extends Controller
             ->first();
 
         if (!$friendship) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No pending friend request found.'
-            ], 404);
+            return back()->with('error', 'No pending friend request found.');
         }
 
         $friendship->decline();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Friend request declined.'
-        ]);
+        return back()->with('success', 'Friend request declined.');
     }
 
     /**
