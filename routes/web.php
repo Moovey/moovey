@@ -290,7 +290,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | Routes accessible only to admin users
     */
     
-    Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['auth', 'verified', 'role.admin'])->prefix('admin')->name('admin.')->group(function () {
         
         // Admin Dashboard (redirects to overview)
         Route::get('dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
@@ -333,7 +333,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | Routes accessible only to business users
     */
     
-    Route::middleware(['auth', 'verified'])->prefix('business')->name('business.')->group(function () {
+    Route::middleware(['auth', 'verified', 'role.business'])->prefix('business')->name('business.')->group(function () {
         
         // Business Dashboard
         Route::get('dashboard', [BusinessController::class, 'dashboard'])->name('dashboard');
@@ -366,7 +366,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | Routes accessible only to housemover users (default role)
     */
     
-    Route::middleware(['auth', 'verified'])->prefix('housemover')->name('housemover.')->group(function () {
+    Route::middleware(['auth', 'verified', 'role.housemover'])->prefix('housemover')->name('housemover.')->group(function () {
         
         // Housemover Dashboard
         Route::get('dashboard', [HousemoverController::class, 'dashboard'])->name('dashboard');
