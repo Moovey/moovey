@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { router, usePage } from '@inertiajs/react';
 import { Bell, Check, CheckCheck, User, Heart, MessageCircle, Share2, UserPlus } from 'lucide-react';
 import { useInitials } from '@/hooks/use-initials';
 import { getAvatarUrl } from '@/utils/fileUtils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import type { SharedData } from '@/types';
 
 interface NotificationData {
     post_id?: number;
@@ -44,10 +46,59 @@ interface UnreadCountResponse {
 
 const NotificationDropdown: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const { props } = usePage<SharedData>();
+    const unreadCount = props.unreadNotificationCount ?? 0;
+    const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const getInitials = useInitials();
+
+    // Function to refresh notification count via Inertia
+    const refreshNotificationCount = () => {
+        router.reload({ only: ['unreadNotificationCount'] });
+    };
+
+    useEffect(() => {
+        // Initial load of unread count
+        refreshNotificationCount();
+        
+        // Set up aggressive polling for real-time updates
+        pollIntervalRef.current = setInterval(() => {
+            refreshNotificationCount();
+        }, 3000); // Check every 3 seconds
+        
+        // Listen for custom notification events from other components
+        const handleNotificationCreated = () => {
+            refreshNotificationCount();
+            if (isOpen) {
+                fetchNotifications();
+            }
+        };
+
+        window.addEventListener('notificationCreated', handleNotificationCreated);
+        window.addEventListener('notificationUpdated', handleNotificationCreated);
+        
+        return () => {
+            if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+            }
+            window.removeEventListener('notificationCreated', handleNotificationCreated);
+            window.removeEventListener('notificationUpdated', handleNotificationCreated);
+        };
+    }, [isOpen]);
+
+    // Refresh notifications when dropdown opens
+    useEffect(() => {
+        if (isOpen) {
+            fetchNotifications();
+            // Also refresh while dropdown is open
+            const openInterval = setInterval(() => {
+                fetchNotifications();
+            }, 5000); // Refresh every 5 seconds while open
+            
+            return () => clearInterval(openInterval);
+        }
+    }, [isOpen]);
 
     const fetchNotifications = async () => {
         try {
@@ -71,25 +122,6 @@ const NotificationDropdown: React.FC = () => {
         }
     };
 
-    const fetchUnreadCount = async () => {
-        try {
-            const response = await fetch('/api/notifications/unread-count', {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                credentials: 'same-origin',
-            });
-
-            if (response.ok) {
-                const data: UnreadCountResponse = await response.json();
-                setUnreadCount(data.count);
-            }
-        } catch (error) {
-            console.error('Failed to fetch unread count:', error);
-        }
-    };
-
     const markAsRead = async (notificationId: number) => {
         try {
             const response = await fetch(`/api/notifications/${notificationId}/mark-as-read`, {
@@ -105,7 +137,7 @@ const NotificationDropdown: React.FC = () => {
                 setNotifications(prev => prev.map(notif => 
                     notif.id === notificationId ? { ...notif, is_read: true } : notif
                 ));
-                setUnreadCount(prev => Math.max(0, prev - 1));
+                refreshNotificationCount();
             }
         } catch (error) {
             console.error('Failed to mark notification as read:', error);
@@ -125,7 +157,7 @@ const NotificationDropdown: React.FC = () => {
 
             if (response.ok) {
                 setNotifications(prev => prev.map(notif => ({ ...notif, is_read: true })));
-                setUnreadCount(0);
+                refreshNotificationCount();
             }
         } catch (error) {
             console.error('Failed to mark all notifications as read:', error);
@@ -157,26 +189,24 @@ const NotificationDropdown: React.FC = () => {
         if (notification.type === 'post_like' || notification.type === 'post_comment' || notification.type === 'post_share') {
             // Navigate to community page or specific post
             window.location.href = '/community';
-        } else if (notification.type === 'friend_request' || notification.type === 'friend_accepted') {
-            // Navigate to connections/friends page
-            window.location.href = '/housemover/connections';
+        } else if (notification.type === 'friend_request') {
+            // Navigate to sender's profile page to review and accept the request
+            if (notification.sender?.id) {
+                window.location.href = `/user/${notification.sender.id}`;
+            } else {
+                // Fallback to connections page if sender info is missing
+                window.location.href = '/housemover/connections';
+            }
+        } else if (notification.type === 'friend_accepted') {
+            // Navigate to the accepter's profile page
+            if (notification.sender?.id) {
+                window.location.href = `/user/${notification.sender.id}`;
+            } else {
+                // Fallback to connections page if sender info is missing
+                window.location.href = '/housemover/connections';
+            }
         }
     };
-
-    useEffect(() => {
-        fetchUnreadCount();
-        
-        // Fetch unread count every 30 seconds
-        const interval = setInterval(fetchUnreadCount, 30000);
-        
-        return () => clearInterval(interval);
-    }, []);
-
-    useEffect(() => {
-        if (isOpen) {
-            fetchNotifications();
-        }
-    }, [isOpen]);
 
     return (
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>

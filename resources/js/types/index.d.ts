@@ -29,6 +29,7 @@ export interface SharedData {
     ziggy: Config & { location: string };
     sidebarOpen: boolean;
     unreadMessageCount?: number;
+    unreadNotificationCount?: number;
     [key: string]: unknown;
 }
 

@@ -41,6 +41,8 @@ class HandleInertiaRequests extends Middleware
 
         // Get unread message count for authenticated users
         $unreadMessageCount = 0;
+        $unreadNotificationCount = 0;
+        
         if ($request->user()) {
             $unreadMessageCount = \App\Models\Message::whereHas('conversation', function ($query) use ($request) {
                 $query->where('user_one_id', $request->user()->id)
@@ -49,6 +51,11 @@ class HandleInertiaRequests extends Middleware
             ->where('sender_id', '!=', $request->user()->id)
             ->where('is_read', false)
             ->count();
+
+            // Use custom Notification model instead of Laravel's default notification system
+            $unreadNotificationCount = \App\Models\Notification::where('user_id', $request->user()->id)
+                ->where('is_read', false)
+                ->count();
         }
 
         return [
@@ -67,6 +74,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'unreadMessageCount' => $unreadMessageCount,
+            'unreadNotificationCount' => $unreadNotificationCount,
         ];
     }
 }
