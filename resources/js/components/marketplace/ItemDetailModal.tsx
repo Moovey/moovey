@@ -281,13 +281,50 @@ export default function ItemDetailModal({
                                 <h1 className="text-2xl font-semibold text-gray-900 mb-2">
                                     {item.name}
                                 </h1>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getConditionColor(item.condition)}`}>
                                         {item.condition.charAt(0).toUpperCase() + item.condition.slice(1)} condition
                                     </span>
                                     <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
                                         {item.category}
                                     </span>
+                                    {/* Action Badge */}
+                                    {item.action && (
+                                        <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 ${
+                                            item.action === 'sell' 
+                                                ? 'bg-green-100 text-green-800' 
+                                                : item.action === 'donate' 
+                                                ? 'bg-purple-100 text-purple-800'
+                                                : item.action === 'throw'
+                                                ? 'bg-orange-100 text-orange-800'
+                                                : 'bg-blue-100 text-blue-800'
+                                        }`}>
+                                            {item.action === 'sell' && (
+                                                <>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    For Sale
+                                                </>
+                                            )}
+                                            {item.action === 'donate' && (
+                                                <>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                                    </svg>
+                                                    Free - Donate
+                                                </>
+                                            )}
+                                            {item.action === 'throw' && (
+                                                <>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                    Free - Throw Away
+                                                </>
+                                            )}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 
@@ -345,7 +382,10 @@ export default function ItemDetailModal({
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                         </svg>
-                                        Message Seller
+                                        {item.action === 'sell' && 'Contact Seller'}
+                                        {item.action === 'donate' && 'Request Item'}
+                                        {item.action === 'throw' && 'Claim Item'}
+                                        {!item.action && 'Message Seller'}
                                     </button>
                                 ) : showMessageOptions && !showCustomMessage ? (
                                     <div className="space-y-3">
