@@ -391,19 +391,21 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                                     <div className="space-y-1">
                                                         {dayMessages.map((message, index) => {
                                                             const prevMessage = dayMessages[index - 1];
-                                                            const showAvatar = !message.is_from_me && (!prevMessage || prevMessage.is_from_me || prevMessage.sender.id !== message.sender.id);
+                                                            const nextMessage = dayMessages[index + 1];
+                                                            const showAvatar = !prevMessage || prevMessage.sender.id !== message.sender.id || prevMessage.is_from_me !== message.is_from_me;
+                                                            const showNextAvatar = !nextMessage || nextMessage.sender.id !== message.sender.id || nextMessage.is_from_me !== message.is_from_me;
                                                             
                                                             return (
                                                                 <div
                                                                     key={message.id}
-                                                                    className={`flex items-end ${message.is_from_me ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mb-2' : 'mb-1'} group`}
+                                                                    className={`flex items-end ${message.is_from_me ? 'justify-end' : 'justify-start'} ${showNextAvatar ? 'mb-2' : 'mb-1'} group`}
                                                                     onMouseEnter={() => setHoveredMessageId(message.id)}
                                                                     onMouseLeave={() => setHoveredMessageId(null)}
                                                                 >
-                                                                    {/* Avatar for other user */}
+                                                                    {/* Avatar for other user (left side) */}
                                                                     {!message.is_from_me && (
                                                                         <div className="w-7 h-7 mr-2 flex-shrink-0">
-                                                                            {showAvatar ? (
+                                                                            {showNextAvatar ? (
                                                                                 message.sender.avatar ? (
                                                                                     <img
                                                                                         src={message.sender.avatar}
@@ -534,6 +536,27 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                                                         </div>
                                                                     )}
                                                                 </div>
+
+                                                                    {/* Avatar for current user (right side) */}
+                                                                    {message.is_from_me && (
+                                                                        <div className="w-7 h-7 ml-2 flex-shrink-0">
+                                                                            {showNextAvatar ? (
+                                                                                auth.user?.avatar ? (
+                                                                                    <img
+                                                                                        src={auth.user.avatar}
+                                                                                        alt={auth.user.name}
+                                                                                        className="w-7 h-7 rounded-full object-cover"
+                                                                                    />
+                                                                            ) : (
+                                                                                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#17B7C7] to-[#1A237E] flex items-center justify-center">
+                                                                                    <span className="text-white font-bold text-xs">
+                                                                                        {auth.user?.name?.charAt(0) || 'U'}
+                                                                                    </span>
+                                                                                </div>
+                                                                            )
+                                                                            ) : null}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             );
                                                         })}

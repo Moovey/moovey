@@ -56,7 +56,10 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user() ? $request->user()->only(['id', 'name', 'email', 'role', 'avatar', 'email_verified_at', 'created_at', 'updated_at']) : null,
+                'user' => $request->user() ? [
+                    ...$request->user()->only(['id', 'name', 'email', 'role', 'avatar', 'email_verified_at', 'created_at', 'updated_at']),
+                    'avatar' => $request->user()->avatar_url, // Use avatar_url accessor for production compatibility
+                ] : null,
             ],
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),
