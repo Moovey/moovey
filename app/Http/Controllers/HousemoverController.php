@@ -251,13 +251,13 @@ class HousemoverController extends Controller
                 'notes' => $savedProvider->notes,
             ]);
 
-        // Get pending connection requests (received)
+        // Get pending connection requests (received) - paginated with 3 per page
         $connectionRequests = \App\Models\Friendship::where('friend_id', $userId)
             ->where('status', 'pending')
             ->with(['user.profile'])
             ->latest()
-            ->get()
-            ->map(function($friendship) use ($userId) {
+            ->paginate(3)
+            ->through(function($friendship) use ($userId) {
                 $requester = $friendship->user;
                 $profile = $requester->profile;
                 

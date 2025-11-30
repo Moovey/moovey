@@ -74,10 +74,23 @@ class FriendshipController extends Controller
             ->first();
 
         if (!$friendship) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No pending friend request found.'
+                ], 404);
+            }
             return back()->with('error', 'No pending friend request found.');
         }
 
         $friendship->accept();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Friend request accepted.'
+            ]);
+        }
 
         return back()->with('success', 'Friend request accepted.');
     }
@@ -101,10 +114,23 @@ class FriendshipController extends Controller
             ->first();
 
         if (!$friendship) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No pending friend request found.'
+                ], 404);
+            }
             return back()->with('error', 'No pending friend request found.');
         }
 
         $friendship->decline();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Friend request declined.'
+            ]);
+        }
 
         return back()->with('success', 'Friend request declined.');
     }

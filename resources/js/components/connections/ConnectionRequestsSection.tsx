@@ -1,3 +1,5 @@
+import { router } from '@inertiajs/react';
+
 interface ConnectionRequest {
     id: string;
     friendship_id: number;
@@ -12,8 +14,30 @@ interface ConnectionRequest {
     requestMessage?: string;
 }
 
+interface PaginationLinks {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedConnectionRequests {
+    current_page: number;
+    data: ConnectionRequest[];
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: PaginationLinks[];
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+}
+
 interface ConnectionRequestsSectionProps {
-    connectionRequests: ConnectionRequest[];
+    connectionRequests: PaginatedConnectionRequests;
     onAcceptRequest: (requestId: string) => void;
     onDeclineRequest: (requestId: string) => void;
 }
@@ -23,6 +47,17 @@ export default function ConnectionRequestsSection({
     onAcceptRequest, 
     onDeclineRequest 
 }: ConnectionRequestsSectionProps) {
+    const handlePageChange = (url: string | null) => {
+        if (!url) return;
+        
+        // Use Inertia router to navigate to the new page
+        router.get(url, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['connectionRequests']
+        });
+    };
+
     return (
         <div className="col-span-12 lg:col-span-4">
             <div className="bg-white rounded-3xl p-5 shadow-lg h-full">
@@ -32,11 +67,11 @@ export default function ConnectionRequestsSection({
                     </svg>
                     Connection Requests
                     <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                        {connectionRequests.length}
+                        {connectionRequests.total}
                     </span>
                 </h4>
-                <div className="space-y-3">
-                    {connectionRequests.slice(0, 3).map((request) => (
+                <div className="space-y-3 mb-4">
+                    {connectionRequests.data.map((request) => (
                         <div key={request.id} className="bg-[#E0F7FA] border border-[#00BCD4] rounded-xl p-3">
                             <div className="flex items-start space-x-3">
                                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
@@ -75,6 +110,41 @@ export default function ConnectionRequestsSection({
                         </div>
                     ))}
                 </div>
+                
+                {/* Pagination Controls */}
+                {connectionRequests.last_page > 1 && (
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                        <button
+                            onClick={() => handlePageChange(connectionRequests.prev_page_url)}
+                            disabled={!connectionRequests.prev_page_url}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                connectionRequests.prev_page_url
+                                    ? 'bg-[#00BCD4] text-white hover:bg-[#00ACC1]'
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                            Previous
+                        </button>
+                        
+                        <div className="flex items-center space-x-1">
+                            <span className="text-sm text-gray-600">
+                                Page {connectionRequests.current_page} of {connectionRequests.last_page}
+                            </span>
+                        </div>
+                        
+                        <button
+                            onClick={() => handlePageChange(connectionRequests.next_page_url)}
+                            disabled={!connectionRequests.next_page_url}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                connectionRequests.next_page_url
+                                    ? 'bg-[#00BCD4] text-white hover:bg-[#00ACC1]'
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

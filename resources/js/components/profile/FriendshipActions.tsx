@@ -34,10 +34,16 @@ export default function FriendshipActions({
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({ friend_id: userId }),
             });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ success: false, message: 'An error occurred' }));
+                throw new Error(errorData.message || 'Failed to send friend request');
+            }
 
             const data = await response.json();
             
@@ -53,7 +59,7 @@ export default function FriendshipActions({
                     autoClose: 3000,
                 });
             } else {
-                toast.error('❌ Failed to send friend request', {
+                toast.error(data.message || '❌ Failed to send friend request', {
                     position: 'top-right',
                     autoClose: 3000,
                 });
@@ -77,10 +83,16 @@ export default function FriendshipActions({
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({ friend_id: userId }),
             });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ success: false, message: 'An error occurred' }));
+                throw new Error(errorData.message || 'Failed to accept friend request');
+            }
 
             const data = await response.json();
             
@@ -92,6 +104,11 @@ export default function FriendshipActions({
                     canCancelRequest: false,
                 });
                 toast.success('🎉 You are now friends!', {
+                    position: 'top-right',
+                    autoClose: 3000,
+                });
+            } else {
+                toast.error(data.message || '❌ Failed to accept friend request', {
                     position: 'top-right',
                     autoClose: 3000,
                 });
@@ -115,10 +132,16 @@ export default function FriendshipActions({
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({ friend_id: userId }),
             });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ success: false, message: 'An error occurred' }));
+                throw new Error(errorData.message || 'Failed to cancel friend request');
+            }
 
             const data = await response.json();
             
@@ -130,6 +153,11 @@ export default function FriendshipActions({
                     canCancelRequest: false,
                 });
                 toast.success('🔄 Friend request cancelled', {
+                    position: 'top-right',
+                    autoClose: 3000,
+                });
+            } else {
+                toast.error(data.message || '❌ Failed to cancel friend request', {
                     position: 'top-right',
                     autoClose: 3000,
                 });
@@ -153,16 +181,22 @@ export default function FriendshipActions({
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
             },
             body: JSON.stringify({ user_id: userId }),
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to start conversation');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 window.location.href = `/messages/${data.conversation_id}`;
             } else {
-                toast.error('❌ Failed to start conversation');
+                toast.error(data.message || '❌ Failed to start conversation');
             }
         })
         .catch(error => {

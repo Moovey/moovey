@@ -107,9 +107,25 @@ interface PaginatedSavedProviders {
     total: number;
 }
 
+interface PaginatedConnectionRequests {
+    current_page: number;
+    data: ConnectionRequest[];
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: PaginationLinks[];
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+}
+
 interface ConnectionsProps {
     savedProviders: PaginatedSavedProviders;
-    connectionRequests: ConnectionRequest[];
+    connectionRequests: PaginatedConnectionRequests;
 }
 
 export default function Connections({ savedProviders, connectionRequests }: ConnectionsProps) {
@@ -345,7 +361,7 @@ export default function Connections({ savedProviders, connectionRequests }: Conn
     ]);
 
     const handleAcceptRequest = async (requestId: string) => {
-        const request = connectionRequests.find(r => r.id === requestId);
+        const request = connectionRequests.data.find((r: ConnectionRequest) => r.id === requestId);
         if (!request) return;
 
         const requesterName = request.name.split(' - ')[0];
@@ -380,7 +396,7 @@ export default function Connections({ savedProviders, connectionRequests }: Conn
     };
 
     const handleDeclineRequest = async (requestId: string) => {
-        const request = connectionRequests.find(r => r.id === requestId);
+        const request = connectionRequests.data.find((r: ConnectionRequest) => r.id === requestId);
         if (!request) return;
 
         const requesterName = request.name.split(' - ')[0];
@@ -559,7 +575,7 @@ export default function Connections({ savedProviders, connectionRequests }: Conn
                         totalConnections={12}
                         savedProvidersCount={savedProviders.total}
                         activeChats={8}
-                        pendingRequests={connectionRequests.length}
+                        pendingRequests={connectionRequests.total}
                     />
                     <QuickActionsSection />
                 </div>
