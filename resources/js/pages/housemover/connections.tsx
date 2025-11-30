@@ -500,7 +500,6 @@ export default function Connections({ savedProviders }: ConnectionsProps) {
                 <div className="grid grid-cols-12 gap-6 mb-6">
                     <SavedProvidersSection 
                         savedProviders={savedProviders}
-                        onContactProvider={handleContactProvider}
                     />
                     <ConnectionRequestsSection 
                         connectionRequests={connectionRequests}

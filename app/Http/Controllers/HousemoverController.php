@@ -249,6 +249,7 @@ class HousemoverController extends Controller
             
             return [
                 'id' => (string) $business->id,
+                'business_profile_id' => $business->id, // Add explicit business_profile_id for frontend
                 'name' => $business->name,
                 'avatar' => '🏢',
                 'logo_url' => $business->logo_path ? url('/files/business-logos/' . basename($business->logo_path)) : null,

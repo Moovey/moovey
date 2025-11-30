@@ -1,7 +1,9 @@
 import { Link, router } from '@inertiajs/react';
+import { toast } from 'react-toastify';
 
 interface SavedProvider {
     id: string;
+    business_profile_id: number;
     name: string;
     avatar: string;
     logo_url?: string | null;
@@ -41,10 +43,9 @@ interface PaginatedData {
 
 interface SavedProvidersSectionProps {
     savedProviders: PaginatedData;
-    onContactProvider: (providerId: string) => void;
 }
 
-export default function SavedProvidersSection({ savedProviders, onContactProvider }: SavedProvidersSectionProps) {
+export default function SavedProvidersSection({ savedProviders }: SavedProvidersSectionProps) {
     const handlePageChange = (url: string | null) => {
         if (url) {
             router.get(url, {}, {
@@ -52,6 +53,25 @@ export default function SavedProvidersSection({ savedProviders, onContactProvide
                 preserveScroll: true,
             });
         }
+    };
+
+    const handleContactProvider = (businessProfileId: number) => {
+        router.post('/api/messages/connect-business', {
+            business_profile_id: businessProfileId,
+            message: '',
+        }, {
+            onSuccess: () => {
+                toast.success('Connected! Opening conversation...');
+                // Dispatch event to notify MessageDropdown and other components
+                window.dispatchEvent(new CustomEvent('conversationUpdated'));
+                // Inertia will handle the redirect automatically
+            },
+            onError: (errors) => {
+                console.error('Error connecting:', errors);
+                const errorMessage = (errors as any)?.message || 'Failed to connect. Please try again.';
+                toast.error(errorMessage);
+            },
+        });
     };
     return (
         <div className="col-span-12 lg:col-span-8">
@@ -129,7 +149,7 @@ export default function SavedProvidersSection({ savedProviders, onContactProvide
                                     {/* Quick Actions */}
                                     <div className="flex flex-col space-y-2">
                                         <button
-                                            onClick={() => onContactProvider(provider.id)}
+                                            onClick={() => handleContactProvider(provider.business_profile_id)}
                                             className="bg-[#00BCD4] text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-[#00ACC1] transition-colors"
                                         >
                                             Contact

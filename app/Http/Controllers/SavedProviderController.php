@@ -79,6 +79,7 @@ class SavedProviderController extends Controller
                 
                 return [
                     'id' => $business->id,
+                    'business_profile_id' => $business->id, // Add explicit business_profile_id for frontend
                     'name' => $business->name,
                     'avatar' => '🏢',
                     'businessType' => $business->user->name ?? 'Service Provider',
