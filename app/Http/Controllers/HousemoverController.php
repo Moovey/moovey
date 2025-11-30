@@ -9,7 +9,7 @@ use App\Models\UserTask;
 use App\Models\Lesson;
 use Illuminate\Support\Facades\Auth;
 use App\Models\CustomTask;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class HousemoverController extends Controller
 {
@@ -18,82 +18,94 @@ class HousemoverController extends Controller
      */
     public function dashboard(): Response
     {
-        // Get user's pending tasks from CTA buttons (limit to 4 for upcoming tasks section)
-        $upcomingTasks = UserTask::where('user_id', Auth::id())
+        $userId = Auth::id();
+        
+        // Single optimized query for all pending tasks with computed stats
+        $pendingTasks = UserTask::select('id', 'title', 'description', 'priority', 'status', 'category', 'metadata', 'created_at')
+            ->where('user_id', $userId)
             ->where('status', 'pending')
             ->orderBy('created_at', 'desc')
-            ->limit(4)
-            ->get()
-            ->map(function ($task) {
-                return [
-                    'id' => $task->id,
-                    'title' => $task->title,
-                    'description' => $task->description,
-                    'priority' => $task->priority,
-                    'created_at' => $task->created_at->format('M j, Y'),
-                    'source' => $task->metadata['source'] ?? 'unknown',
-                    'source_id' => $task->metadata['source_id'] ?? null,
-                    'category' => $task->category ?? $this->mapPriorityToCategory($task->priority),
-                    'completed' => false,
-                    'urgency' => $this->mapPriorityToUrgency($task->priority),
-                ];
-            });
+            ->get();
 
-        // Get ALL user tasks for CTA task management section
-        $allUserTasks = UserTask::where('user_id', Auth::id())
-            ->where('status', 'pending')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($task) {
-                return [
-                    'id' => $task->id,
-                    'title' => $task->title,
-                    'description' => $task->description,
-                    'priority' => $task->priority,
-                    'created_at' => $task->created_at->format('M j, Y'),
-                    'source' => $task->metadata['source'] ?? 'unknown',
-                    'source_id' => $task->metadata['source_id'] ?? null,
-                    'category' => $task->category ?? 'General',
-                    'completed' => false,
-                    'urgency' => $this->mapPriorityToUrgency($task->priority),
-                ];
-            });
-
-        // Get task statistics
-        $taskStats = [
-            'total' => UserTask::where('user_id', Auth::id())->count(),
-            'pending' => UserTask::where('user_id', Auth::id())->where('status', 'pending')->count(),
-            'completed' => UserTask::where('user_id', Auth::id())->where('status', 'completed')->count(),
-        ];
-
-        // Get lesson progress data for academy rank
-        $academyProgress = $this->getAcademyProgress(Auth::id());
-
-        // Get user's move details for personal details and countdown
-        $moveDetails = \App\Models\UserMoveDetail::where('user_id', Auth::id())->first();
-        $personalDetails = [
-            'currentAddress' => $moveDetails->current_address ?? '',
-            'newAddress' => $moveDetails->new_address ?? '',
-            'movingDate' => $moveDetails && $moveDetails->moving_date ? $moveDetails->moving_date->format('Y-m-d') : '',
-            'contactInfo' => '', // This could be from user profile if needed
-            'emergencyContact' => '', // This could be from user profile if needed
-        ];
-
-        // Debug: Get all tasks to see what's happening
-        $allTasks = UserTask::where('user_id', Auth::id())->get();
+        // Transform once and reuse
+        $transformedTasks = $pendingTasks->map(fn($task) => $this->transformTask($task));
+        
+        // Get move details in single query
+        $moveDetails = \App\Models\UserMoveDetail::select('current_address', 'new_address', 'moving_date', 'active_section')
+            ->where('user_id', $userId)
+            ->first();
 
         return Inertia::render('housemover/dashboard', [
-            'upcomingTasks' => $upcomingTasks,
-            'allUserTasks' => $allUserTasks,
-            'taskStats' => $taskStats,
-            'academyProgress' => $academyProgress,
-            'personalDetails' => $personalDetails,
-            'activeSection' => $moveDetails->active_section ?? 1,
+            'upcomingTasks' => $transformedTasks->take(4)->values(),
+            'allUserTasks' => $transformedTasks,
+            'taskStats' => $this->getTaskStatsOptimized($userId),
+            'academyProgress' => $this->getAcademyProgress($userId),
+            'personalDetails' => $this->formatMoveDetails($moveDetails),
+            'activeSection' => $moveDetails?->active_section ?? 1,
         ]);
     }
 
     /**
-     * Map task priority to category for dashboard display
+     * Transform task model to array format
+     */
+    private function transformTask(UserTask $task, bool $includeStatus = false): array
+    {
+        $data = [
+            'id' => $task->id,
+            'title' => $task->title,
+            'description' => $task->description,
+            'priority' => $task->priority,
+            'created_at' => $task->created_at->format('M j, Y'),
+            'source' => $task->metadata['source'] ?? 'unknown',
+            'source_id' => $task->metadata['source_id'] ?? null,
+            'category' => $task->category ?? $this->mapPriorityToCategory($task->priority),
+            'urgency' => $this->mapPriorityToUrgency($task->priority),
+            'completed' => $task->status === 'completed',
+        ];
+
+        if ($includeStatus) {
+            $data['status'] = $task->status;
+            $data['completed_at'] = $task->completed_at?->format('M j, Y');
+            $data['due_date'] = $task->due_date?->format('M j, Y');
+            $data['is_overdue'] = $task->isOverdue();
+        }
+
+        return $data;
+    }
+
+    /**
+     * Get optimized task statistics using single query
+     */
+    private function getTaskStatsOptimized(int $userId): array
+    {
+        $stats = UserTask::select('status', DB::raw('count(*) as count'))
+            ->where('user_id', $userId)
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        return [
+            'total' => $stats->sum(),
+            'pending' => $stats->get('pending', 0),
+            'completed' => $stats->get('completed', 0),
+        ];
+    }
+
+    /**
+     * Format move details for response
+     */
+    private function formatMoveDetails($moveDetails): array
+    {
+        return [
+            'currentAddress' => $moveDetails?->current_address ?? '',
+            'newAddress' => $moveDetails?->new_address ?? '',
+            'movingDate' => $moveDetails?->moving_date?->format('Y-m-d') ?? '',
+            'contactInfo' => '',
+            'emergencyContact' => '',
+        ];
+    }
+
+    /**
+     * Map task priority to category
      */
     private function mapPriorityToCategory(string $priority): string
     {
@@ -106,13 +118,13 @@ class HousemoverController extends Controller
     }
 
     /**
-     * Map task priority to urgency for dashboard display
+     * Map task priority to urgency
      */
     private function mapPriorityToUrgency(string $priority): string
     {
         return match($priority) {
             'high' => 'urgent',
-            'medium' => 'moderate', 
+            'medium' => 'moderate',
             'low' => 'normal',
             default => 'normal',
         };
@@ -124,33 +136,18 @@ class HousemoverController extends Controller
     public function moveDetails(): Response
     {
         $userId = Auth::id();
+        
         $details = \App\Models\UserMoveDetail::firstOrCreate(
             ['user_id' => $userId],
-            [
-                'recommended_task_states' => [],
-                'custom_tasks' => [],
-            ]
+            ['recommended_task_states' => [], 'custom_tasks' => []]
         );
 
-        $personal = [
-            'currentAddress' => $details->current_address ?? '',
-            'newAddress' => $details->new_address ?? '',
-            'movingDate' => $details->moving_date?->format('Y-m-d') ?? '',
-            'budget' => $details->budget ?? '',
-            'movingType' => $details->moving_type ?? 'purchase',
-            'targetArea' => $details->target_area ?? '',
-            'propertyRequirements' => $details->property_requirements ?? '',
-            'solicitorContact' => $details->solicitor_contact ?? '',
-            'keyDates' => $details->key_dates ?? '',
-        ];
-
-        // New: fetch custom tasks from dedicated table, grouped by section.
-        $grouped = [];
-        $dbTasks = CustomTask::where('user_id', $userId)->get();
-        foreach ($dbTasks as $task) {
-            $section = (string)$task->section_id;
-            if (!isset($grouped[$section])) { $grouped[$section] = []; }
-            $grouped[$section][] = [
+        // Fetch and group custom tasks efficiently
+        $customTasks = CustomTask::select('id', 'section_id', 'title', 'description', 'category', 'completed', 'completed_at')
+            ->where('user_id', $userId)
+            ->get()
+            ->groupBy('section_id')
+            ->map(fn($tasks) => $tasks->map(fn($task) => [
                 'id' => (string)$task->id,
                 'title' => $task->title,
                 'description' => $task->description,
@@ -158,17 +155,26 @@ class HousemoverController extends Controller
                 'completed' => $task->completed,
                 'isCustom' => true,
                 'completedDate' => $task->completed_at?->format('Y-m-d'),
-            ];
-        }
-        // Fallback to legacy JSON if table empty / not migrated yet.
-        if (empty($grouped) && !empty($details->custom_tasks)) {
-            $grouped = $details->custom_tasks;
-        }
+            ])->values())
+            ->mapWithKeys(fn($tasks, $key) => [(string)$key => $tasks])
+            ->all();
+
+        // Fallback to legacy JSON if table empty
+        $grouped = !empty($customTasks) ? $customTasks : ($details->custom_tasks ?? []);
 
         return Inertia::render('housemover/move-details', [
-            'moveDetails' => array_merge($personal, [
+            'moveDetails' => [
+                'currentAddress' => $details->current_address ?? '',
+                'newAddress' => $details->new_address ?? '',
+                'movingDate' => $details->moving_date?->format('Y-m-d') ?? '',
+                'budget' => $details->budget ?? '',
+                'movingType' => $details->moving_type ?? 'purchase',
+                'targetArea' => $details->target_area ?? '',
+                'propertyRequirements' => $details->property_requirements ?? '',
+                'solicitorContact' => $details->solicitor_contact ?? '',
+                'keyDates' => $details->key_dates ?? '',
                 'activeSection' => $details->active_section ?? 1,
-            ]),
+            ],
             'taskData' => [
                 'recommendedTaskStates' => $details->recommended_task_states ?? [],
                 'customTasks' => $grouped,
@@ -181,45 +187,27 @@ class HousemoverController extends Controller
      */
     public function tasks(): Response
     {
-        // Get all user tasks grouped by status
-        $allTasks = UserTask::where('user_id', Auth::id())
+        $userId = Auth::id();
+        
+        // Single optimized query with computed overdue count
+        $allTasks = UserTask::select('id', 'title', 'description', 'priority', 'status', 'category', 'metadata', 'created_at', 'completed_at', 'due_date')
+            ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($task) {
-                return [
-                    'id' => $task->id,
-                    'title' => $task->title,
-                    'description' => $task->description,
-                    'priority' => $task->priority,
-                    'status' => $task->status,
-                    'created_at' => $task->created_at->format('M j, Y'),
-                    'completed_at' => $task->completed_at?->format('M j, Y'),
-                    'due_date' => $task->due_date?->format('M j, Y'),
-                    'source' => $task->metadata['source'] ?? 'unknown',
-                    'source_id' => $task->metadata['source_id'] ?? null,
-                    'category' => $task->category ?? $this->mapPriorityToCategory($task->priority),
-                    'urgency' => $this->mapPriorityToUrgency($task->priority),
-                    'is_overdue' => $task->isOverdue(),
-                ];
-            });
+            ->get();
 
-        // Group tasks by status
-        $groupedTasks = [
-            'pending' => $allTasks->where('status', 'pending')->values(),
-            'completed' => $allTasks->where('status', 'completed')->values(),
-        ];
-
-        // Get task statistics
-        $taskStats = [
-            'total' => $allTasks->count(),
-            'pending' => $allTasks->where('status', 'pending')->count(),
-            'completed' => $allTasks->where('status', 'completed')->count(),
-            'overdue' => $allTasks->where('is_overdue', true)->count(),
-        ];
+        $transformedTasks = $allTasks->map(fn($task) => $this->transformTask($task, true));
 
         return Inertia::render('housemover/tasks', [
-            'tasks' => $groupedTasks,
-            'taskStats' => $taskStats,
+            'tasks' => [
+                'pending' => $transformedTasks->where('status', 'pending')->values(),
+                'completed' => $transformedTasks->where('status', 'completed')->values(),
+            ],
+            'taskStats' => [
+                'total' => $transformedTasks->count(),
+                'pending' => $transformedTasks->where('status', 'pending')->count(),
+                'completed' => $transformedTasks->where('status', 'completed')->count(),
+                'overdue' => $transformedTasks->where('is_overdue', true)->count(),
+            ],
         ]);
     }
 
@@ -236,39 +224,31 @@ class HousemoverController extends Controller
      */
     public function connections(): Response
     {
-        // Get user's saved providers with business profile data - paginated
-        $savedProvidersQuery = \App\Models\SavedProvider::where('user_id', Auth::id())
-            ->with(['businessProfile.user'])
-            ->latest();
-
-        // Paginate with 2 items per page
-        $savedProvidersPaginator = $savedProvidersQuery->paginate(2);
-
-        $savedProviders = $savedProvidersPaginator->through(function ($savedProvider) {
-            $business = $savedProvider->businessProfile;
-            
-            return [
-                'id' => (string) $business->id,
-                'business_profile_id' => $business->id, // Add explicit business_profile_id for frontend
-                'name' => $business->name,
+        $savedProviders = \App\Models\SavedProvider::where('user_id', Auth::id())
+            ->with(['businessProfile:id,name,logo_path,plan,services', 'businessProfile.user:id,name'])
+            ->latest()
+            ->paginate(2)
+            ->through(fn($savedProvider) => [
+                'id' => (string)$savedProvider->businessProfile->id,
+                'business_profile_id' => $savedProvider->businessProfile->id,
+                'name' => $savedProvider->businessProfile->name,
                 'avatar' => '🏢',
-                'logo_url' => $business->logo_path ? url('/files/business-logos/' . basename($business->logo_path)) : null,
-                'businessType' => $business->user->name ?? 'Service Provider',
+                'logo_url' => $savedProvider->businessProfile->logo_path 
+                    ? url('/files/business-logos/' . basename($savedProvider->businessProfile->logo_path)) 
+                    : null,
+                'businessType' => $savedProvider->businessProfile->user->name ?? 'Service Provider',
                 'location' => 'UK',
                 'rating' => 4.5,
                 'reviewCount' => 0,
-                'verified' => $business->plan === 'premium',
-                'services' => $business->services ?? [],
+                'verified' => $savedProvider->businessProfile->plan === 'premium',
+                'services' => $savedProvider->businessProfile->services ?? [],
                 'availability' => 'Available',
                 'responseTime' => 'Usually responds within 24 hours',
                 'savedDate' => $savedProvider->created_at->diffForHumans(),
                 'notes' => $savedProvider->notes,
-            ];
-        });
+            ]);
 
-        return Inertia::render('housemover/connections', [
-            'savedProviders' => $savedProviders,
-        ]);
+        return Inertia::render('housemover/connections', ['savedProviders' => $savedProviders]);
     }
 
     /**
@@ -288,25 +268,19 @@ class HousemoverController extends Controller
     }
 
     /**
-     * Get academy progress data for dashboard
+     * Get academy progress data for dashboard (optimized)
      */
-    private function getAcademyProgress($userId)
+    private function getAcademyProgress(int $userId): array
     {
-        // Define the 9 stages in order (same as Moovey Academy)
         $stages = [
-            'Move Dreamer',
-            'Plan Starter',
-            'Moovey Critic',
-            'Prep Pioneer',
-            'Moovey Director',
-            'Move Rockstar',
-            'Home Navigator',
-            'Settler Specialist',
-            'Moovey Star'
+            'Move Dreamer', 'Plan Starter', 'Moovey Critic', 'Prep Pioneer',
+            'Moovey Director', 'Move Rockstar', 'Home Navigator', 
+            'Settler Specialist', 'Moovey Star'
         ];
 
-        // Get all published lessons with progress data
-        $allLessons = Lesson::where('status', 'Published')
+        // Single query with eager loading
+        $allLessons = Lesson::select('id', 'title', 'description', 'lesson_stage', 'lesson_order', 'duration', 'difficulty')
+            ->where('status', 'Published')
             ->orderBy('lesson_stage')
             ->orderBy('lesson_order')
             ->get();
@@ -314,9 +288,9 @@ class HousemoverController extends Controller
         $totalLessons = $allLessons->count();
         $completedLessons = 0;
         $nextLesson = null;
-
-        // Calculate stage progress and find next lesson
         $stageProgress = [];
+
+        // Single pass calculation
         foreach ($stages as $stage) {
             $stageLessons = $allLessons->where('lesson_stage', $stage);
             $stageTotal = $stageLessons->count();
@@ -327,7 +301,6 @@ class HousemoverController extends Controller
                     $stageCompleted++;
                     $completedLessons++;
                 } elseif (!$nextLesson && $lesson->isAccessibleByUser($userId)) {
-                    // This is the next available lesson
                     $nextLesson = [
                         'id' => $lesson->id,
                         'title' => $lesson->title,
@@ -346,78 +319,50 @@ class HousemoverController extends Controller
             ];
         }
 
-        // Determine current rank based on stage completion
-        $currentRank = 'MOVE DREAMER'; // Default to first stage
-        $currentLevel = 1;
-        $nextRank = 'PLAN STARTER';
-
-        // Find the highest completed stage
-        $completedStages = 0;
+        // Calculate ranks in single pass
         $highestCompletedLevel = 0;
         $activeStage = null;
         $activeStageLevel = 0;
 
-        // First pass: Find all completed stages and the highest one
         foreach ($stages as $index => $stage) {
             $progress = $stageProgress[$stage];
             
-            // Check if stage is completed (all lessons done) and has lessons
             if ($progress['total'] > 0 && $progress['completed'] === $progress['total']) {
-                $completedStages++;
-                $highestCompletedLevel = $index + 1; // 1-based indexing
+                $highestCompletedLevel = $index + 1;
+            } elseif (!$activeStage && $progress['percentage'] > 0 && $progress['percentage'] < 100) {
+                $activeStage = $stage;
+                $activeStageLevel = $index + 1;
             }
         }
 
-        // Second pass: Find active stage (first incomplete stage with progress)
-        foreach ($stages as $index => $stage) {
-            $progress = $stageProgress[$stage];
-            
-            if ($progress['percentage'] > 0 && $progress['percentage'] < 100) {
-                if (!$activeStage) { // Take the first active stage
-                    $activeStage = $stage;
-                    $activeStageLevel = $index + 1;
-                }
-            }
-        }
-
-        // Determine current rank and level
+        // Determine current and next ranks
         if ($highestCompletedLevel > 0) {
-            // User has completed at least one full stage
             $currentLevel = $highestCompletedLevel;
-            $currentRank = strtoupper($stages[$highestCompletedLevel - 1]); // Convert to 0-based for array
-            
-            // Set next rank
-            if ($highestCompletedLevel < count($stages)) {
-                $nextRank = strtoupper($stages[$highestCompletedLevel]); // Next stage after completed
-            } else {
-                $nextRank = 'MOOVEY MASTER'; // Already at max
-            }
+            $currentRank = strtoupper($stages[$highestCompletedLevel - 1]);
+            $nextRank = $highestCompletedLevel < count($stages) 
+                ? strtoupper($stages[$highestCompletedLevel]) 
+                : 'MOOVEY MASTER';
         } elseif ($activeStage) {
-            // User is working on a stage but hasn't completed any full stages yet
             $currentLevel = $activeStageLevel;
             $currentRank = strtoupper($activeStage);
-            
-            // Next rank is the next stage after current active stage
-            if ($activeStageLevel < count($stages)) {
-                $nextRank = strtoupper($stages[$activeStageLevel]); // Next stage after active
-            } else {
-                $nextRank = 'MOOVEY MASTER';
-            }
+            $nextRank = $activeStageLevel < count($stages) 
+                ? strtoupper($stages[$activeStageLevel]) 
+                : 'MOOVEY MASTER';
+        } else {
+            $currentLevel = 1;
+            $currentRank = 'MOVE DREAMER';
+            $nextRank = 'PLAN STARTER';
         }
-        // If neither completed nor active stages, keep defaults (Move Dreamer, Level 1)
-
-        // Calculate overall progress percentage
-        $progressPercentage = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
 
         return [
             'totalLessons' => $totalLessons,
             'completedLessons' => $completedLessons,
-            'progressPercentage' => $progressPercentage,
+            'progressPercentage' => $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0,
             'currentLevel' => $currentLevel,
             'currentRank' => $currentRank,
             'nextRank' => $nextRank,
             'stageProgress' => $stageProgress,
-            'completedStages' => $completedStages,
+            'completedStages' => $highestCompletedLevel,
             'highestCompletedLevel' => $highestCompletedLevel,
             'activeStage' => $activeStage,
             'nextLesson' => $nextLesson,

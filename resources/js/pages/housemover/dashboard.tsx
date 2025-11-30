@@ -274,10 +274,23 @@ export default function Dashboard({
         }
     }, []);
 
+    const [showTaskCreator, setShowTaskCreator] = useState<number | null>(null);
+    const [newTaskText, setNewTaskText] = useState('');
+    const [personalDetails, setPersonalDetails] = useState<PersonalDetails>(personalDetailsFromProps);
+    const [selectedCtaTasks, setSelectedCtaTasks] = useState<Set<string>>(new Set());
+    const [userPriorityTasks, setUserPriorityTasks] = useState<Task[]>([]);
+    // Local state for allUserTasks to enable real-time updates when tasks are completed
+    const [localAllUserTasks, setLocalAllUserTasks] = useState(allUserTasks);
+
+    // Sync localAllUserTasks when props change (e.g., after Inertia navigation)
+    useEffect(() => {
+        setLocalAllUserTasks(allUserTasks);
+    }, [allUserTasks]);
+
     // Optimized save task to priority list with optimistic updates
     const saveToPriorityList = useCallback(async (taskId: string) => {
         // Optimistic update - add immediately to UI
-        const task = allUserTasks.find(t => t.id.toString() === taskId);
+        const task = localAllUserTasks.find(t => t.id.toString() === taskId);
         if (task) {
             const optimisticTask = {
                 id: task.id.toString(),
@@ -320,7 +333,7 @@ export default function Dashboard({
             setUserPriorityTasks(prev => prev.filter(t => t.id !== taskId));
         }
         return false;
-    }, [allUserTasks]);
+    }, [localAllUserTasks]);
 
     // Optimized remove task from priority list with optimistic updates
     const removeFromPriorityList = useCallback(async (taskId: string) => {
@@ -362,11 +375,6 @@ export default function Dashboard({
         }
         return false;
     }, []);
-    const [showTaskCreator, setShowTaskCreator] = useState<number | null>(null);
-    const [newTaskText, setNewTaskText] = useState('');
-    const [personalDetails, setPersonalDetails] = useState<PersonalDetails>(personalDetailsFromProps);
-    const [selectedCtaTasks, setSelectedCtaTasks] = useState<Set<string>>(new Set());
-    const [userPriorityTasks, setUserPriorityTasks] = useState<Task[]>([]);
 
     // Icon mapping function to convert emoji icons to professional SVG icons
     const getSectionIcon = (iconName: string, iconSize: string = "w-6 h-6") => {
@@ -772,8 +780,21 @@ export default function Dashboard({
                         await removeFromPriorityList(taskId);
                     }
                     
+                    // Update the task status in Moving Tasks section (allUserTasks)
+                    setLocalAllUserTasks(prev => prev.map(task => 
+                        task.id.toString() === taskId 
+                            ? { ...task, completed: true, urgency: 'normal' as const }
+                            : task
+                    ));
+                    
+                    // Invalidate cache to ensure fresh data on next load
+                    API_CACHE.delete('academy-tasks-1');
+                    
                     // Show success message
                     alert(`"${taskTitle}" has been marked as completed! 🎉`);
+                    
+                    // Use Inertia to refresh task data without full page reload
+                    router.reload({ only: ['allUserTasks', 'taskStats', 'upcomingTasks'] });
                 } else {
                     throw new Error(data.message || 'Failed to complete task');
                 }
@@ -916,13 +937,13 @@ export default function Dashboard({
 
     // Memoized CTA tasks by category
     const ctaTasksByCategory = useMemo(() => {
-        const ctaTasks = allUserTasks || [];
+        const ctaTasks = localAllUserTasks || [];
         return {
             'Pre-Move': ctaTasks.filter(task => task.category === 'Pre-Move'),
             'In-Move': ctaTasks.filter(task => task.category === 'In-Move'),
             'Post-Move': ctaTasks.filter(task => task.category === 'Post-Move')
         };
-    }, [allUserTasks]);
+    }, [localAllUserTasks]);
 
     // Match Move Details logic for coloring progress
     const getProgressColor = (progress: number) => (progress > 0 ? 'bg-[#00BCD4]' : 'bg-gray-300');
@@ -948,26 +969,14 @@ export default function Dashboard({
 
     // Add selected CTA tasks to priority tasks
     const addSelectedTasksToPriority = async () => {
-        const tasksToAdd = allUserTasks.filter(task => 
-            selectedCtaTasks.has(task.id.toString())
+        const tasksToAdd = localAllUserTasks.filter(task => 
+            selectedCtaTasks.has(task.id.toString()) &&
+            !userPriorityTasks.some(pt => pt.id === task.id.toString())
         );
 
+        // saveToPriorityList handles optimistic update internally for each task
         for (const task of tasksToAdd) {
-            const success = await saveToPriorityList(task.id.toString());
-            if (success) {
-                const newPriorityTask = {
-                    id: task.id.toString(),
-                    title: task.title,
-                    icon: '🎓',
-                    dueDate: 'From Academy',
-                    urgency: 'moderate' as const,
-                    category: task.category,
-                    completed: false,
-                    estimatedTime: '15 mins',
-                    description: task.description,
-                };
-                setUserPriorityTasks(prev => [...prev, newPriorityTask]);
-            }
+            await saveToPriorityList(task.id.toString());
         }
 
         setSelectedCtaTasks(new Set());
@@ -983,24 +992,12 @@ export default function Dashboard({
     const handleDropOnPriority = async (e: React.DragEvent) => {
         e.preventDefault();
         const taskId = e.dataTransfer.getData('text/plain');
-        const task = allUserTasks.find(t => t.id.toString() === taskId);
+        const task = localAllUserTasks.find(t => t.id.toString() === taskId);
         
+        // Check if task exists and is not already in priority list
         if (task && !userPriorityTasks.some(pt => pt.id === taskId)) {
-            const success = await saveToPriorityList(taskId);
-            if (success) {
-                const newPriorityTask = {
-                    id: task.id.toString(),
-                    title: task.title,
-                    icon: '🎓',
-                    dueDate: 'From Academy',
-                    urgency: 'moderate' as const,
-                    category: task.category,
-                    completed: false,
-                    estimatedTime: '15 mins',
-                    description: task.description,
-                };
-                setUserPriorityTasks(prev => [...prev, newPriorityTask]);
-            }
+            // saveToPriorityList handles optimistic update internally, no need to update state here
+            await saveToPriorityList(taskId);
         }
     };
 
