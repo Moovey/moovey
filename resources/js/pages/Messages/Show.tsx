@@ -283,7 +283,7 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                 className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
                             >
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 12H5M5 12l7-7M5 12l7 7" />
                                 </svg>
                                 Back to all chats
                             </Link>
@@ -331,7 +331,7 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                         className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100"
                                     >
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 12H5M5 12l7-7M5 12l7 7" />
                                         </svg>
                                     </Link>
                                     
@@ -364,7 +364,8 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                         title="View Profile"
                                     >
                                         <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            <circle cx="12" cy="8" r="4" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 21c0-3.866-3.582-7-8-7s-8 3.134-8 7" />
                                         </svg>
                                     </Link>
                                 </div>
@@ -432,8 +433,10 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                                                                 className="p-1 hover:bg-gray-200 rounded-full transition-colors opacity-0 group-hover:opacity-100"
                                                                                 title="More options"
                                                                             >
-                                                                                <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-                                                                                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                                                                                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <circle cx="12" cy="12" r="1" fill="currentColor" />
+                                                                                    <circle cx="19" cy="12" r="1" fill="currentColor" />
+                                                                                    <circle cx="5" cy="12" r="1" fill="currentColor" />
                                                                                 </svg>
                                                                             </button>
                                                                             
@@ -454,7 +457,7 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                                                                             className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                                                                         >
                                                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M4 7h16" />
                                                                                             </svg>
                                                                                             Delete for everyone
                                                                                         </button>
@@ -515,8 +518,10 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                                                                 className="p-1 hover:bg-gray-200 rounded-full transition-colors opacity-0 group-hover:opacity-100"
                                                                                 title="More options"
                                                                             >
-                                                                                <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-                                                                                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                                                                                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <circle cx="12" cy="12" r="1" fill="currentColor" />
+                                                                                    <circle cx="19" cy="12" r="1" fill="currentColor" />
+                                                                                    <circle cx="5" cy="12" r="1" fill="currentColor" />
                                                                                 </svg>
                                                                             </button>
                                                                             
@@ -527,7 +532,7 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                                                                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                                                                                     >
                                                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M4 7h16" />
                                                                                         </svg>
                                                                                         Delete for me
                                                                                     </button>
@@ -603,7 +608,7 @@ export default function ConversationShow({ conversation, messages: initialMessag
                                                 <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                             ) : (
                                                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
                                                 </svg>
                                             )}
                                         </button>

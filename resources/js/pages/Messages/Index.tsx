@@ -32,6 +32,8 @@ export default function MessagesIndex({ conversations, unreadCount }: MessagesIn
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredConversations, setFilteredConversations] = useState(conversations);
     const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [showComposeModal, setShowComposeModal] = useState(false);
 
     useEffect(() => {
         if (searchQuery.trim() === '') {
@@ -44,6 +46,24 @@ export default function MessagesIndex({ conversations, unreadCount }: MessagesIn
             );
         }
     }, [searchQuery, conversations]);
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = () => setMenuOpen(false);
+        if (menuOpen) {
+            document.addEventListener('click', handleClickOutside);
+            return () => document.removeEventListener('click', handleClickOutside);
+        }
+    }, [menuOpen]);
+
+    const handleMenuToggle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setMenuOpen(!menuOpen);
+    };
+
+    const handleComposeClick = () => {
+        router.visit('/trade-directory');
+    };
 
     const handleConversationClick = (conversationId: number) => {
         setSelectedConversation(conversationId);
@@ -73,14 +93,58 @@ export default function MessagesIndex({ conversations, unreadCount }: MessagesIn
                             <div className="flex items-center justify-between mb-3 sm:mb-4">
                                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Chats</h1>
                                 <div className="flex items-center space-x-1 sm:space-x-2">
-                                    <button className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors">
-                                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                        </svg>
-                                    </button>
-                                    <button className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors">
-                                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    <div className="relative">
+                                        <button 
+                                            onClick={handleMenuToggle}
+                                            className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                            title="Options"
+                                        >
+                                            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6h.01M12 12h.01M12 18h.01" />
+                                            </svg>
+                                        </button>
+                                        {menuOpen && (
+                                            <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50">
+                                                <Link
+                                                    href="/profile-settings"
+                                                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                    </svg>
+                                                    Settings
+                                                </Link>
+                                                <button
+                                                    onClick={() => {
+                                                        setMenuOpen(false);
+                                                        setSearchQuery('');
+                                                    }}
+                                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                    </svg>
+                                                    Refresh Conversations
+                                                </button>
+                                                <Link
+                                                    href="/trade-directory"
+                                                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                    </svg>
+                                                    Browse Businesses
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button 
+                                        onClick={handleComposeClick}
+                                        className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                        title="Find businesses to connect"
+                                    >
+                                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                                         </svg>
                                     </button>
                                 </div>
@@ -98,7 +162,7 @@ export default function MessagesIndex({ conversations, unreadCount }: MessagesIn
                                     placeholder="Search Messenger"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 bg-gray-100 border-0 rounded-full text-sm focus:outline-none focus:bg-white focus:ring-1 focus:ring-[#17B7C7] transition-all"
+                                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 bg-gray-100 border-0 rounded-full text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-1 focus:ring-[#17B7C7] transition-all"
                                 />
                             </div>
                         </div>
