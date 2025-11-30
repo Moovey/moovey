@@ -71,8 +71,10 @@ export default function LearningJourneyProgress({
                                     return "Amazing work! You're more than halfway to becoming a moving expert!";
                                 } else if (overallProgress < 100) {
                                     return "Outstanding! You're so close to mastering all the moving skills. Push through to the finish!";
-                                } else {
+                                } else if (overallProgress === 100 && totalLessons > 0) {
                                     return "Congratulations! You've completed your journey and become a true Moovey Star! 🌟";
+                                } else {
+                                    return "Welcome to your learning journey! Start with your first lesson to begin your path to moving mastery.";
                                 }
                             })()}
                         </span>
@@ -411,12 +413,19 @@ export default function LearningJourneyProgress({
                                             and you'll have mastered all the moving skills.
                                         </>
                                     );
-                                } else {
+                                } else if (overallProgress === 100 && totalLessons > 0) {
                                     return (
                                         <>
                                             🏆 <strong>Congratulations, Moovey Star!</strong><br />
                                             You've completed your entire learning journey! You now have the knowledge 
                                             and skills to handle any move with confidence.
+                                        </>
+                                    );
+                                } else {
+                                    return (
+                                        <>
+                                            📚 <strong>Your Journey Awaits!</strong><br />
+                                            Start your learning journey today and unlock the path to becoming a Moovey Star.
                                         </>
                                     );
                                 }

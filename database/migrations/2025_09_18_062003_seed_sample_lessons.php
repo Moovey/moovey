@@ -9,9 +9,16 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     * 
+     * Note: Sample lesson seeding has been disabled.
+     * Lessons should be created through the admin panel instead.
      */
     public function up(): void
     {
+        // Sample lesson seeding disabled - lessons should be created via admin panel
+        // Uncomment below if you need to recreate sample lessons for testing
+        
+        /*
         $lessons = [
             [
                 'title' => 'Why Move? Your Big Reason',
@@ -72,6 +79,7 @@ return new class extends Migration
         foreach ($lessons as $lesson) {
             Lesson::create($lesson);
         }
+        */
     }
 
     /**
