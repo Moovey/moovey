@@ -101,7 +101,7 @@ class BusinessController extends Controller
      */
     public function profile(): Response
     {
-        return Inertia::render('business/profile');
+        return Inertia::render('business/settings');
     }
 
     /**
