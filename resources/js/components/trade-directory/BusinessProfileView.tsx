@@ -50,6 +50,28 @@ export default function BusinessProfileView({ profile }: BusinessProfileProps) {
     // Inertia form for unsaving provider
     const unsaveForm = useForm({});
 
+    // Inertia form for connecting with business
+    const connectForm = useForm({
+        business_profile_id: profile.id,
+        message: '',
+    });
+
+    const handleConnect = () => {
+        connectForm.post('/api/messages/connect-business', {
+            onSuccess: () => {
+                toast.success('Connected! Opening conversation...');
+                // Dispatch event to notify MessageDropdown and other components
+                window.dispatchEvent(new CustomEvent('conversationUpdated'));
+                // Inertia will handle the redirect automatically
+            },
+            onError: (errors) => {
+                console.error('Error connecting:', errors);
+                const errorMessage = (errors as any)?.message || 'Failed to connect. Please try again.';
+                toast.error(errorMessage);
+            },
+        });
+    };
+
     const handleSave = () => {
         if (isSaved) {
             // Unsave
@@ -81,6 +103,8 @@ export default function BusinessProfileView({ profile }: BusinessProfileProps) {
     };
 
     const isSaving = saveForm.processing || unsaveForm.processing;
+    const isConnecting = connectForm.processing;
+    
     return (
         <>
             <Head title={`${profile.name} - Business Profile`} />
@@ -239,8 +263,14 @@ export default function BusinessProfileView({ profile }: BusinessProfileProps) {
                             <div className="lg:col-span-1">
                                 <div className="bg-white rounded-xl shadow-lg p-6 sticky top-6">
                                     <div className="space-y-4">
-                                        <button className="w-full bg-[#17B7C7] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors">
-                                            Connect Now
+                                        <button 
+                                            onClick={handleConnect}
+                                            disabled={isConnecting}
+                                            className={`w-full bg-[#17B7C7] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors ${
+                                                isConnecting ? 'opacity-50 cursor-not-allowed' : ''
+                                            }`}
+                                        >
+                                            {isConnecting ? 'Connecting...' : 'Connect Now'}
                                         </button>
                                         <button className="w-full border-2 border-[#17B7C7] text-[#17B7C7] px-6 py-3 rounded-lg font-semibold hover:bg-[#17B7C7] hover:text-white transition-colors">
                                             Get Quote
