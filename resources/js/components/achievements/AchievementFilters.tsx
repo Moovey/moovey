@@ -26,8 +26,8 @@ export default function AchievementFilters({
                     {/* Status Filter */}
                     <select 
                         value={filter} 
-                        onChange={(e) => setFilter(e.target.value as any)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent"
+                        onChange={(e) => setFilter(e.target.value as 'all' | 'earned' | 'in-progress' | 'locked')}
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent text-gray-900 bg-white"
                     >
                         <option value="all">All Status</option>
                         <option value="earned">Earned</option>
@@ -39,7 +39,7 @@ export default function AchievementFilters({
                     <select 
                         value={categoryFilter} 
                         onChange={(e) => setCategoryFilter(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent"
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent text-gray-900 bg-white"
                     >
                         <option value="all">All Categories</option>
                         {categories.map(category => (
@@ -54,7 +54,7 @@ export default function AchievementFilters({
                     placeholder="Search achievements..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent"
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
                 />
             </div>
         </div>

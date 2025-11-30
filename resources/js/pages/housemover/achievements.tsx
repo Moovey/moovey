@@ -16,7 +16,23 @@ import {
 } from '@/components/achievements';
 import type { Achievement } from '@/types/achievement';
 
-export default function Achievements() {
+interface AcademyProgress {
+    totalLessons: number;
+    completedLessons: number;
+    progressPercentage: number;
+    currentLevel: number;
+    currentRank: string;
+    nextRank: string;
+    completedStages: number;
+    highestCompletedLevel: number;
+}
+
+interface AchievementsProps {
+    academyProgress: AcademyProgress;
+    learningAchievements: Achievement[];
+}
+
+export default function Achievements({ academyProgress, learningAchievements }: AchievementsProps) {
     const { taskData } = useMoveProgress();
     const [filter, setFilter] = useState<'all' | 'earned' | 'in-progress' | 'locked'>('all');
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -24,122 +40,8 @@ export default function Achievements() {
     const [showCelebration, setShowCelebration] = useState(false);
     const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement | null>(null);
 
-    const [achievements, setAchievements] = useState<Achievement[]>([
-        // Learning Achievements
-        {
-            id: 'learn-1',
-            title: 'Move Dreamer',
-            description: 'Just starting your moving journey',
-            icon: 'Move Dreamer.png',
-            status: 'earned',
-            category: 'Learning',
-            earnedDate: '2025-08-10',
-            points: 100,
-            difficulty: 'Beginner'
-        },
-        {
-            id: 'learn-2',
-            title: 'Plan Starter',
-            description: 'Beginning to plan your move',
-            icon: 'Plan Starter.png',
-            status: 'earned',
-            category: 'Learning',
-            earnedDate: '2025-08-12',
-            points: 150,
-            difficulty: 'Beginner'
-        },
-        {
-            id: 'learn-3',
-            title: 'Moovey Critic',
-            description: 'Developing moving expertise',
-            icon: 'Moovey Critic.png',
-            status: 'locked',
-            category: 'Learning',
-            requirements: 'Complete 5 learning modules',
-            progress: 2,
-            maxProgress: 5,
-            points: 200,
-            difficulty: 'Beginner'
-        },
-        {
-            id: 'learn-4',
-            title: 'Prep Pioneer',
-            description: 'Leading the way in preparation',
-            icon: 'Prep Pioneer.png',
-            status: 'locked',
-            category: 'Learning',
-            requirements: 'Complete all basic lessons',
-            progress: 0,
-            maxProgress: 10,
-            points: 300,
-            difficulty: 'Intermediate'
-        },
-        {
-            id: 'learn-5',
-            title: 'Moovey Director',
-            description: 'Orchestrating successful moves',
-            icon: 'Moovey Director.png',
-            status: 'locked',
-            category: 'Learning',
-            requirements: 'Achieve 100% on all quizzes',
-            progress: 0,
-            maxProgress: 15,
-            points: 500,
-            difficulty: 'Expert'
-        },
-        {
-            id: 'learn-6',
-            title: 'Move Rockstar',
-            description: 'A true moving superstar',
-            icon: 'Move Rockstar.png',
-            status: 'locked',
-            category: 'Learning',
-            requirements: 'Complete advanced moving courses',
-            progress: 0,
-            maxProgress: 20,
-            points: 750,
-            difficulty: 'Expert'
-        },
-        {
-            id: 'learn-7',
-            title: 'New Home Navigator',
-            description: 'Expert at finding new homes',
-            icon: 'Home Navigator.png',
-            status: 'locked',
-            category: 'Learning',
-            requirements: 'Master home search techniques',
-            progress: 0,
-            maxProgress: 25,
-            points: 1000,
-            difficulty: 'Expert'
-        },
-        {
-            id: 'learn-8',
-            title: 'Settler Specialist',
-            description: 'Master of settling into new places',
-            icon: 'Settler Specialist.png',
-            status: 'locked',
-            category: 'Learning',
-            requirements: 'Complete settling-in masterclass',
-            progress: 0,
-            maxProgress: 30,
-            points: 1500,
-            difficulty: 'Expert'
-        },
-        {
-            id: 'learn-9',
-            title: 'Moovey Star',
-            description: 'The ultimate moving legend',
-            icon: 'Moovey Star.png',
-            status: 'locked',
-            category: 'Learning',
-            requirements: 'Achieve perfect moving mastery',
-            progress: 0,
-            maxProgress: 50,
-            points: 2500,
-            difficulty: 'Expert'
-        },
-
+    // Merge real learning achievements with placeholder achievements for other categories
+    const placeholderAchievements: Achievement[] = [
         // Skills Achievements
         {
             id: 'skill-1',
@@ -464,11 +366,17 @@ export default function Achievements() {
             points: 25000,
             difficulty: 'Expert'
         }
+    ];
+
+    // Combine real learning achievements with placeholder achievements
+    const [achievements, setAchievements] = useState<Achievement[]>([
+        ...learningAchievements,
+        ...placeholderAchievements
     ]);
 
     const categories = ['Learning', 'Skills', 'Community', 'Planning', 'Networking', 'Mastery'];
 
-    const filteredAchievements = achievements.filter(achievement => {
+    const filteredAchievements = achievements.filter((achievement: Achievement) => {
         const matchesStatus = filter === 'all' || achievement.status === filter;
         const matchesCategory = categoryFilter === 'all' || achievement.category === categoryFilter;
         const matchesSearch = achievement.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -477,18 +385,21 @@ export default function Achievements() {
     });
 
     const getStatusCounts = () => {
-        const earned = achievements.filter(a => a.status === 'earned').length;
-        const inProgress = achievements.filter(a => a.status === 'in-progress').length;
-        const locked = achievements.filter(a => a.status === 'locked').length;
-        const totalPoints = achievements.filter(a => a.status === 'earned').reduce((sum, a) => sum + a.points, 0);
+        const earned = achievements.filter((a: Achievement) => a.status === 'earned').length;
+        const inProgress = achievements.filter((a: Achievement) => a.status === 'in-progress').length;
+        const locked = achievements.filter((a: Achievement) => a.status === 'locked').length;
+        // Only count points from Learning category (real achievements from academy progress)
+        const totalPoints = achievements
+            .filter((a: Achievement) => a.status === 'earned' && a.category === 'Learning')
+            .reduce((sum: number, a: Achievement) => sum + a.points, 0);
         return { earned, inProgress, locked, totalPoints };
     };
 
     const getNextRecommendation = () => {
-        const inProgress = achievements.find(a => a.status === 'in-progress');
+        const inProgress = achievements.find((a: Achievement) => a.status === 'in-progress');
         if (inProgress) return inProgress;
         
-        const locked = achievements.find(a => a.status === 'locked' && a.progress && a.progress > 0);
+        const locked = achievements.find((a: Achievement) => a.status === 'locked' && a.progress && a.progress > 0);
         return locked;
     };
 
@@ -527,13 +438,13 @@ export default function Achievements() {
     };
 
     const simulateAchievementUnlock = (achievementId: string) => {
-        setAchievements(prev => prev.map(achievement => 
+        setAchievements((prev: Achievement[]) => prev.map((achievement: Achievement) => 
             achievement.id === achievementId 
                 ? { ...achievement, status: 'earned' as const, earnedDate: new Date().toISOString().split('T')[0] }
                 : achievement
         ));
         
-        const unlockedAchievement = achievements.find(a => a.id === achievementId);
+        const unlockedAchievement = achievements.find((a: Achievement) => a.id === achievementId);
         if (unlockedAchievement) {
             setNewlyUnlocked(unlockedAchievement);
             setShowCelebration(true);
@@ -566,7 +477,7 @@ export default function Achievements() {
             />
 
             {/* Rank Progress Bar */}
-            <AchievementRankProgress statusCounts={statusCounts} />
+            <AchievementRankProgress statusCounts={statusCounts} academyProgress={academyProgress} />
 
             {/* Filters */}
             <AchievementFilters
@@ -586,12 +497,6 @@ export default function Achievements() {
                 categoryFilter={categoryFilter}
                 onAchievementClick={handleAchievementClick}
                 getTimeToComplete={getTimeToComplete}
-            />
-
-            {/* Debug: Simulate Achievement Unlock */}
-            <AchievementDebugSection
-                achievements={achievements}
-                onSimulateUnlock={simulateAchievementUnlock}
             />
 
           

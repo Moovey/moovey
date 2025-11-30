@@ -122,6 +122,7 @@ interface DashboardProps {
       difficulty: string;
     };
   };
+  totalPoints?: number;
   personalDetails?: PersonalDetails;
   activeSection?: number;
 }
@@ -162,6 +163,7 @@ export default function Dashboard({
         nextRank: 'PLAN STARTER',
         nextLesson: undefined
     },
+    totalPoints = 0,
     personalDetails: personalDetailsFromProps = {
         currentAddress: '',
         newAddress: '',
@@ -1156,7 +1158,7 @@ export default function Dashboard({
                     {/* Vouchers & Rewards Section - Lazy Loaded */}
                     {visibleSections.has('vouchers') ? (
                         <Suspense fallback={<LoadingSkeleton className="h-40" />}>
-                            <SimpleVouchersRewards />
+                            <SimpleVouchersRewards totalPoints={totalPoints} />
                         </Suspense>
                     ) : (
                         <LoadingSkeleton className="h-40" />

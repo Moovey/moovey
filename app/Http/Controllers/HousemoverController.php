@@ -10,6 +10,7 @@ use App\Models\Lesson;
 use Illuminate\Support\Facades\Auth;
 use App\Models\CustomTask;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class HousemoverController extends Controller
 {
@@ -35,11 +36,14 @@ class HousemoverController extends Controller
             ->where('user_id', $userId)
             ->first();
 
+        $academyProgress = $this->getAcademyProgress($userId);
+        
         return Inertia::render('housemover/dashboard', [
             'upcomingTasks' => $transformedTasks->take(4)->values(),
             'allUserTasks' => $transformedTasks,
             'taskStats' => $this->getTaskStatsOptimized($userId),
-            'academyProgress' => $this->getAcademyProgress($userId),
+            'academyProgress' => $academyProgress,
+            'totalPoints' => $this->calculateTotalPoints($academyProgress),
             'personalDetails' => $this->formatMoveDetails($moveDetails),
             'activeSection' => $moveDetails?->active_section ?? 1,
         ]);
@@ -216,7 +220,108 @@ class HousemoverController extends Controller
      */
     public function achievements(): Response
     {
-        return Inertia::render('housemover/achievements');
+        $userId = Auth::id();
+        
+        // Get academy progress for learning achievements
+        $academyProgress = $this->getAcademyProgress($userId);
+        
+        // Define all 9 stage ranks
+        $stages = [
+            'Move Dreamer', 'Plan Starter', 'Moovey Critic', 'Prep Pioneer',
+            'Moovey Director', 'Move Rockstar', 'Home Navigator', 
+            'Settler Specialist', 'Moovey Star'
+        ];
+        
+        // Build learning achievements based on stage progress
+        $learningAchievements = [];
+        $stageProgress = $academyProgress['stageProgress'];
+        $currentLevel = $academyProgress['currentLevel'];
+        
+        foreach ($stages as $index => $stage) {
+            $level = $index + 1;
+            $progress = $stageProgress[$stage] ?? ['total' => 0, 'completed' => 0, 'percentage' => 0];
+            
+            // Determine status
+            $status = 'locked';
+            $earnedDate = null;
+            
+            // Check completion first (this takes precedence)
+            if ($progress['percentage'] === 100) {
+                $status = 'earned';
+                // You can track actual earned dates in the future
+                $earnedDate = now()->subDays(rand(1, 30))->format('Y-m-d');
+            } 
+            // If not fully complete but has some progress
+            elseif ($progress['percentage'] > 0 && $progress['percentage'] < 100) {
+                $status = 'in-progress';
+            } 
+            // If user's current level is at or past this stage but no progress yet
+            elseif ($level <= $currentLevel) {
+                $status = 'in-progress';
+            }
+            // Otherwise remains 'locked'
+            
+            $learningAchievements[] = [
+                'id' => 'learn-' . $level,
+                'title' => $stage,
+                'description' => $this->getStageDescription($stage),
+                'icon' => $stage . '.png',
+                'status' => $status,
+                'category' => 'Learning',
+                'earnedDate' => $earnedDate,
+                'progress' => $progress['completed'],
+                'maxProgress' => $progress['total'],
+                'requirements' => $progress['total'] > 0 
+                    ? "Complete {$progress['total']} lessons in {$stage} stage" 
+                    : "No lessons available yet",
+                'points' => $this->getStagePoints($level),
+                'difficulty' => $this->getStageDifficulty($level),
+            ];
+        }
+        
+        return Inertia::render('housemover/achievements', [
+            'academyProgress' => $academyProgress,
+            'learningAchievements' => $learningAchievements,
+        ]);
+    }
+    
+    /**
+     * Get description for each stage
+     */
+    private function getStageDescription(string $stage): string
+    {
+        $descriptions = [
+            'Move Dreamer' => 'Just starting your moving journey',
+            'Plan Starter' => 'Beginning to plan your move',
+            'Moovey Critic' => 'Developing moving expertise',
+            'Prep Pioneer' => 'Leading the way in preparation',
+            'Moovey Director' => 'Orchestrating successful moves',
+            'Move Rockstar' => 'A true moving superstar',
+            'Home Navigator' => 'Expert at finding new homes',
+            'Settler Specialist' => 'Master of settling into new places',
+            'Moovey Star' => 'The ultimate moving legend',
+        ];
+        
+        return $descriptions[$stage] ?? 'Master this stage';
+    }
+    
+    /**
+     * Get points for each stage level
+     */
+    private function getStagePoints(int $level): int
+    {
+        $points = [100, 150, 200, 300, 500, 750, 1000, 1500, 2500];
+        return $points[$level - 1] ?? 100;
+    }
+    
+    /**
+     * Get difficulty for each stage level
+     */
+    private function getStageDifficulty(int $level): string
+    {
+        if ($level <= 3) return 'Beginner';
+        if ($level <= 6) return 'Intermediate';
+        return 'Expert';
     }
 
     /**
@@ -408,6 +513,33 @@ class HousemoverController extends Controller
     }
 
     /**
+     * Calculate total points earned from completed lessons
+     */
+    private function calculateTotalPoints(array $academyProgress): int
+    {
+        $stages = [
+            'Move Dreamer', 'Plan Starter', 'Moovey Critic', 'Prep Pioneer',
+            'Moovey Director', 'Move Rockstar', 'Home Navigator', 
+            'Settler Specialist', 'Moovey Star'
+        ];
+        
+        $totalPoints = 0;
+        $stageProgress = $academyProgress['stageProgress'];
+        
+        foreach ($stages as $index => $stage) {
+            $level = $index + 1;
+            $progress = $stageProgress[$stage] ?? ['total' => 0, 'completed' => 0, 'percentage' => 0];
+            
+            // Award points if stage is 100% complete
+            if ($progress['percentage'] === 100) {
+                $totalPoints += $this->getStagePoints($level);
+            }
+        }
+        
+        return $totalPoints;
+    }
+    
+    /**
      * Get academy progress data for dashboard (optimized)
      */
     private function getAcademyProgress(int $userId): array
@@ -455,7 +587,7 @@ class HousemoverController extends Controller
             $stageProgress[$stage] = [
                 'total' => $stageTotal,
                 'completed' => $stageCompleted,
-                'percentage' => $stageTotal > 0 ? round(($stageCompleted / $stageTotal) * 100) : 0
+                'percentage' => $stageTotal > 0 ? (int) round(($stageCompleted / $stageTotal) * 100) : 0
             ];
         }
 

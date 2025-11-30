@@ -1,4 +1,13 @@
-export default function SimpleVouchersRewards() {
+interface SimpleVouchersRewardsProps {
+    totalPoints?: number;
+}
+
+export default function SimpleVouchersRewards({ totalPoints = 0 }: SimpleVouchersRewardsProps) {
+    // Calculate progress towards next voucher tier
+    const nextTierPoints = 2500; // Gold tier requirement
+    const pointsNeeded = Math.max(0, nextTierPoints - totalPoints);
+    const progressPercentage = Math.min(100, (totalPoints / nextTierPoints) * 100);
+    
     return (
         <section className="bg-white rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-4 md:p-6 lg:p-8">
             {/* Coins & Voucher Rewards Section - Responsive */}
@@ -16,7 +25,7 @@ export default function SimpleVouchersRewards() {
                                 </div>
                                 <div>
                                     <div className="text-xs text-black opacity-80 mb-1">Coins Earned</div>
-                                    <div className="text-2xl font-bold text-black">2,459</div>
+                                    <div className="text-2xl font-bold text-black">{totalPoints.toLocaleString()}</div>
                                     <div className="text-xs text-black opacity-90">Keep earning to unlock vouchers!</div>
                                 </div>
                             </div>
@@ -30,7 +39,7 @@ export default function SimpleVouchersRewards() {
                                 </div>
                                 <div>
                                     <div className="text-xs sm:text-sm text-black opacity-80 mb-1">Coins Earned</div>
-                                    <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black">2,459</div>
+                                    <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black">{totalPoints.toLocaleString()}</div>
                                     <div className="text-xs sm:text-sm text-black opacity-90">Keep earning to unlock vouchers!</div>
                                 </div>
                             </div>
@@ -43,24 +52,24 @@ export default function SimpleVouchersRewards() {
                                 
                                 {/* Mobile Title */}
                                 <div className="block sm:hidden text-base font-bold mb-3 text-[#1A237E]">
-                                    41 more coins for £25 Discount
+                                    {pointsNeeded > 0 ? `${pointsNeeded} more coins for £25 Discount` : 'Gold Tier Unlocked!'}
                                 </div>
                                 
                                 {/* Desktop Title */}
                                 <div className="hidden sm:block text-sm sm:text-base lg:text-lg font-bold mb-3 text-[#1A237E]">
-                                    41 more coins for £25 Moving Services Discount
+                                    {pointsNeeded > 0 ? `${pointsNeeded} more coins for £25 Moving Services Discount` : 'Gold Tier Unlocked!'}
                                 </div>
                                 
                                 {/* Progress Bar - Responsive */}
                                 <div className="bg-[#F5F5F5] rounded-full h-2 sm:h-3 mb-3 overflow-hidden">
                                     <div 
                                         className="bg-[#00BCD4] h-full rounded-full transition-all duration-700 ease-out shadow-sm"
-                                        style={{ width: '98.4%' }}
+                                        style={{ width: `${progressPercentage}%` }}
                                     ></div>
                                 </div>
                                 
                                 <div className="flex justify-between items-center text-xs sm:text-sm">
-                                    <span className="text-gray-700">98.4% complete</span>
+                                    <span className="text-gray-700">{progressPercentage.toFixed(1)}% complete</span>
                                     <span className="font-medium text-[#00BCD4]">Gold Tier</span>
                                 </div>
                             </div>
@@ -117,18 +126,24 @@ export default function SimpleVouchersRewards() {
                             </div>
                             
                             {/* Next Tier Preview - Responsive */}
-                            <div className="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-gray-900 border-2 border-dashed border-gray-300">
+                            <div className={`rounded-lg p-3 sm:p-4 text-gray-900 border-2 ${pointsNeeded > 0 ? 'bg-[#F5F5F5] border-dashed border-gray-300' : 'bg-gradient-to-br from-yellow-100 to-yellow-200 border-yellow-400'}`}>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center space-x-2">
-                                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500 opacity-50"></div>
-                                        <span className="font-medium text-gray-600 text-sm sm:text-base">Gold</span>
+                                        <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500 ${pointsNeeded > 0 ? 'opacity-50' : 'opacity-100'}`}></div>
+                                        <span className={`font-medium text-sm sm:text-base ${pointsNeeded > 0 ? 'text-gray-600' : 'text-yellow-800'}`}>Gold</span>
                                     </div>
                                     <span className="text-xs text-gray-500">2500 coins</span>
                                 </div>
-                                <div className="text-base sm:text-lg font-bold text-gray-500 mb-2 sm:mb-3">£25 Discount</div>
-                                <div className="w-full bg-[#F5F5F5] text-gray-600 py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium text-center">
-                                    41 more coins
-                                </div>
+                                <div className={`text-base sm:text-lg font-bold mb-2 sm:mb-3 ${pointsNeeded > 0 ? 'text-gray-500' : 'text-yellow-800'}`}>£25 Discount</div>
+                                {pointsNeeded > 0 ? (
+                                    <div className="w-full bg-[#F5F5F5] text-gray-600 py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium text-center">
+                                        {pointsNeeded} more coins
+                                    </div>
+                                ) : (
+                                    <button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors">
+                                        Redeem Now
+                                    </button>
+                                )}
                             </div>
                         </div>
                         
