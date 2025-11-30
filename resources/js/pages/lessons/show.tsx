@@ -80,6 +80,10 @@ export default function LessonView({
                 const data = await response.json();
                 setIsCompleted(true);
                 
+                // Trigger global academy progress update for dashboard
+                // This will ensure rank updates are reflected immediately
+                window.dispatchEvent(new CustomEvent('academyProgressUpdated'));
+                
                 // Show success message
                 if (data.nextLesson && data.nextLesson.is_accessible) {
                     // Optional: Auto-redirect to next lesson or show next lesson button

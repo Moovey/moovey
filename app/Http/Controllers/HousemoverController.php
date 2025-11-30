@@ -336,19 +336,32 @@ class HousemoverController extends Controller
         }
 
         // Determine current and next ranks
+        // FIXED: When a stage is fully completed, user should be promoted to the NEXT rank
         if ($highestCompletedLevel > 0) {
-            $currentLevel = $highestCompletedLevel;
-            $currentRank = strtoupper($stages[$highestCompletedLevel - 1]);
-            $nextRank = $highestCompletedLevel < count($stages) 
-                ? strtoupper($stages[$highestCompletedLevel]) 
-                : 'MOOVEY MASTER';
+            // User has completed at least one full stage
+            // If they completed stage N, they are now at rank N+1 (next stage)
+            if ($highestCompletedLevel < count($stages)) {
+                // Still stages remaining - promote to next stage
+                $currentLevel = $highestCompletedLevel + 1;
+                $currentRank = strtoupper($stages[$highestCompletedLevel]);
+                $nextRank = $highestCompletedLevel + 1 < count($stages) 
+                    ? strtoupper($stages[$highestCompletedLevel + 1]) 
+                    : 'MOOVEY MASTER';
+            } else {
+                // All stages completed - maximum rank achieved
+                $currentLevel = count($stages);
+                $currentRank = strtoupper($stages[count($stages) - 1]);
+                $nextRank = 'MOOVEY MASTER';
+            }
         } elseif ($activeStage) {
+            // User is in progress on a stage
             $currentLevel = $activeStageLevel;
             $currentRank = strtoupper($activeStage);
             $nextRank = $activeStageLevel < count($stages) 
                 ? strtoupper($stages[$activeStageLevel]) 
                 : 'MOOVEY MASTER';
         } else {
+            // No progress yet - start at first stage
             $currentLevel = 1;
             $currentRank = 'MOVE DREAMER';
             $nextRank = 'PLAN STARTER';

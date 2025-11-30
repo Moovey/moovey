@@ -232,6 +232,20 @@ export default function Dashboard({
         initializeDashboard();
     }, []);
 
+    // Listen for academy progress updates (when lessons are completed)
+    useEffect(() => {
+        const handleAcademyProgressUpdate = () => {
+            // Reload academyProgress data from server using Inertia
+            router.reload({ only: ['academyProgress'] });
+        };
+
+        window.addEventListener('academyProgressUpdated', handleAcademyProgressUpdate);
+        
+        return () => {
+            window.removeEventListener('academyProgressUpdated', handleAcademyProgressUpdate);
+        };
+    }, []);
+
     // Optimized priority tasks loading with caching
     const loadPriorityTasks = useCallback(async () => {
         const cacheKey = 'priority-tasks';
@@ -706,6 +720,18 @@ export default function Dashboard({
 
         return () => clearInterval(cleanup);
     }, []);
+
+    // Periodic academy progress check (every 2 minutes) to catch updates from other tabs/sessions
+    useEffect(() => {
+        const checkAcademyProgress = setInterval(() => {
+            // Only reload if user is on the overview tab
+            if (activeTab === 'overview') {
+                router.reload({ only: ['academyProgress'] });
+            }
+        }, 120000); // Check every 2 minutes
+
+        return () => clearInterval(checkAcademyProgress);
+    }, [activeTab]);
 
     // Removed sample priority tasks - now only showing tasks added from Academy Learning Tasks
     const priorityTasks: Task[] = [];
