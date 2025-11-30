@@ -122,19 +122,27 @@ interface PaginatedConnectionRequests {
     total: number;
 }
 
+interface NetworkStats {
+    totalConnections: number;
+    savedProvidersCount: number;
+    activeChats: number;
+    pendingRequests: number;
+}
+
 interface ConnectionsProps {
     savedProviders: PaginatedSavedProviders;
     connectionRequests: PaginatedConnectionRequests;
     recommendedConnections: RecommendedConnection[];
+    networkStats: NetworkStats;
 }
 
-export default function Connections({ savedProviders, connectionRequests, recommendedConnections }: ConnectionsProps) {
+export default function Connections({ savedProviders, connectionRequests, recommendedConnections, networkStats }: ConnectionsProps) {
     const { taskData } = useMoveProgress();
 
     // Listen for friendship updates (when new requests are sent from other pages)
     useEffect(() => {
         const handleFriendshipUpdate = () => {
-            router.reload({ only: ['connectionRequests'] });
+            router.reload({ only: ['connectionRequests', 'networkStats'] });
         };
 
         window.addEventListener('friendshipUpdated', handleFriendshipUpdate);
@@ -296,7 +304,7 @@ export default function Connections({ savedProviders, connectionRequests, recomm
                     });
                     
                     // Reload connection requests to update the list
-                    router.reload({ only: ['connectionRequests'] });
+                    router.reload({ only: ['connectionRequests', 'networkStats'] });
                 },
                 onError: (errors) => {
                     console.error('Error accepting request:', errors);
@@ -331,7 +339,7 @@ export default function Connections({ savedProviders, connectionRequests, recomm
                     });
                     
                     // Reload connection requests to update the list
-                    router.reload({ only: ['connectionRequests'] });
+                    router.reload({ only: ['connectionRequests', 'networkStats'] });
                 },
                 onError: (errors) => {
                     console.error('Error declining request:', errors);
@@ -508,10 +516,10 @@ export default function Connections({ savedProviders, connectionRequests, recomm
                         onConnectRecommended={handleConnectRecommended}
                     />
                     <NetworkStatsSection 
-                        totalConnections={12}
-                        savedProvidersCount={savedProviders.total}
-                        activeChats={8}
-                        pendingRequests={connectionRequests.total}
+                        totalConnections={networkStats.totalConnections}
+                        savedProvidersCount={networkStats.savedProvidersCount}
+                        activeChats={networkStats.activeChats}
+                        pendingRequests={networkStats.pendingRequests}
                     />
                     <QuickActionsSection />
                 </div>

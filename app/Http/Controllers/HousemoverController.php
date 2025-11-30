@@ -345,11 +345,50 @@ class HousemoverController extends Controller
             })
             ->values();
 
+        // Calculate network statistics
+        $networkStats = $this->getNetworkStats($userId);
+
         return Inertia::render('housemover/connections', [
             'savedProviders' => $savedProviders,
             'connectionRequests' => $connectionRequests,
             'recommendedConnections' => $recommendedConnections,
+            'networkStats' => $networkStats,
         ]);
+    }
+
+    /**
+     * Get network statistics for user
+     */
+    private function getNetworkStats(int $userId): array
+    {
+        // Count total accepted friendships (connections)
+        $totalConnections = \App\Models\Friendship::where(function($query) use ($userId) {
+            $query->where('user_id', $userId)->where('status', 'accepted');
+        })->orWhere(function($query) use ($userId) {
+            $query->where('friend_id', $userId)->where('status', 'accepted');
+        })->count();
+
+        // Count saved providers
+        $savedProvidersCount = \App\Models\SavedProvider::where('user_id', $userId)->count();
+
+        // Count active conversations (conversations with messages in last 7 days)
+        $activeChats = \App\Models\Conversation::where(function($query) use ($userId) {
+            $query->where('user_one_id', $userId)->orWhere('user_two_id', $userId);
+        })
+        ->where('last_message_at', '>=', now()->subDays(7))
+        ->count();
+
+        // Count pending friend requests (received)
+        $pendingRequests = \App\Models\Friendship::where('friend_id', $userId)
+            ->where('status', 'pending')
+            ->count();
+
+        return [
+            'totalConnections' => $totalConnections,
+            'savedProvidersCount' => $savedProvidersCount,
+            'activeChats' => $activeChats,
+            'pendingRequests' => $pendingRequests,
+        ];
     }
 
     /**
