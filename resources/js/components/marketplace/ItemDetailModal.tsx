@@ -175,10 +175,11 @@ export default function ItemDetailModal({
                     <h2 className="text-xl font-semibold text-gray-900">Item Details</h2>
                     <button
                         onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                        className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[#E0F7FA] transition-colors text-[#00BCD4] hover:text-[#00ACC1]"
+                        aria-label="Close"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
@@ -339,10 +340,10 @@ export default function ItemDetailModal({
                                 {!showMessageOptions && !showCustomMessage ? (
                                     <button
                                         onClick={() => setShowMessageOptions(true)}
-                                        className="w-full bg-[#17B7C7] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#139AAA] transition-colors flex items-center justify-center gap-2"
+                                        className="w-full bg-[#00BCD4] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#00ACC1] transition-colors flex items-center justify-center gap-2 shadow-sm"
                                     >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                         </svg>
                                         Message Seller
                                     </button>
